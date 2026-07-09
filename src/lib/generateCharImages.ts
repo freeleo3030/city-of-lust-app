@@ -36,11 +36,11 @@ const POSES = [
   },
   {
     key: 'cowgirl', label: '여성상위',
-    pose: `${SOLO_FEMALE}, spread pussy, vagina fully exposed and visible, completely nude Korean woman in cowgirl position, sitting upright facing camera, legs spread wide apart, pussy clearly visible between open thighs, face and hair visible at top, large breasts center, explicit vagina fully shown at bottom of frame, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, spread pussy, vagina fully exposed and visible, completely nude Korean woman in cowgirl position, sitting upright facing camera, both hands placed on own thighs in front of body, hands resting on knees visible in frame, legs spread wide apart, pussy clearly visible between open thighs, face and hair visible at top, large breasts center, explicit vagina fully shown at bottom of frame, explicit nude adult photography`,
   },
   {
     key: 'side', label: '좌위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman sitting upright on bed facing camera, both legs spread wide open to each side with knees bent outward, butterfly spread leg position, both arms stretched behind her back with palms flat on bed behind her buttocks, hands placed far behind body NOT in front, arms fully extended backward supporting her weight from behind, hands nowhere near vagina or groin, no hands near crotch, camera from slightly above looking down at her body, large breasts prominent in upper center of frame, exposed vagina visible at bottom center between spread thighs, face visible at top of frame, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, both hands behind back, arms behind body, hands on bed behind buttocks supporting weight, both thighs spread wide apart, legs open butterfly position, knees bent outward to sides, completely nude Korean woman sitting upright facing camera, vagina exposed between spread thighs, large breasts center, face at top, explicit nude adult photography`,
   },
 ]
 
@@ -395,7 +395,8 @@ export async function generatePoseVariants(
     const filename = `pose_${poseKey}_${exprKey}_v${i + 1}_${Date.now()}.png`
     const mode = faceB64 ? 'ipadapter' : 'txt2img'
     const imgH = poseKey === 'cowgirl' ? 640 : 512
-    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, 0.35, signal)
+    const poseRefUrl = POSE_REF_URLS[poseKey]
+    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, poseRefUrl, undefined, faceB64, 0.35, signal)
       .then(url => { onProgress(++done, count); return url })
       .catch((e: any) => { if (e?.name !== 'AbortError') { onProgress(++done, count) } return '' })
   })

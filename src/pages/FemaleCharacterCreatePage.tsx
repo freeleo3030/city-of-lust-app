@@ -526,10 +526,16 @@ export default function FemaleCharacterCreatePage({
         { profileImageUrl: profileImages[selectedProfileIdx], signal: controller.signal, bgKey: selectedBgKey }
       )
       if (!controller.signal.aborted) {
-        setPoseVariants(prev => ({
-          ...prev,
-          [poseKey]: { ...(prev[poseKey] ?? {}), [exprKey]: urls }
-        }))
+        setPoseVariants(prev => {
+          // 이전 variants 삭제 (선택된 이미지 제외)
+          const prevUrls = prev[poseKey]?.[exprKey] ?? []
+          const chosen = selectedPoseImages[`${poseKey}_${exprKey}`]
+          prevUrls.forEach(u => { if (u && u !== chosen) deleteImageFromStorage(u) })
+          return {
+            ...prev,
+            [poseKey]: { ...(prev[poseKey] ?? {}), [exprKey]: urls }
+          }
+        })
       }
     } catch (e: any) {
       if (e?.name !== 'AbortError') console.error('variant 생성 실패:', e)
@@ -645,7 +651,7 @@ export default function FemaleCharacterCreatePage({
 
   // 3단계: 표정·자세 생성 스튜디오
   if (phase === 'image_studio') {
-    const busy = generatingExpr || generatingPose || generating
+    const busy = generatingExpr || generatingPose || generating || generatingVariants
     return (
       <div style={S.container}>
 
@@ -904,8 +910,8 @@ export default function FemaleCharacterCreatePage({
               <p style={IS.hint}>대화 화면에서 사용되는 표정 5종입니다.</p>
             )}
             <button
-              style={{ ...IS.genBtn, opacity: busy ? 0.5 : 1 }}
-              disabled={busy}
+              style={{ ...IS.genBtn, opacity: (busy || generatingVariants) ? 0.5 : 1 }}
+              disabled={busy || generatingVariants}
               onClick={handleGenExpressions}
             >
               {generatingExpr ? `⏳ ${genProgress}` : expressionSets.length > 0 ? '🔄 표정 재생성' : '🎭 표정 5장 생성'}
@@ -956,8 +962,8 @@ export default function FemaleCharacterCreatePage({
                     )}
                     {/* 생성/다시 버튼 */}
                     {selectedUrl ? (
-                      <button style={{ background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: generatingVariants ? 'not-allowed' : 'pointer', opacity: generatingVariants ? 0.4 : 1 }}
-                        disabled={generatingVariants}
+                      <button style={{ background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1 }}
+                        disabled={busy}
                         onClick={() => {
                           setSelectedPoseImages(prev => { const n = { ...prev }; delete n[`${poseKey}_${exprKey}`]; return n })
                           setActivePoseKey(poseKey); setActiveExprStep(exprKey)
@@ -972,15 +978,16 @@ export default function FemaleCharacterCreatePage({
                           onClick={handleCancelVariants}>✕ 취소</button>
                       </div>
                     ) : variantUrls.filter(Boolean).length > 0 ? (
-                      <button style={{ background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: 'pointer' }}
+                      <button style={{ background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1 }}
+                        disabled={busy}
                         onClick={() => {
                           handleGenVariants(poseKey, exprKey)
                         }}>🔄 다시 생성</button>
                     ) : canGenClimax ? (
                       <span style={{ color: '#ffffff33', fontSize: 10 }}>흥분 선택 후</span>
                     ) : (
-                      <button style={{ ...IS.genBtn, margin: 0, width: '100%', fontSize: 11, padding: '4px 0', opacity: (generatingVariants || (exprKey === 'climax' && !aroused)) ? 0.35 : 1, cursor: (generatingVariants || (exprKey === 'climax' && !aroused)) ? 'not-allowed' : 'pointer' }}
-                        disabled={generatingVariants || (exprKey === 'climax' && !aroused)}
+                      <button style={{ ...IS.genBtn, margin: 0, width: '100%', fontSize: 11, padding: '4px 0', opacity: (busy || (exprKey === 'climax' && !aroused)) ? 0.35 : 1, cursor: (busy || (exprKey === 'climax' && !aroused)) ? 'not-allowed' : 'pointer' }}
+                        disabled={busy || (exprKey === 'climax' && !aroused)}
                         onClick={() => handleGenVariants(poseKey, exprKey)}>
                         🔥 생성
                       </button>

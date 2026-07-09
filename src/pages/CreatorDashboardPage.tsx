@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
-import { generateExpressionImages, generatePoseImages, CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES } from '../lib/generateCharImages'
+import { CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES } from '../lib/generateCharImages'
 
 interface Props {
   chars: FemaleCharacterData[]
@@ -11,19 +11,9 @@ interface Props {
   onUpdateChar?: (char: FemaleCharacterData) => void
 }
 
-type GenType = 'expression' | 'pose'
-
-interface GenState {
-  charId: string
-  type: GenType
-  done: number
-  total: number
-  currentLabel: string
-}
-
 interface PreviewState {
   char: FemaleCharacterData
-  tab: GenType
+  tab: 'expression' | 'pose'
 }
 
 const marriedLabel: Record<string, string> = { '미혼': '미혼', '기혼': '기혼', '돌싱': '돌싱' }
@@ -37,7 +27,6 @@ const diffColor = (married: string, age: number) => {
 
 export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, onBack, onUpdateChar }: Props) {
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [genState, setGenState] = useState<GenState | null>(null)
   const [preview, setPreview] = useState<PreviewState | null>(null)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [lbScale, setLbScale] = useState(1)
@@ -66,26 +55,6 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
     onUpdateChar?.(updated)
   }
 
-  const startGenerate = async (char: FemaleCharacterData, type: GenType) => {
-    if (genState) return
-    setGenState({ charId: char.id, type, done: 0, total: type === 'expression' ? 5 : 8, currentLabel: '준비 중...' })
-
-    const onProgress = (done: number, total: number, label: string) => {
-      setGenState({ charId: char.id, type, done, total, currentLabel: label })
-    }
-
-    if (type === 'expression') {
-      const images = await generateExpressionImages(char, onProgress)
-      const updated = { ...char, expressionImages: images }
-      updateLocal(updated)
-    } else {
-      const images = await generatePoseImages(char, onProgress)
-      const updated = { ...char, poseImages: images }
-      updateLocal(updated)
-    }
-    setGenState(null)
-  }
-
   const displayChars = localChars.length ? localChars : chars
 
   return (
@@ -101,18 +70,6 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
           <span style={S.count}>총 {chars.length}명 등록됨</span>
           <button style={S.addBtn} onClick={onAdd}>＋ 새 캐릭터 추가</button>
         </div>
-
-        {genState && (
-          <div style={S.genBanner}>
-            <div style={S.genLabel}>
-              {genState.type === 'expression' ? '😊 표정 이미지' : '🔥 자세 이미지'} 생성 중...
-              <span style={S.genSub}>{genState.currentLabel} ({genState.done}/{genState.total})</span>
-            </div>
-            <div style={S.progressBar}>
-              <div style={{ ...S.progressFill, width: `${(genState.done / genState.total) * 100}%` }} />
-            </div>
-          </div>
-        )}
 
         {displayChars.length === 0 ? (
           <div style={S.empty}>
@@ -152,23 +109,6 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
                     ))}
                   </div>
 
-                  {/* 이미지 생성 버튼 */}
-                  <div style={S.genRow}>
-                    <button
-                      style={{ ...S.genBtn, opacity: genState ? 0.5 : 1 }}
-                      disabled={!!genState}
-                      onClick={() => startGenerate(c, 'expression')}
-                    >
-                      😊 표정 {c.expressionImages?.length ? `(${c.expressionImages.filter(Boolean).length}/5)` : '생성'}
-                    </button>
-                    <button
-                      style={{ ...S.genBtn, opacity: genState ? 0.5 : 1 }}
-                      disabled={!!genState}
-                      onClick={() => startGenerate(c, 'pose')}
-                    >
-                      🔥 자세 {c.poseImages ? `(${Object.entries(c.poseImages).filter(([k,v]) => /_(aroused|climax)$/.test(k) && Boolean(v)).length}/8)` : '생성'}
-                    </button>
-                  </div>
 
                   {/* 미리보기 버튼 */}
                   {(c.expressionImages?.length || c.poseImages) && (
@@ -296,11 +236,6 @@ const S: Record<string, React.CSSProperties> = {
   count: { color: '#ffffff66', fontSize: 13 },
   addBtn: { background: 'linear-gradient(135deg, #c9a84c, #e94560)', border: 'none', borderRadius: 8, color: '#fff', padding: '8px 18px', cursor: 'pointer', fontSize: 14, fontWeight: 'bold' },
   empty: { padding: '60px 0', display: 'flex', justifyContent: 'center' },
-  genBanner: { background: 'rgba(201,168,76,0.1)', border: '1px solid #c9a84c44', borderRadius: 10, padding: '12px 16px' },
-  genLabel: { color: '#c9a84c', fontSize: 14, fontWeight: 'bold', marginBottom: 8, display: 'flex', justifyContent: 'space-between' },
-  genSub: { color: '#ffffff88', fontSize: 12, fontWeight: 'normal' },
-  progressBar: { height: 6, background: '#ffffff11', borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', background: 'linear-gradient(90deg, #c9a84c, #e94560)', borderRadius: 3, transition: 'width 0.3s ease' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 },
   card: { background: 'rgba(255,255,255,0.04)', border: '1px solid #ffffff11', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
   imgWrap: { position: 'relative', height: 300, background: '#0d0d1a' },
@@ -315,8 +250,6 @@ const S: Record<string, React.CSSProperties> = {
   stat: { flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 6, padding: '4px 0', textAlign: 'center' },
   statLabel: { display: 'block', fontSize: 10, color: '#ffffff44' },
   statVal: { display: 'block', fontSize: 14, fontWeight: 'bold', color: '#c9a84c' },
-  genRow: { display: 'flex', gap: 6, marginTop: 8 },
-  genBtn: { flex: 1, background: 'rgba(201,168,76,0.12)', border: '1px solid #c9a84c44', borderRadius: 6, color: '#c9a84c', padding: '6px 4px', cursor: 'pointer', fontSize: 11, fontWeight: 'bold' },
   previewBtn: { background: 'rgba(255,255,255,0.06)', border: '1px solid #ffffff22', borderRadius: 6, color: '#ffffff88', padding: '5px 0', cursor: 'pointer', fontSize: 11, marginTop: 2 },
   date: { fontSize: 11, color: '#ffffff33', marginTop: 2 },
   editBtn: { marginTop: 4, background: 'none', border: '1px solid #c9a84c55', borderRadius: 6, color: '#c9a84c', padding: '5px 0', cursor: 'pointer', fontSize: 12 },
