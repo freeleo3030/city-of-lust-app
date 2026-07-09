@@ -36,7 +36,7 @@ const POSES = [
   },
   {
     key: 'cowgirl', label: '여성상위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman in cowgirl position, sitting upright facing camera, full body from head to mid-thigh visible, thighs and knees visible at bottom edge of frame, face at top of frame, breasts in upper center, spread thighs fill lower frame, both knees visible at bottom corners, shot from slightly below eye level showing full torso and thighs, no male body visible, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman in cowgirl position, sitting upright facing camera, full body head to calves fully visible in frame, face at top, breasts center, spread thighs and knees mid-frame, calves and lower legs visible at very bottom of frame, wide shot showing entire body including lower legs, zoomed out enough to show calves, no male body visible, explicit nude adult photography`,
   },
   {
     key: 'side', label: '좌위',
@@ -394,7 +394,8 @@ export async function generatePoseVariants(
     const seed = (baseSeed + i) % 999999998 + 1
     const filename = `pose_${poseKey}_${exprKey}_v${i + 1}_${Date.now()}.png`
     const mode = faceB64 ? 'ipadapter' : 'txt2img'
-    return generateAndUpload(prompt, neg, 384, 512, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, 0.35, signal)
+    const imgH = poseKey === 'cowgirl' ? 640 : 512
+    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, 0.35, signal)
       .then(url => { onProgress(++done, count); return url })
       .catch((e: any) => { if (e?.name !== 'AbortError') { onProgress(++done, count) } return '' })
   })
