@@ -318,6 +318,19 @@ export default function FemaleCharacterCreatePage({
   const profileWasDragging = React.useRef(false)
   const profileImgWrapRef = React.useRef<HTMLDivElement>(null)
   const profileEnlargedWrapRef = React.useRef<HTMLDivElement>(null)
+  const [exprZoomScale, setExprZoomScale] = useState(1)
+  const [exprPan, setExprPan] = useState({ x: 0, y: 0 })
+  const exprDragRef = React.useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
+  const [generatingExpr, setGeneratingExpr] = useState(false)
+  const [generatingPose, setGeneratingPose] = useState(false)
+  const [selectedBgKey, setSelectedBgKey] = useState('bed')
+  const [enlargedPose, setEnlargedPose] = useState(false)
+  const [enlargedExprIdx, setEnlargedExprIdx] = useState<number | null>(null)
+  const [enlargedPoseIdx, setEnlargedPoseIdx] = useState<number | null>(null)
+
+  const MAX_PROFILE_IMGS = 5
+  const [enlargedProfile, setEnlargedProfile] = useState(false)
+  const [enlargedExpr, setEnlargedExpr] = useState(false)
 
   // non-passive wheel: 메인 액자
   useEffect(() => {
@@ -342,19 +355,6 @@ export default function FemaleCharacterCreatePage({
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
   }, [enlargedProfile])
-  const [exprZoomScale, setExprZoomScale] = useState(1)
-  const [exprPan, setExprPan] = useState({ x: 0, y: 0 })
-  const exprDragRef = React.useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
-  const [generatingExpr, setGeneratingExpr] = useState(false)
-  const [generatingPose, setGeneratingPose] = useState(false)
-  const [selectedBgKey, setSelectedBgKey] = useState('bed')
-  const [enlargedPose, setEnlargedPose] = useState(false)
-  const [enlargedExprIdx, setEnlargedExprIdx] = useState<number | null>(null)
-  const [enlargedPoseIdx, setEnlargedPoseIdx] = useState<number | null>(null)
-
-  const MAX_PROFILE_IMGS = 5
-  const [enlargedProfile, setEnlargedProfile] = useState(false)
-  const [enlargedExpr, setEnlargedExpr] = useState(false)
 
   const toggleTag = (tag: string, list: string[], setList: (v: string[]) => void, max: number) => {
     if (list.includes(tag)) setList(list.filter(t => t !== tag))
