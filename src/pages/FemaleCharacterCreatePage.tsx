@@ -707,7 +707,7 @@ export default function FemaleCharacterCreatePage({
                   {expressionSets.length > 1 && (
                     <div style={IS.setTabs}>
                       {expressionSets.map((_, i) => (
-                        <button key={i} style={{ ...IS.setTab, ...(i === selectedExprSet ? IS.setTabActive : {}) }} onClick={() => { handleSelectExprSet(i); setEnlargedExprIdx(null) }}>세트 {i + 1}</button>
+                        <button key={i} style={{ ...IS.setTab, ...(i === selectedExprSet ? IS.setTabActive : {}) }} onClick={() => { setSelectedExprSet(i); setEnlargedExprIdx(null) }}>세트 {i + 1}</button>
                       ))}
                     </div>
                   )}
@@ -886,7 +886,7 @@ export default function FemaleCharacterCreatePage({
                   <div style={IS.setTabs}>
                     {expressionSets.map((_, i) => (
                       <button key={i} style={{ ...IS.setTab, ...(i === selectedExprSet ? IS.setTabActive : {}) }}
-                        onClick={() => handleSelectExprSet(i)}>세트 {i + 1}</button>
+                        onClick={() => setSelectedExprSet(i)}>세트 {i + 1}</button>
                     ))}
                   </div>
                 )}
@@ -898,6 +898,12 @@ export default function FemaleCharacterCreatePage({
                     </div>
                   ))}
                 </div>
+                {expressionSets.length > 1 && (
+                  <button
+                    style={{ background: 'linear-gradient(90deg,#c9a84c,#e94560)', border: 'none', color: '#fff', borderRadius: 10, padding: '8px 24px', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', marginTop: 4 }}
+                    onClick={() => handleSelectExprSet(selectedExprSet)}
+                  >✅ 세트 {selectedExprSet + 1} 확정</button>
+                )}
               </>
             ) : (
               <p style={IS.hint}>대화 화면에서 사용되는 표정 5종입니다.</p>
