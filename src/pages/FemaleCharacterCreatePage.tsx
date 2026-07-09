@@ -755,7 +755,7 @@ export default function FemaleCharacterCreatePage({
                     <button onClick={() => { setVariantZoom(null); setVariantZoomScale(1); setVariantPan({ x: 0, y: 0 }); setVariantOverlay(null) }}
                       style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'rgba(0,0,0,0.6)', border: '1px solid #ffffff55', color: '#fff', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                   <div
-                    style={{ overflow: 'hidden', width: '100%', height: Math.min(window.innerHeight - 160, window.innerWidth * 4/3), display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: variantDrag.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+                    style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: variantDrag.current ? 'grabbing' : 'grab', userSelect: 'none' }}
                     onWheel={e => {
                       e.preventDefault()
                       setVariantZoomScale(s => Math.min(4, Math.max(1, s - e.deltaY * 0.003)))
@@ -783,7 +783,7 @@ export default function FemaleCharacterCreatePage({
                     onClick={e => e.stopPropagation()}
                   >
                     <img src={variantZoom} alt="확대" draggable={false}
-                      style={{ width: Math.min(window.innerWidth - 24, window.innerHeight * 3/4 - 12), height: Math.min(window.innerHeight - 160, window.innerWidth * 4/3), objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c', flexShrink: 0, transform: `translate(${variantPan.x}px, ${variantPan.y}px) scale(${variantZoomScale})`, transformOrigin: 'center', transition: variantDrag.current ? 'none' : 'transform 0.05s' }} />
+                      style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c', transform: `translate(${variantPan.x}px, ${variantPan.y}px) scale(${variantZoomScale})`, transformOrigin: 'center', transition: variantDrag.current ? 'none' : 'transform 0.05s' }} />
                   </div>
                   </div>{/* position:relative wrapper */}
                   <div style={{ color: '#ffffff44', fontSize: 11 }}>휠: 확대/축소 · 드래그: 이동</div>
