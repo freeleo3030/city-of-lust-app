@@ -1059,6 +1059,8 @@ export default function FemaleCharacterCreatePage({
                 profileDragRef.current = null
                 window.removeEventListener('mousemove', onMove)
                 window.removeEventListener('mouseup', onUp)
+                setProfilePan({ x: 0, y: 0 })
+                setProfileZoomScale(1)
                 setTimeout(() => { profileWasDragging.current = false }, 50)
               }
               window.addEventListener('mousemove', onMove)
@@ -1087,7 +1089,7 @@ export default function FemaleCharacterCreatePage({
                     if (!profileDragRef.current) return
                     setProfilePan({ x: profileDragRef.current.panX + ev.clientX - profileDragRef.current.startX, y: profileDragRef.current.panY + ev.clientY - profileDragRef.current.startY })
                   }
-                  const onUp = () => { profileDragRef.current = null; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+                  const onUp = () => { profileDragRef.current = null; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); setProfilePan({ x: 0, y: 0 }); setProfileZoomScale(1) }
                   window.addEventListener('mousemove', onMove)
                   window.addEventListener('mouseup', onUp)
                 }}
