@@ -74,7 +74,7 @@ const LOCATION_BG: Record<string, string> = {
   '레스토랑': 'restaurant background, dining interior, warm lighting',
   '고급레스토랑': 'luxury restaurant background, fine dining, elegant interior',
   '바': 'bar background, night bar interior, ambient lighting',
-  '클럽': 'Korean nightclub interior, DJ booth in front, dance floor, stage with spotlights, colorful LED neon lights, dark atmosphere, crowd dancing, no swimsuit, no beach',
+  '클럽': 'nightclub background, dark club interior, neon lights',
   '호텔': 'hotel room background, elegant hotel interior',
 }
 
@@ -96,7 +96,7 @@ const LOCATION_OUTFIT: Record<string, string> = {
   '레스토랑': 'elegant dress',
   '고급레스토랑': 'evening gown',
   '바': 'cocktail dress',
-  '클럽': 'sexy club outfit, short mini dress or crop top and skirt, high heels, NOT swimsuit, NOT bikini',
+  '클럽': 'club dress',
   '호텔': 'satin slip dress',
 }
 
