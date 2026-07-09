@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, deleteImageFromStorage, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS } from '../lib/generateCharImages'
 import { supabase } from '../lib/supabase'
 
@@ -316,6 +316,32 @@ export default function FemaleCharacterCreatePage({
   const [profilePan, setProfilePan] = useState({ x: 0, y: 0 })
   const profileDragRef = React.useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
   const profileWasDragging = React.useRef(false)
+  const profileImgWrapRef = React.useRef<HTMLDivElement>(null)
+  const profileEnlargedWrapRef = React.useRef<HTMLDivElement>(null)
+
+  // non-passive wheel: 메인 액자
+  useEffect(() => {
+    const el = profileImgWrapRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      setProfileZoomScale(s => { const n = Math.min(4, Math.max(1, s - e.deltaY * 0.003)); if (n === 1) setProfilePan({ x: 0, y: 0 }); return n })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
+  // non-passive wheel: enlarged 모달
+  useEffect(() => {
+    const el = profileEnlargedWrapRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      setProfileZoomScale(s => { const n = Math.min(4, Math.max(1, s - e.deltaY * 0.003)); if (n === 1) setProfilePan({ x: 0, y: 0 }); return n })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [enlargedProfile])
   const [exprZoomScale, setExprZoomScale] = useState(1)
   const [exprPan, setExprPan] = useState({ x: 0, y: 0 })
   const exprDragRef = React.useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
@@ -1018,15 +1044,8 @@ export default function FemaleCharacterCreatePage({
 
           {/* 메인 이미지 — 인-플레이스 휠줌 + 드래그 */}
           <div
+            ref={profileImgWrapRef}
             style={{ ...PR.imgWrap, padding: 0, width: 220, height: 286, overflow: 'hidden', borderRadius: 12, cursor: profileWasDragging.current ? 'grabbing' : profileZoomScale > 1 ? 'grab' : 'zoom-in', userSelect: 'none' }}
-            onWheel={e => {
-              e.preventDefault()
-              setProfileZoomScale(s => {
-                const next = Math.min(4, Math.max(1, s - e.deltaY * 0.003))
-                if (next === 1) setProfilePan({ x: 0, y: 0 })
-                return next
-              })
-            }}
             onMouseDown={e => {
               if (e.button !== 0) return
               profileWasDragging.current = false
@@ -1057,9 +1076,10 @@ export default function FemaleCharacterCreatePage({
           {/* 전체화면 모달 */}
           {enlargedProfile && activeImg && (
             <div style={PR.enlargeOverlay} onClick={() => { setEnlargedProfile(false); setProfileZoomScale(1); setProfilePan({ x: 0, y: 0 }) }}>
-              <div style={{ overflow: 'hidden', width: '90vw', height: '85vh', display: 'flex', justifyContent: 'center', alignItems: 'center', userSelect: 'none' }}
+              <div
+                ref={profileEnlargedWrapRef}
+                style={{ position: 'relative', overflow: 'hidden', width: Math.min(window.innerWidth * 0.9, 600), height: Math.min(window.innerHeight * 0.85, 800), display: 'flex', justifyContent: 'center', alignItems: 'center', userSelect: 'none', borderRadius: 12, cursor: profileDragRef.current ? 'grabbing' : 'grab' }}
                 onClick={e => e.stopPropagation()}
-                onWheel={e => { e.preventDefault(); setProfileZoomScale(s => { const n = Math.min(4, Math.max(1, s - e.deltaY * 0.003)); if (n === 1) setProfilePan({ x: 0, y: 0 }); return n }) }}
                 onMouseDown={e => {
                   if (e.button !== 0) return
                   profileDragRef.current = { startX: e.clientX, startY: e.clientY, panX: profilePan.x, panY: profilePan.y }
@@ -1072,7 +1092,7 @@ export default function FemaleCharacterCreatePage({
                   window.addEventListener('mouseup', onUp)
                 }}
               >
-                <img src={activeImg} alt="확대" draggable={false} style={{ ...PR.enlargedImg, transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
+                <img src={activeImg} alt="확대" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c55', transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
               </div>
               <div style={{ color: '#ffffff44', fontSize: 12, marginTop: 12 }}>휠: 확대/축소 · 드래그: 이동 · 바깥 클릭으로 닫기</div>
             </div>
