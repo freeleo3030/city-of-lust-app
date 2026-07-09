@@ -381,7 +381,7 @@ export async function generatePoseVariants(
   const neg = `${NEG_NUDE}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, male, man, penis, cock, dick, balls, testicles, male genitalia, male body, masculine, man's body, two people, couple, monochrome, grayscale, black and white, black & white, desaturated, greyscale`
   const prompt = `${SOLO_FEMALE}, ${base}, ${pose.pose}, ${expr.arousal}${(pose as any).cameraHint ? `, ${(pose as any).cameraHint}` : ''}, hotel bedroom background, luxury bed with white sheets, warm ambient lighting, full color photography, vibrant skin tones, colorful, RAW photo, 8k uhd, DSLR, high quality, photorealistic, nsfw, explicit, adult content`
 
-  const bgSeed = charSeed(c)
+  const baseSeed = Math.floor(Math.random() * 999999999) + 1
   let done = 0
   onProgress(0, count)
 
@@ -391,7 +391,7 @@ export async function generatePoseVariants(
   }
 
   const tasks = Array.from({ length: count }, (_, i) => {
-    const seed = (bgSeed + i) % 999999998 + 1
+    const seed = (baseSeed + i) % 999999998 + 1
     const filename = `pose_${poseKey}_${exprKey}_v${i + 1}_${Date.now()}.png`
     const mode = faceB64 ? 'ipadapter' : 'txt2img'
     return generateAndUpload(prompt, neg, 384, 512, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, 0.35, signal)
