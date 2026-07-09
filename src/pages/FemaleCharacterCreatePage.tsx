@@ -805,7 +805,7 @@ export default function FemaleCharacterCreatePage({
                     return (
                       <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                         <img src={url} alt={`${i+1}`} onClick={e => { e.stopPropagation(); variantZoomFromSelected.current = false; setVariantZoom(url); setVariantZoomScale(1); setVariantPan({ x: 0, y: 0 }) }}
-                          style={{ width: imgW, height: imgH, objectFit: 'cover', borderRadius: 8, border: '1px solid #ffffff22', cursor: 'zoom-in' }} />
+                          style={{ width: imgW, height: imgH, objectFit: 'contain', borderRadius: 8, border: '1px solid #ffffff22', cursor: 'zoom-in' }} />
                         <button onClick={() => { handleSelectVariant(variantOverlay.poseKey, variantOverlay.exprKey, url); setVariantOverlay(null) }}
                           style={{ background: 'linear-gradient(90deg,#c9a84c,#e94560)', border: 'none', color: '#fff', borderRadius: 6, padding: '6px 0', width: imgW, fontSize: 12, fontWeight: 'bold', cursor: 'pointer' }}>✅ 선택</button>
                       </div>
