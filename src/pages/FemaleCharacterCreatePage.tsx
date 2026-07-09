@@ -1085,7 +1085,7 @@ export default function FemaleCharacterCreatePage({
             <div style={PR.enlargeOverlay} onClick={() => { setEnlargedProfile(false); setProfileZoomScale(1); setProfilePan({ x: 0, y: 0 }) }}>
               <div
                 ref={profileEnlargedWrapRef}
-                style={{ position: 'relative', overflow: 'hidden', width: Math.min(window.innerWidth * 0.9, 600), height: Math.min(window.innerHeight * 0.85, 800), display: 'flex', justifyContent: 'center', alignItems: 'center', userSelect: 'none', borderRadius: 12, cursor: profileDragRef.current ? 'grabbing' : 'grab' }}
+                style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', userSelect: 'none', cursor: profileDragRef.current ? 'grabbing' : 'grab' }}
                 onClick={e => e.stopPropagation()}
                 onMouseDown={e => {
                   if (e.button !== 0) return
@@ -1099,7 +1099,7 @@ export default function FemaleCharacterCreatePage({
                   window.addEventListener('mouseup', onUp)
                 }}
               >
-                <img src={activeImg} alt="확대" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c55', transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
+                <img src={activeImg} alt="확대" draggable={false} style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c55', transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
               </div>
               <div style={{ color: '#ffffff44', fontSize: 12, marginTop: 12 }}>휠: 확대/축소 · 드래그: 이동 · 바깥 클릭으로 닫기</div>
             </div>
