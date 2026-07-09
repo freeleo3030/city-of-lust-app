@@ -32,7 +32,7 @@ const POSES = [
   },
   {
     key: 'doggy', label: '후배위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman in doggy style position on bed, on all fours with legs spread apart, shot from behind at low angle, large round buttocks fill upper frame, legs spread wide revealing vagina and labia clearly visible between thighs in center of frame, pussy exposed and visible from behind, arched back extends toward background, back of head visible at far end, rear view from behind, ass and exposed vagina toward camera, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman in doggy style position on bed, POV from directly behind her, ass and buttocks closest to camera filling bottom of frame, vagina and labia visible between spread thighs, back and spine visible in middle of frame, head and face at the far top of frame away from camera, camera positioned low behind her looking forward toward her head, rear-facing camera angle only showing her back side, explicit nude adult photography`,
   },
   {
     key: 'cowgirl', label: '여성상위',
