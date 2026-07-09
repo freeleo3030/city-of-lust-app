@@ -1018,7 +1018,7 @@ export default function FemaleCharacterCreatePage({
 
           {/* 메인 이미지 — 인-플레이스 휠줌 + 드래그 */}
           <div
-            style={{ ...PR.imgWrap, overflow: 'hidden', cursor: profileWasDragging.current ? 'grabbing' : profileZoomScale > 1 ? 'grab' : 'zoom-in', userSelect: 'none' }}
+            style={{ ...PR.imgWrap, padding: 0, width: 220, height: 286, overflow: 'hidden', borderRadius: 12, cursor: profileWasDragging.current ? 'grabbing' : profileZoomScale > 1 ? 'grab' : 'zoom-in', userSelect: 'none' }}
             onWheel={e => {
               e.preventDefault()
               setProfileZoomScale(s => {
