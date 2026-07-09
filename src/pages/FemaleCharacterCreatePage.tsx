@@ -654,20 +654,20 @@ export default function FemaleCharacterCreatePage({
           <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.93)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
             onClick={() => { setEnlargedProfile(false); setProfileZoomScale(1); setProfilePan({ x: 0, y: 0 }) }}>
             <div
-              style={{ overflow: 'hidden', width: '90vw', height: '85vh', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: profileDragRef.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+              ref={profileEnlargedWrapRef}
+              style={{ overflow: 'hidden', width: Math.min(window.innerWidth * 0.9, 600), height: Math.min(window.innerHeight * 0.85, 800), display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: profileDragRef.current ? 'grabbing' : 'grab', userSelect: 'none', borderRadius: 12, border: '2px solid #c9a84c55' }}
               onClick={e => e.stopPropagation()}
-              onWheel={e => { e.preventDefault(); setProfileZoomScale(s => Math.min(4, Math.max(1, s - e.deltaY * 0.003))) }}
               onMouseDown={e => {
                 if (e.button !== 0) return
                 profileDragRef.current = { startX: e.clientX, startY: e.clientY, panX: profilePan.x, panY: profilePan.y }
                 const onMove = (ev: MouseEvent) => { if (!profileDragRef.current) return; setProfilePan({ x: profileDragRef.current.panX + ev.clientX - profileDragRef.current.startX, y: profileDragRef.current.panY + ev.clientY - profileDragRef.current.startY }) }
-                const onUp = () => { profileDragRef.current = null; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+                const onUp = () => { profileDragRef.current = null; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); setProfilePan({ x: 0, y: 0 }); setProfileZoomScale(1) }
                 window.addEventListener('mousemove', onMove)
                 window.addEventListener('mouseup', onUp)
               }}
             >
               <img src={profileImages[0]} alt="대표 확대" draggable={false}
-                style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c55', transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10, transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
             </div>
             <div style={{ color: '#ffffff44', fontSize: 12, marginTop: 12 }}>휠: 확대/축소 · 드래그: 이동 · 바깥 클릭으로 닫기</div>
           </div>
