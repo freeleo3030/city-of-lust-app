@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
 import { generateExpressionImages, generatePoseImages, CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES } from '../lib/generateCharImages'
 
@@ -40,6 +40,24 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
   const [genState, setGenState] = useState<GenState | null>(null)
   const [preview, setPreview] = useState<PreviewState | null>(null)
   const [lightbox, setLightbox] = useState<string | null>(null)
+  const [lbScale, setLbScale] = useState(1)
+  const [lbPan, setLbPan] = useState({ x: 0, y: 0 })
+  const lbDragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
+  const lbWrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = lbWrapRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      setLbScale(s => { const n = Math.min(4, Math.max(1, s - e.deltaY * 0.003)); if (n === 1) setLbPan({ x: 0, y: 0 }); return n })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [lightbox])
+
+  const openLightbox = (url: string) => { setLightbox(url); setLbScale(1); setLbPan({ x: 0, y: 0 }) }
+  const closeLightbox = () => { setLightbox(null); setLbScale(1); setLbPan({ x: 0, y: 0 }) }
   // local copy for preview (gets updated as images come in)
   const [localChars, setLocalChars] = useState<FemaleCharacterData[]>(chars)
 
@@ -109,7 +127,7 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
                 {/* 이미지 */}
                 <div style={S.imgWrap}>
                   {c.imageUrl
-                    ? <img src={c.imageUrl} style={{ ...S.img, cursor: 'zoom-in' }} alt={c.nickname} onClick={() => setLightbox(c.imageUrl!)} />
+                    ? <img src={c.imageUrl} style={{ ...S.img, cursor: 'zoom-in' }} alt={c.nickname} onClick={() => openLightbox(c.imageUrl!)} />
                     : <div style={S.imgPlaceholder}>👤</div>
                   }
                   <span style={{ ...S.diffBadge, background: diffColor(c.married, c.age) }}>
@@ -204,7 +222,7 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
                   return (
                     <div key={i} style={S.thumbWrap}>
                       {url
-                        ? <img src={url} style={{ ...S.thumb, cursor: 'pointer' }} alt={lv.label} onClick={() => setLightbox(url)} />
+                        ? <img src={url} style={{ ...S.thumb, cursor: 'pointer' }} alt={lv.label} onClick={() => openLightbox(url)} />
                         : <div style={S.thumbEmpty}>⏳</div>}
                       <div style={S.thumbLabel}>{lv.label}</div>
                     </div>
@@ -219,7 +237,7 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
                   return (
                     <div key={key} style={S.thumbWrap}>
                       {url
-                        ? <img src={url} style={{ ...S.thumb, cursor: 'pointer' }} alt={`${p.label} · ${e.label}`} onClick={() => setLightbox(url)} />
+                        ? <img src={url} style={{ ...S.thumb, cursor: 'pointer' }} alt={`${p.label} · ${e.label}`} onClick={() => openLightbox(url)} />
                         : <div style={S.thumbEmpty}>⏳</div>}
                       <div style={S.thumbLabel}>{p.label} · {e.label}</div>
                     </div>
@@ -233,9 +251,34 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
 
       {/* 라이트박스 */}
       {lightbox && (
-        <div style={S.lightboxOverlay} onClick={() => setLightbox(null)}>
-          <img src={lightbox} style={S.lightboxImg} alt="확대 이미지" onClick={e => e.stopPropagation()} />
-          <button style={S.lightboxClose} onClick={() => setLightbox(null)}>✕</button>
+        <div style={S.lightboxOverlay} onClick={closeLightbox}>
+          <div
+            ref={lbWrapRef}
+            style={{ position: 'relative', overflow: 'hidden', width: Math.min(window.innerWidth * 0.9, 600), height: Math.min(window.innerHeight * 0.88, 800), borderRadius: 12, cursor: lbDragRef.current ? 'grabbing' : 'grab', userSelect: 'none' }}
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => {
+              if (e.button !== 0) return
+              lbDragRef.current = { startX: e.clientX, startY: e.clientY, panX: lbPan.x, panY: lbPan.y }
+              const onMove = (ev: MouseEvent) => {
+                if (!lbDragRef.current) return
+                setLbPan({ x: lbDragRef.current.panX + ev.clientX - lbDragRef.current.startX, y: lbDragRef.current.panY + ev.clientY - lbDragRef.current.startY })
+              }
+              const onUp = () => {
+                lbDragRef.current = null
+                window.removeEventListener('mousemove', onMove)
+                window.removeEventListener('mouseup', onUp)
+                setLbPan({ x: 0, y: 0 })
+                setLbScale(1)
+              }
+              window.addEventListener('mousemove', onMove)
+              window.addEventListener('mouseup', onUp)
+            }}
+          >
+            <img src={lightbox} draggable={false} alt="확대 이미지"
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 12, transform: `translate(${lbPan.x}px, ${lbPan.y}px) scale(${lbScale})`, transformOrigin: 'center', transition: lbDragRef.current ? 'none' : 'transform 0.05s' }} />
+          </div>
+          <div style={{ color: '#ffffff44', fontSize: 12, marginTop: 10 }}>휠: 확대/축소 · 드래그 후 놓으면 원위치 · 바깥 클릭으로 닫기</div>
+          <button style={S.lightboxClose} onClick={closeLightbox}>✕</button>
         </div>
       )}
     </div>
