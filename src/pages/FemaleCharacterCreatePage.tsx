@@ -477,13 +477,14 @@ export default function FemaleCharacterCreatePage({
       setExpressionSets(prev => {
         const next = [...prev, result]
         if (next.length > MAX_SETS) {
-          // 가장 오래된 세트 삭제
           next[0].forEach(url => { if (url) deleteImageFromStorage(url) })
-          return next.slice(1)
+          const sliced = next.slice(1)
+          setSelectedExprSet(sliced.length - 1)
+          return sliced
         }
+        setSelectedExprSet(next.length - 1)
         return next
       })
-      setSelectedExprSet(prev => Math.min(prev, MAX_SETS - 1))
     } catch (e) { console.error('표정 생성 실패:', e) }
     setGenProgress('')
     setGeneratingExpr(false)
