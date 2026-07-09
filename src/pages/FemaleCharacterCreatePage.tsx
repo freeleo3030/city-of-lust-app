@@ -465,21 +465,25 @@ export default function FemaleCharacterCreatePage({
 
   const MAX_SETS = 5
 
-  // 표정 5장 생성 — 기존 세트 모두 삭제 후 새 1세트로 교체
+  // 표정 5장 생성 — 최대 MAX_SETS 세트까지 append, 초과 시 가장 오래된 세트 삭제
   const handleGenExpressions = async () => {
     setGeneratingExpr(true)
-    // 기존 표정 세트 전부 Storage에서 삭제
-    expressionSets.forEach(set => set.forEach(url => { if (url) deleteImageFromStorage(url) }))
-    setExpressionSets([])
-    setSelectedExprSet(0)
     try {
       const result = await generateExpressionImages(
         buildPartialChar() as any,
         (done, total, label) => setGenProgress(`표정 생성 중... ${label} (${done + 1}/${total})`),
         { randomSeed: true, profileImageUrl: profileImages[selectedProfileIdx] }
       )
-      setExpressionSets([result])
-      setSelectedExprSet(0)
+      setExpressionSets(prev => {
+        const next = [...prev, result]
+        if (next.length > MAX_SETS) {
+          // 가장 오래된 세트 삭제
+          next[0].forEach(url => { if (url) deleteImageFromStorage(url) })
+          return next.slice(1)
+        }
+        return next
+      })
+      setSelectedExprSet(prev => Math.min(prev, MAX_SETS - 1))
     } catch (e) { console.error('표정 생성 실패:', e) }
     setGenProgress('')
     setGeneratingExpr(false)
