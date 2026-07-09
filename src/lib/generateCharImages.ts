@@ -36,7 +36,7 @@ const POSES = [
   },
   {
     key: 'cowgirl', label: '여성상위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman in cowgirl position, sitting upright facing camera, full body head to calves fully visible in frame, face at top, breasts center, spread thighs and knees mid-frame, calves and lower legs visible at very bottom of frame, wide shot showing entire body including lower legs, zoomed out enough to show calves, no male body visible, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman in cowgirl position, sitting upright facing camera, framed from head to just below vagina, face at top of frame, breasts in center, vagina and vulva at very bottom edge of frame with 1cm space below it, inner thighs spread wide visible, close enough shot that vagina appears near bottom of frame, no knees or lower legs visible, no male body visible, explicit nude adult photography`,
   },
   {
     key: 'side', label: '좌위',
