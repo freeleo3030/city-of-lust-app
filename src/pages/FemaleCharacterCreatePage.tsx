@@ -476,10 +476,15 @@ export default function FemaleCharacterCreatePage({
         { randomSeed: true, profileImageUrl: profileImages[selectedProfileIdx] }
       )
       setExpressionSets(prev => {
-        prev.forEach(set => set.forEach(url => { if (url) deleteImageFromStorage(url) }))
-        return [result]
+        const next = [...prev, result]
+        if (next.length > MAX_SETS) {
+          next.splice(0, next.length - MAX_SETS).forEach(set =>
+            set.forEach(url => { if (url) deleteImageFromStorage(url) })
+          )
+        }
+        setSelectedExprSet(next.length - 1)
+        return next
       })
-      setSelectedExprSet(0)
     } catch (e) { console.error('표정 생성 실패:', e) }
     setGenProgress('')
     setGeneratingExpr(false)
