@@ -375,7 +375,7 @@ export default function FemaleCharacterCreatePage({
     profileAbortController.current?.abort()
   }
 
-  // 1단계: 프로필 이미지만 생성
+  // 1단계: 프로필 이미지 5장 동시 생성
   const handleComplete = async () => {
     if (!nickname.trim()) { setError('닉네임을 입력해주세요.'); return }
     if (!job.trim()) { setError('직업을 입력해주세요.'); return }
@@ -386,44 +386,33 @@ export default function FemaleCharacterCreatePage({
     profileAbortController.current = controller
     setGenerating(true)
     setError('')
-    setGenProgress('프로필 이미지 생성 중...')
-    try {
-      const url = await generateProfileImage(buildPartialChar(), false, controller.signal)
-      if (!controller.signal.aborted) {
-        setProfileImages([url])
-        setPhase('profile_review')
-      } else {
-        await deleteImageFromStorage(url)
-      }
-    } catch (e: any) {
-      if (e?.name !== 'AbortError') console.error('프로필 생성 실패:', e)
-    }
-    setGenerating(false)
-    setGenProgress('')
-    profileAbortController.current = null
-  }
+    setProfileImages([])
+    setSelectedProfileIdx(0)
+    setGenProgress('0 / 5')
+    setPhase('profile_review')
 
-  // 프로필 재생성
-  const handleRegenProfile = async () => {
-    if (profileImages.length >= MAX_PROFILE_IMGS) return
-    const controller = new AbortController()
-    profileAbortController.current = controller
-    setGenerating(true)
-    setGenProgress('프로필 이미지 재생성 중...')
-    try {
-      const url = await generateProfileImage(buildPartialChar() as any, true, controller.signal)
-      if (!controller.signal.aborted) {
-        setProfileImages(prev => {
-          const next = [...prev, url]
-          setSelectedProfileIdx(next.length - 1)
-          return next
-        })
-      } else {
-        await deleteImageFromStorage(url)
-      }
-    } catch (e: any) {
-      if (e?.name !== 'AbortError') console.error('재생성 실패:', e)
-    }
+    const char = buildPartialChar()
+    let count = 0
+    const results: string[] = []
+
+    await Promise.all(
+      Array.from({ length: MAX_PROFILE_IMGS }).map(async (_, i) => {
+        try {
+          const url = await generateProfileImage(char as any, true, controller.signal)
+          if (controller.signal.aborted) {
+            deleteImageFromStorage(url)
+            return
+          }
+          results[i] = url
+          count++
+          setGenProgress(`${count} / ${MAX_PROFILE_IMGS}`)
+          setProfileImages([...results].filter(Boolean))
+        } catch (e: any) {
+          if (e?.name !== 'AbortError') console.error(`프로필 ${i+1} 생성 실패:`, e)
+        }
+      })
+    )
+
     setGenerating(false)
     setGenProgress('')
     profileAbortController.current = null
@@ -1050,7 +1039,7 @@ export default function FemaleCharacterCreatePage({
         )}
 
         <div style={PR.card}>
-          <p style={PR.subtitle}>대표 이미지를 선택해주세요</p>
+          <p style={PR.subtitle}>{generating ? `대표 이미지 생성 중... (${genProgress})` : '마음에 드는 이미지를 선택해주세요'}</p>
           <h2 style={PR.name}>{nickname}</h2>
           <p style={PR.meta}>{age}세 · {married} · {job} · {location}</p>
 
@@ -1124,39 +1113,22 @@ export default function FemaleCharacterCreatePage({
             </div>
           )}
 
-          {/* 재생성 */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', maxWidth: 280 }}>
-            <button
-              style={{ ...PR.regenBtn, opacity: (generating || profileImages.length >= MAX_PROFILE_IMGS) ? 0.5 : 1, width: '100%' }}
-              disabled={generating || profileImages.length >= MAX_PROFILE_IMGS}
-              onClick={handleRegenProfile}
-            >
-              {generating ? `⏳ ${genProgress}` : `🔄 재생성 (${profileImages.length}/${MAX_PROFILE_IMGS})`}
-            </button>
-            {generating && (
+          {/* 생성 진행 상태 */}
+          {generating && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: '100%', maxWidth: 280 }}>
+              <p style={{ color: '#c9a84c', fontSize: 14, textAlign: 'center', margin: 0 }}>⏳ 생성 중 {genProgress}</p>
               <button
                 style={{ background: '#e9455688', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 20px', fontSize: 12, cursor: 'pointer', width: '100%' }}
                 onClick={handleCancelProfile}
               >✕ 취소</button>
-            )}
-            {profileImages.length >= MAX_PROFILE_IMGS && (
-              <span style={{ color: '#ffffff44', fontSize: 11 }}>최대 {MAX_PROFILE_IMGS}장까지 생성 가능</span>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* 확정 버튼 */}
           {activeImg && !generating && (
-            <button style={{ ...PR.finalBtn, width: '100%', maxWidth: 280 }} onClick={() => {
-              if (profileImages.length === 1) handleFinalizeProfile()
-              else setConfirmingProfile(true)
-            }}>
+            <button style={{ ...PR.finalBtn, width: '100%', maxWidth: 280 }} onClick={() => setConfirmingProfile(true)}>
               ✅ 이 이미지로 확정 → 표정·자세 생성
             </button>
-          )}
-
-          {/* 생성 진행 상태 */}
-          {generating && profileFinalized && (
-            <p style={{ color: '#c9a84c', fontSize: 13, textAlign: 'center', margin: '12px 0' }}>🎨 {genProgress}</p>
           )}
 
           <button style={PR.backBtn} onClick={() => setPhase('form')}>← 폼으로 돌아가기</button>
