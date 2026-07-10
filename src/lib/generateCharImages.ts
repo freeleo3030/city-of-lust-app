@@ -259,7 +259,7 @@ async function callRunPod(input: Record<string, unknown>, signal?: AbortSignal):
         return data.output.image as string
       }
       if (data.status === 'FAILED' || data.status === 'CANCELLED') {
-        throw new Error(`RunPod job ${data.status}`)
+        throw new Error(`RunPod job ${data.status}: ${data.error ?? JSON.stringify(data)}`)
       }
       // IN_QUEUE / IN_PROGRESS → 계속 폴링
     }
@@ -421,10 +421,13 @@ export async function generateProfileImage(c: FemaleCharacterData, randomSeed = 
 
 export async function deleteImageFromStorage(url: string): Promise<void> {
   try {
-    const path = url.split('/char-images/')[1]
+    const path = url.split('/char-images/')[1]?.split('?')[0]
     if (!path) return
-    await supabase.storage.from('char-images').remove([path])
-  } catch {}
+    const { error } = await supabase.storage.from('char-images').remove([path])
+    if (error) console.error('[Storage delete failed]', path, error.message)
+  } catch (e) {
+    console.error('[Storage delete error]', url, e)
+  }
 }
 
 async function fetchBase64FromUrl(url: string): Promise<string> {

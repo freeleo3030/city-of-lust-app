@@ -422,7 +422,7 @@ export default function FemaleCharacterCreatePage({
     if (isNaN(ageNum) || ageNum < 20 || ageNum > 49) { setError('나이를 올바르게 입력해주세요. (20~49)'); return }
     setError('')
     setPhase('profile_review')
-    await generateProfileSet([])
+    await generateProfileSet(profileImages)
   }
 
   // 재생성: 현재 5장 전부 삭제 후 새로 5장
@@ -435,8 +435,12 @@ export default function FemaleCharacterCreatePage({
     const imageUrl = profileImages[selectedProfileIdx]
 
     // 선택 안 된 프로필 이미지 Storage에서 삭제
+    console.log('[FinalizeProfile] total images:', profileImages.length, 'selected idx:', selectedProfileIdx, 'selected url:', imageUrl)
     profileImages.forEach((url, i) => {
-      if (i !== selectedProfileIdx && url) deleteImageFromStorage(url)
+      if (i !== selectedProfileIdx && url) {
+        console.log('[FinalizeProfile] deleting:', url)
+        deleteImageFromStorage(url)
+      }
     })
 
     setProfileImages([imageUrl])
