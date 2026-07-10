@@ -375,21 +375,17 @@ export default function FemaleCharacterCreatePage({
     profileAbortController.current?.abort()
   }
 
-  // 1단계: 프로필 이미지 5장 동시 생성
-  const handleComplete = async () => {
-    if (!nickname.trim()) { setError('닉네임을 입력해주세요.'); return }
-    if (!job.trim()) { setError('직업을 입력해주세요.'); return }
-    const ageNum = parseInt(age)
-    if (isNaN(ageNum) || ageNum < 20 || ageNum > 49) { setError('나이를 올바르게 입력해주세요. (20~49)'); return }
+  // 프로필 이미지 5장 생성 (공통)
+  const generateProfileSet = async (prevImages: string[] = []) => {
+    // 이전 이미지 전부 삭제
+    prevImages.forEach(url => { if (url) deleteImageFromStorage(url) })
 
     const controller = new AbortController()
     profileAbortController.current = controller
     setGenerating(true)
-    setError('')
     setProfileImages([])
     setSelectedProfileIdx(0)
-    setGenProgress('0 / 5')
-    setPhase('profile_review')
+    setGenProgress(`0 / ${MAX_PROFILE_IMGS}`)
 
     const char = buildPartialChar()
     let count = 0
@@ -416,6 +412,22 @@ export default function FemaleCharacterCreatePage({
     setGenerating(false)
     setGenProgress('')
     profileAbortController.current = null
+  }
+
+  // 1단계: 폼 완료 → 5장 생성
+  const handleComplete = async () => {
+    if (!nickname.trim()) { setError('닉네임을 입력해주세요.'); return }
+    if (!job.trim()) { setError('직업을 입력해주세요.'); return }
+    const ageNum = parseInt(age)
+    if (isNaN(ageNum) || ageNum < 20 || ageNum > 49) { setError('나이를 올바르게 입력해주세요. (20~49)'); return }
+    setError('')
+    setPhase('profile_review')
+    await generateProfileSet([])
+  }
+
+  // 재생성: 현재 5장 전부 삭제 후 새로 5장
+  const handleRegenProfile = async () => {
+    await generateProfileSet(profileImages)
   }
 
   // 프로필 확정 → image_studio 단계로
@@ -1113,16 +1125,22 @@ export default function FemaleCharacterCreatePage({
             </div>
           )}
 
-          {/* 생성 진행 상태 */}
-          {generating && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: '100%', maxWidth: 280 }}>
-              <p style={{ color: '#c9a84c', fontSize: 14, textAlign: 'center', margin: 0 }}>⏳ 생성 중 {genProgress}</p>
+          {/* 재생성 / 취소 */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', maxWidth: 280 }}>
+            <button
+              style={{ ...PR.regenBtn, opacity: generating ? 0.5 : 1, width: '100%' }}
+              disabled={generating}
+              onClick={handleRegenProfile}
+            >
+              {generating ? `⏳ 생성 중 ${genProgress}` : '🔄 5장 재생성'}
+            </button>
+            {generating && (
               <button
                 style={{ background: '#e9455688', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 20px', fontSize: 12, cursor: 'pointer', width: '100%' }}
                 onClick={handleCancelProfile}
               >✕ 취소</button>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* 확정 버튼 */}
           {activeImg && !generating && (
