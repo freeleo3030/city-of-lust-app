@@ -1033,6 +1033,10 @@ export default function FemaleCharacterCreatePage({
   // 2단계: 프로필 이미지 선택 화면
   if (phase === 'profile_review') {
     const activeImg = profileImages[selectedProfileIdx]
+    const mainImgH = Math.min(Math.round(window.innerHeight * 0.55), 520)
+    const mainImgW = Math.round(mainImgH * 3 / 4)
+    const thumbH = Math.min(Math.round(window.innerHeight * 0.12), 100)
+    const thumbW = Math.round(thumbH * 3 / 4)
     return (
       <div style={S.container}>
         {/* 확정 확인 모달 */}
@@ -1058,7 +1062,7 @@ export default function FemaleCharacterCreatePage({
           {/* 메인 이미지 — 인-플레이스 휠줌 + 드래그 */}
           <div
             ref={profileImgWrapRef}
-            style={{ ...PR.imgWrap, padding: 0, width: 220, height: 286, overflow: 'hidden', borderRadius: 12, cursor: profileWasDragging.current ? 'grabbing' : profileZoomScale > 1 ? 'grab' : 'zoom-in', userSelect: 'none' }}
+            style={{ ...PR.imgWrap, padding: 0, width: mainImgW, height: mainImgH, overflow: 'hidden', borderRadius: 12, cursor: profileWasDragging.current ? 'grabbing' : profileZoomScale > 1 ? 'grab' : 'zoom-in', userSelect: 'none' }}
             onMouseDown={e => {
               if (e.button !== 0) return
               profileWasDragging.current = false
@@ -1083,8 +1087,8 @@ export default function FemaleCharacterCreatePage({
           >
             {activeImg
               ? <img src={activeImg} alt="프로필" draggable={false}
-                  style={{ ...PR.mainImg, transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s', cursor: 'inherit' }} />
-              : <div style={PR.imgPlaceholder}>생성 중...</div>
+                  style={{ ...PR.mainImg, width: mainImgW, height: mainImgH, transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s', cursor: 'inherit' }} />
+              : <div style={{ ...PR.imgPlaceholder, width: mainImgW, height: mainImgH }}>생성 중...</div>
             }
           </div>
 
@@ -1119,7 +1123,7 @@ export default function FemaleCharacterCreatePage({
               {profileImages.map((url, i) => (
                 <img key={i} src={url} alt={`v${i+1}`}
                   onClick={() => setSelectedProfileIdx(i)}
-                  style={{ ...PR.thumb, border: i === selectedProfileIdx ? '2px solid #c9a84c' : '2px solid #ffffff22' }}
+                  style={{ ...PR.thumb, width: thumbW, height: thumbH, border: i === selectedProfileIdx ? '2px solid #c9a84c' : '2px solid #ffffff22' }}
                 />
               ))}
             </div>
