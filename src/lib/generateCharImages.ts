@@ -27,7 +27,7 @@ const SOLO_FEMALE = 'solo female, 1girl, no male, no man, no penis, no male body
 const POSES = [
   {
     key: 'missionary', label: '정상위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, M字開脚, M-shaped legs spread wide, legs raised high and spread apart, soles of feet visible at top corners of frame, vagina and labia fully exposed at center of frame, breasts visible on chest, both arms raised above head stretched out on bed, hands above head, face at top looking down toward camera, camera positioned between her legs looking up toward her face, low angle shot from between legs, feet and pussy close to camera, full body visible lying on back, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, M字開脚, M-shaped legs spread wide, legs raised high and spread apart, soles of feet visible at top corners of frame, vagina and labia fully exposed at center of frame, breasts visible on chest, both arms bent behind head, elbows out to sides, hands clasped behind head, face at top looking down toward camera, camera positioned between her legs looking up toward her face, low angle shot from between legs, feet and pussy close to camera, full body visible lying on back, explicit nude adult photography`,
   },
   {
     key: 'doggy', label: '후배위',
