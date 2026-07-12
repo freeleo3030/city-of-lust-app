@@ -419,15 +419,13 @@ export async function generateProfileImage(c: FemaleCharacterData, randomSeed = 
   return generateAndUpload(prompt, neg, 400, 520, seed, charId, filename, 'txt2img', undefined, undefined, undefined, undefined, undefined, undefined, signal)
 }
 
-export async function deleteImageFromStorage(url: string): Promise<void> {
-  try {
-    const path = url.split('/char-images/')[1]?.split('?')[0]
-    if (!path) return
-    const { error } = await supabase.storage.from('char-images').remove([path])
+export function deleteImageFromStorage(url: string): void {
+  const path = decodeURIComponent(url.split('/char-images/')[1]?.split('?')[0] ?? '')
+  if (!path) return
+  supabase.storage.from('char-images').remove([path]).then(({ error }) => {
     if (error) console.error('[Storage delete failed]', path, error.message)
-  } catch (e) {
-    console.error('[Storage delete error]', url, e)
-  }
+    else console.log('[Storage delete ok]', path)
+  })
 }
 
 async function fetchBase64FromUrl(url: string): Promise<string> {
