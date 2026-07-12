@@ -540,7 +540,12 @@ export default function FemaleCharacterCreatePage({
           // 이전 variants 삭제 (선택된 이미지 제외)
           const prevUrls = prev[poseKey]?.[exprKey] ?? []
           const chosen = selectedPoseImages[`${poseKey}_${exprKey}`]
-          prevUrls.forEach(u => { if (u && u !== chosen) deleteImageFromStorage(u) })
+          prevUrls.forEach(u => {
+            if (!u || u === chosen) return
+            const prevBase = u.split('?')[0]
+            const overwritten = urls.some(nu => nu.split('?')[0] === prevBase)
+            if (!overwritten) deleteImageFromStorage(u)
+          })
           return {
             ...prev,
             [poseKey]: { ...(prev[poseKey] ?? {}), [exprKey]: urls }
