@@ -395,8 +395,7 @@ export async function generatePoseVariants(
     const filename = `pose_${poseKey}_${exprKey}_v${i + 1}_${Date.now()}.png`
     const mode = faceB64 ? 'ipadapter' : 'txt2img'
     const imgH = poseKey === 'cowgirl' ? 640 : 512
-    const poseRefUrl = POSE_REF_URLS[poseKey]
-    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, poseRefUrl, undefined, faceB64, 0.35, signal)
+    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, 0.35, signal)
       .then(url => { onProgress(++done, count); return url })
       .catch((e: any) => { if (e?.name !== 'AbortError') { onProgress(++done, count) } return '' })
   })
