@@ -392,7 +392,7 @@ export async function generatePoseVariants(
 
   const tasks = Array.from({ length: count }, (_, i) => {
     const seed = (baseSeed + i) % 999999998 + 1
-    const filename = `pose_${poseKey}_${exprKey}_v${i + 1}_${Date.now()}.png`
+    const filename = `pose_${poseKey}_${exprKey}_v${i + 1}.png`
     const mode = faceB64 ? 'ipadapter' : 'txt2img'
     const imgH = poseKey === 'cowgirl' ? 640 : 512
     return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, 0.35, signal)
