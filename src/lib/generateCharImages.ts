@@ -39,13 +39,13 @@ const POSES = [
   },
   {
     key: 'side', label: '버터플라이',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, both legs raised high up in the air and spread wide apart forming a wide V shape, legs fully extended straight with no bending at knees, feet pointing toward ceiling, both legs held up high in air, inner thighs fully exposed, vagina and labia fully exposed between raised spread legs, hands resting on bed beside hips, large breasts visible, face looking at camera, camera positioned above looking down at her, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, STRAIGHT LEGS raised high in air spread wide in V shape, knees completely straight and locked, no bending at knees whatsoever, legs are perfectly straight from hip to toe, both legs extended fully straight, feet pointing up toward ceiling, legs spread apart forming wide V, vagina fully exposed, hands flat on bed at sides, large breasts visible, explicit nude adult photography`,
   },
 ]
 
 const COMMON_NEG = 'black and white, grayscale, monochrome, desaturated, colorless, no color, greyscale, blurry, bad anatomy, watermark, text, logo, low quality, deformed, anime, cartoon, 3d render, painting, illustration, drawing, cgi, art, sketch, bad hands, extra fingers, missing fingers, extra limbs, malformed limbs, fused fingers, mutated hands'
 const NEG_CLOTHED = `nude, naked, nsfw, ${COMMON_NEG}`
-const NEG_NUDE = `clothes, underwear, bra, panties, censored, hands covering genitals, hands on pussy, hand covering vagina, covering crotch with hands, hand between legs covering, ${COMMON_NEG}`
+const NEG_NUDE = `clothes, underwear, bra, panties, censored, hands covering genitals, hands on pussy, hand covering vagina, covering crotch with hands, hand between legs covering, bent knees, knees bent, crossed legs, folded legs, legs crossed, ${COMMON_NEG}`
 
 export const POSE_BACKGROUNDS = [
   { key: 'bed',     label: '침대',   bg: 'luxury hotel bedroom, white bed sheets on king size bed, soft pillows, warm ambient lighting' },
