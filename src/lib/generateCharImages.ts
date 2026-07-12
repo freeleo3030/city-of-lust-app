@@ -281,7 +281,7 @@ async function uploadToSupabase(base64: string, charId: string, filename: string
   if (error) throw new Error(`Supabase upload failed: ${error.message}`)
 
   const { data } = supabase.storage.from('char-images').getPublicUrl(path)
-  return data.publicUrl
+  return `${data.publicUrl}?t=${Date.now()}`
 }
 
 // ─── 배경+포즈 합성 ──────────────────────────────────────────────────────────
