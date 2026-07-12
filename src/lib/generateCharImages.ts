@@ -45,7 +45,7 @@ const POSES = [
 
 const COMMON_NEG = 'black and white, grayscale, monochrome, desaturated, colorless, no color, greyscale, blurry, bad anatomy, watermark, text, logo, low quality, deformed, anime, cartoon, 3d render, painting, illustration, drawing, cgi, art, sketch, bad hands, extra fingers, missing fingers, extra limbs, malformed limbs, fused fingers, mutated hands'
 const NEG_CLOTHED = `nude, naked, nsfw, ${COMMON_NEG}`
-const NEG_NUDE = `clothes, underwear, bra, panties, censored, ${COMMON_NEG}`
+const NEG_NUDE = `clothes, underwear, bra, panties, censored, hands covering genitals, hands on pussy, hand covering vagina, covering crotch with hands, hand between legs covering, ${COMMON_NEG}`
 
 export const POSE_BACKGROUNDS = [
   { key: 'bed',     label: '침대',   bg: 'luxury hotel bedroom, white bed sheets on king size bed, soft pillows, warm ambient lighting' },
