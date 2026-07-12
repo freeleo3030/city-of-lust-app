@@ -38,8 +38,8 @@ const POSES = [
     pose: `${SOLO_FEMALE}, spread pussy, vagina fully exposed and visible, completely nude Korean woman in cowgirl position, sitting upright facing camera, both hands placed on own thighs in front of body, hands resting on knees visible in frame, legs spread wide apart, pussy clearly visible between open thighs, face and hair visible at top, large breasts center, explicit vagina fully shown at bottom of frame, explicit nude adult photography`,
   },
   {
-    key: 'side', label: '입위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman standing and bending forward, upper body bent down toward floor, ass raised high toward camera, large round buttocks prominently facing camera, vagina and labia fully exposed from behind between legs, legs straight, hands gripping ankles or reaching toward floor, face not visible, rear view from behind, camera at waist level behind her, explicit nude adult photography`,
+    key: 'side', label: '원산폭격',
+    pose: `${SOLO_FEMALE}, completely nude Korean woman in face down ass up position, lying face down on bed, chest and face pressed against bed, both arms stretched forward on bed, ass raised high in the air, hips up, large round buttocks prominently raised toward camera, vagina and labia fully exposed from behind between spread legs, knees on bed, rear view from behind, camera directly behind her at ass level, explicit nude adult photography`,
   },
 ]
 
