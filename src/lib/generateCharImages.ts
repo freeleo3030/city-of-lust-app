@@ -39,7 +39,7 @@ const POSES = [
   },
   {
     key: 'side', label: '버터플라이',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, both legs stretched straight out and spread wide apart in V shape, legs fully extended no bending, wide leg split, vagina and labia fully exposed between spread straight legs, hands resting on bed beside hips, large breasts visible, face looking at camera, camera positioned above looking down, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, both legs raised high up in the air and spread wide apart forming a wide V shape, legs fully extended straight with no bending at knees, feet pointing toward ceiling, both legs held up high in air, inner thighs fully exposed, vagina and labia fully exposed between raised spread legs, hands resting on bed beside hips, large breasts visible, face looking at camera, camera positioned above looking down at her, explicit nude adult photography`,
   },
 ]
 
