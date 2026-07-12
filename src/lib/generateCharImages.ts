@@ -35,7 +35,7 @@ const POSES = [
   },
   {
     key: 'cowgirl', label: '여성상위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman in cowgirl sex position, sitting upright on top of a man, facing camera, man lying on his back beneath her, man's stomach and hips visible at the very bottom of frame, man's legs visible on both sides, woman straddling man's waist, penis inserted into her vagina, vagina and labia visible at the junction, woman's legs spread wide straddling him, woman's face and breasts visible at top, explicit nude adult photography, heterosexual couple`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman in cowgirl sex position, sitting upright on top of a man, facing camera, man lying on his back beneath her, man's stomach and abdomen visible at the very bottom of frame, man's thighs visible on both sides, woman straddling man's hips, vagina and labia visible between her spread thighs, woman's legs spread wide straddling him, woman's face and breasts visible at top, no male genitals visible, male penis hidden behind woman's body, explicit nude adult photography, heterosexual couple`,
   },
   {
     key: 'side', label: '좌위',
