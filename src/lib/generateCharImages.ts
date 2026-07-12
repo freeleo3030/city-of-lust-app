@@ -17,7 +17,7 @@ const CONVERSATION_EXPRESSIONS = [
 
 const POSE_EXPRESSIONS = [
   { key: 'aroused', label: '흥분', arousal: 'aroused expression, flushed red cheeks, heavy breathing, mouth slightly open, eyes open looking at camera, light sweat on skin, erect nipples' },
-  { key: 'climax',  label: '절정', arousal: 'orgasm climax expression, both eyes completely shut tightly closed, head thrown back neck exposed, mouth wide open in moan, lips parted wide, tongue visible, chin up head tilted back, deep red flushed face, body trembling, sweat on skin, ecstasy face' },
+  { key: 'climax',  label: '절정', arousal: 'closed eyes, eyes shut, mouth wide open, ahegao climax face, orgasm expression, both eyes tightly closed shut, head thrown back neck exposed, mouth open wide in moan, lips parted wide, tongue visible, chin up head tilted back, deep red flushed face, body trembling, sweat on skin, ecstasy face' },
 ]
 
 const EXPRESSION_LEVELS = CONVERSATION_EXPRESSIONS.map(e => ({ key: e.key, label: e.label, arousal: e.expr }))
@@ -393,8 +393,9 @@ export async function generatePoseVariants(
     const seed = (baseSeed + i) % 999999998 + 1
     const filename = `pose_${poseKey}_${exprKey}_v${i + 1}.png`
     const imgH = poseKey === 'cowgirl' ? 640 : 512
-    // 후배위는 IPA가 얼굴을 앞으로 당겨버려서 자세 망침 → IPA 끄기
-    const ipaStrength = poseKey === 'doggy' ? 0.0 : 0.07
+    // 후배위: IPA가 얼굴을 앞으로 당겨서 자세 망침 → 끄기
+    // 절정: IPA가 원본 얼굴 표정(눈 뜸)을 유지시켜버려서 약하게
+    const ipaStrength = poseKey === 'doggy' ? 0.0 : exprKey === 'climax' ? 0.03 : 0.07
     const mode = (faceB64 && ipaStrength > 0) ? 'ipadapter' : 'txt2img'
     return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, ipaStrength, signal)
       .then(url => { onProgress(++done, count); return url })
