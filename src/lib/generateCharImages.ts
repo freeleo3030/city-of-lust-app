@@ -27,11 +27,11 @@ const SOLO_FEMALE = 'solo female, 1girl, no male, no man, no penis, no male body
 const POSES = [
   {
     key: 'missionary', label: '정상위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, male POV looking down at her, camera angle slightly above looking down, woman facing up toward camera, face clearly visible looking up at camera with eye contact, legs spread wide apart with knees bent upward, both feet raised, vagina exposed between spread thighs, bare breasts visible on chest, full body from head to feet visible, woman lying beneath camera POV, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, M字開脚, M-shaped legs spread wide, legs raised high and spread apart, soles of feet visible at top corners of frame, vagina and labia fully exposed at center of frame, breasts visible on chest, face at top looking down toward camera, camera positioned between her legs looking up toward her face, low angle shot from between legs, feet and pussy close to camera, full body visible lying on back, explicit nude adult photography`,
   },
   {
     key: 'doggy', label: '후배위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman in doggy style position on bed, POV from directly behind her, ass and buttocks closest to camera filling bottom of frame, vagina and labia visible between spread thighs, back and spine visible in middle of frame, head and face at the far top of frame away from camera, camera positioned low behind her looking forward toward her head, rear-facing camera angle only showing her back side, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman in doggy style sex position, on all fours on bed, back facing camera, facing away from viewer, ass toward camera, large round buttocks prominently shown toward camera filling frame, arched back, spine visible, vagina and labia fully exposed between spread legs, head pointing away from camera, no face visible, rear view from behind, camera directly behind her at ass level, explicit nude adult photography`,
   },
   {
     key: 'cowgirl', label: '여성상위',
@@ -378,7 +378,7 @@ export async function generatePoseVariants(
   const signal = options?.signal
   const base = buildBaseDesc(c)
   const neg = `${NEG_NUDE}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, male, man, penis, cock, dick, balls, testicles, male genitalia, male body, masculine, man's body, two people, couple, monochrome, grayscale, black and white, black & white, desaturated, greyscale`
-  const prompt = `${SOLO_FEMALE}, ${base}, ${pose.pose}, ${expr.arousal}${(pose as any).cameraHint ? `, ${(pose as any).cameraHint}` : ''}, hotel bedroom background, luxury bed with white sheets, warm ambient lighting, full color photography, vibrant skin tones, colorful, RAW photo, 8k uhd, DSLR, high quality, photorealistic, nsfw, explicit, adult content`
+  const prompt = `${SOLO_FEMALE}, ${base}, ${pose.pose}, ${expr.arousal}, hotel bedroom background, luxury bed with white sheets, warm ambient lighting, full color photography, vibrant skin tones, colorful, RAW photo, 8k uhd, DSLR, high quality, photorealistic, nsfw, explicit, adult content`
 
   const baseSeed = Math.floor(Math.random() * 999999999) + 1
   let done = 0
@@ -392,9 +392,11 @@ export async function generatePoseVariants(
   const tasks = Array.from({ length: count }, (_, i) => {
     const seed = (baseSeed + i) % 999999998 + 1
     const filename = `pose_${poseKey}_${exprKey}_v${i + 1}.png`
-    const mode = faceB64 ? 'ipadapter' : 'txt2img'
     const imgH = poseKey === 'cowgirl' ? 640 : 512
-    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, 0.35, signal)
+    // 후배위는 IPA가 얼굴을 앞으로 당겨버려서 자세 망침 → IPA 끄기
+    const ipaStrength = poseKey === 'doggy' ? 0.0 : 0.07
+    const mode = (faceB64 && ipaStrength > 0) ? 'ipadapter' : 'txt2img'
+    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, ipaStrength, signal)
       .then(url => { onProgress(++done, count); return url })
       .catch((e: any) => { if (e?.name !== 'AbortError') { onProgress(++done, count) } return '' })
   })
