@@ -17,7 +17,7 @@ const CONVERSATION_EXPRESSIONS = [
 
 const POSE_EXPRESSIONS = [
   { key: 'aroused', label: '흥분', arousal: 'aroused expression, flushed red cheeks, heavy breathing, mouth slightly open, eyes open looking at camera, light sweat on skin, erect nipples' },
-  { key: 'climax',  label: '절정', arousal: 'closed eyes, eyes shut, mouth wide open, ahegao climax face, orgasm expression, both eyes tightly closed shut, head thrown back neck exposed, mouth open wide in moan, lips parted wide, tongue visible, chin up head tilted back, deep red flushed face, body trembling, sweat on skin, ecstasy face' },
+  { key: 'climax',  label: '절정', arousal: 'closed eyes, eyes shut, mouth wide open, ahegao climax face, orgasm expression, both eyes tightly closed shut, head thrown back neck exposed, mouth open wide in moan, lips parted wide, chin up head tilted back, deep red flushed face, body trembling, sweat on skin, ecstasy face' },
 ]
 
 const EXPRESSION_LEVELS = CONVERSATION_EXPRESSIONS.map(e => ({ key: e.key, label: e.label, arousal: e.expr }))
