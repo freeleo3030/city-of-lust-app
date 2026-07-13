@@ -284,30 +284,6 @@ async function uploadToSupabase(base64: string, charId: string, filename: string
   return `${data.publicUrl}?t=${Date.now()}`
 }
 
-// ─── 배경+포즈 합성 ──────────────────────────────────────────────────────────
-
-async function compositePoseOnBg(bgB64: string, poseB64: string, width: number, height: number): Promise<string> {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas')
-    canvas.width = width; canvas.height = height
-    const ctx = canvas.getContext('2d')!
-    const bgImg = new Image()
-    bgImg.onload = () => {
-      ctx.drawImage(bgImg, 0, 0, width, height)
-      const poseImg = new Image()
-      poseImg.onload = () => {
-        ctx.globalCompositeOperation = 'screen'
-        ctx.globalAlpha = 0.6
-        ctx.drawImage(poseImg, 0, 0, width, height)
-        ctx.globalAlpha = 1
-        ctx.globalCompositeOperation = 'source-over'
-        resolve(canvas.toDataURL('image/png').split(',')[1])
-      }
-      poseImg.src = `data:image/png;base64,${poseB64}`
-    }
-    bgImg.src = `data:image/png;base64,${bgB64}`
-  })
-}
 
 // ─── 이미지 생성 헬퍼 ────────────────────────────────────────────────────────
 
@@ -512,18 +488,7 @@ export async function generatePoseImages(
   const total = POSES.length * POSE_EXPRESSIONS.length
   let done = 0
 
-  // 호텔방 배경 1장 생성 (모든 자세에 공유)
-  onProgress(0, total, '배경 준비 중...')
-  const bgPrompt = 'luxury hotel bedroom, king size bed with white sheets, warm bedside lamp lighting, elegant interior, no people, RAW photo, 8k uhd, DSLR, photorealistic'
-  const bgNeg = 'person, people, human, anime, cartoon, blurry, low quality'
-  let hotelBgB64 = ''
-  try {
-    hotelBgB64 = await callRunPod({ mode: 'txt2img', prompt: bgPrompt, negative_prompt: bgNeg, width: 768, height: 1024, seed: 777777, steps: 20, cfg_scale: 7 })
-  } catch {
-    hotelBgB64 = ''
-  }
-
-  // 포즈 레퍼런스 + 프로필 이미지 base64 미리 fetch
+  // OpenPose 스켈레톤 base64 미리 fetch
   onProgress(0, total, '포즈 준비 중...')
   const poseRefB64: Record<string, string> = {}
   for (const { key: poseKey } of POSES) {
@@ -554,13 +519,9 @@ export async function generatePoseImages(
         let url: string
         const refB64 = poseRefB64[poseKey]
 
-        // 호텔방 배경 있으면 마네킹과 합성
-        const compositeB64 = (hotelBgB64 && refB64)
-          ? await compositePoseOnBg(hotelBgB64, refB64, 384, 512)
-          : refB64
-
-        if (compositeB64) {
-          url = await generateAndUpload(prompt, neg, 384, 512, seed, charId, filename, 'img2img', compositeB64, 0.6)
+        // OpenPose 스켈레톤으로 ControlNet 적용
+        if (refB64) {
+          url = await generateAndUpload(prompt, neg, 384, 512, seed, charId, filename, 'controlnet', undefined, undefined, refB64, 1.0)
         } else {
           url = await generateAndUpload(prompt, neg, 384, 512, seed, charId, filename)
         }
