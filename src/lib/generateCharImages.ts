@@ -27,7 +27,7 @@ const SOLO_FEMALE = 'solo female, 1girl, no male, no man, no penis, no male body
 const POSES = [
   {
     key: 'missionary', label: '정상위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, M字開脚, M-shaped legs spread wide, legs raised high and spread apart, soles of feet visible at top corners of frame, vagina and labia fully exposed at center of frame, breasts visible on chest, both arms bent behind head, elbows out to sides, hands clasped behind head, face at top looking down toward camera, camera positioned between her legs looking up toward her face, low angle shot from between legs, feet and pussy close to camera, full body visible lying on back, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman lying flat on her back on a bed, body pressed against white bed sheets, lying down on bed mattress, M字開脚, M-shaped legs spread wide open, both legs raised high and spread wide apart in V shape, knees bent outward, soles of feet facing camera at bottom of frame, vagina and labia fully exposed at center, large breasts visible on chest, both arms raised above head with hands behind head resting on pillow, elbows bent outward, face visible at top of frame looking down toward camera, camera angle from between her legs at foot of bed looking up toward face, low angle upward shot from between spread legs, feet and genitals close to camera in foreground, explicit nude adult photography`,
   },
   {
     key: 'doggy', label: '후배위',
@@ -360,20 +360,18 @@ export async function generatePoseVariants(
   let done = 0
   onProgress(0, count)
 
-  let faceB64: string | undefined
-  if (options?.profileImageUrl) {
-    try { faceB64 = await fetchBase64FromUrl(options.profileImageUrl) } catch {}
+  // OpenPose 스켈레톤 fetch
+  let skeletonB64: string | undefined
+  if (POSE_REF_URLS[poseKey]) {
+    try { skeletonB64 = await fetchBase64FromUrl(POSE_REF_URLS[poseKey]) } catch {}
   }
 
   const tasks = Array.from({ length: count }, (_, i) => {
     const seed = (baseSeed + i) % 999999998 + 1
     const filename = `pose_${poseKey}_${exprKey}_v${i + 1}.png`
     const imgH = poseKey === 'cowgirl' ? 640 : 512
-    // 후배위: IPA가 얼굴을 앞으로 당겨서 자세 망침 → 끄기
-    // 절정: IPA가 원본 얼굴 표정(눈 뜸)을 유지시켜버려서 약하게
-    const ipaStrength = poseKey === 'doggy' ? 0.0 : exprKey === 'climax' ? 0.03 : 0.07
-    const mode = (faceB64 && ipaStrength > 0) ? 'ipadapter' : 'txt2img'
-    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, undefined, undefined, faceB64, ipaStrength, signal)
+    const mode = skeletonB64 ? 'controlnet' : 'txt2img'
+    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, skeletonB64, 1.0, undefined, undefined, signal)
       .then(url => { onProgress(++done, count); return url })
       .catch((e: any) => { if (e?.name !== 'AbortError') { onProgress(++done, count) } return '' })
   })
