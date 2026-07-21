@@ -27,7 +27,7 @@ const SOLO_FEMALE = 'solo female, 1girl, no male, no man, no penis, no male body
 const POSES = [
   {
     key: 'missionary', label: '정상위',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman lying flat on her back on a bed, body pressed against white bed sheets, lying down on bed mattress, M字開脚, M-shaped legs spread wide open, both legs raised high and spread wide apart in V shape, knees bent outward, soles of feet facing camera at bottom of frame, vagina and labia fully exposed at center, large breasts visible on chest, both arms raised above head with hands behind head resting on pillow, elbows bent outward, face visible at top of frame looking down toward camera, camera angle from between her legs at foot of bed looking up toward face, low angle upward shot from between spread legs, feet and genitals close to camera in foreground, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, solo, 1girl only, completely nude Korean woman lying flat on her back on a bed, body pressed against white bed sheets, lying down on bed mattress, M字開脚, M-shaped legs spread wide open to both sides, knees bent outward, vagina and labia fully exposed at center, large breasts visible on chest, both arms raised above head with hands resting on pillow above head, elbows bent outward, face visible at top of frame, top-down view, bird's eye view, overhead camera angle, explicit nude adult photography`,
   },
   {
     key: 'doggy', label: '후배위',
@@ -290,10 +290,10 @@ async function uploadToSupabase(base64: string, charId: string, filename: string
 // Supabase char-images 버킷의 skeleton 이미지 URL
 const SKELETON_BASE = 'https://lfhrxkpcyfqnorjkdodp.supabase.co/storage/v1/object/public/char-images/skeletons'
 const POSE_REF_URLS: Record<string, string> = {
-  missionary: `${SKELETON_BASE}/standard.png`,
+  missionary: `${SKELETON_BASE}/missionary.png`,
   doggy:      `${SKELETON_BASE}/doggy.png`,
-  cowgirl:    `${SKELETON_BASE}/womenup.png`,
-  side:       `${SKELETON_BASE}/chair.png`,
+  cowgirl:    `${SKELETON_BASE}/cowgirl.png`,
+  side:       `${SKELETON_BASE}/butterfly.png`,
 }
 
 
@@ -316,7 +316,7 @@ async function generateAndUpload(
 ): Promise<string> {
   const input: Record<string, unknown> = {
     mode, prompt, negative_prompt, width, height, seed,
-    steps: 12, cfg_scale: 7,
+    steps: 30, cfg_scale: 7,
   }
   if (mode === 'img2img' && init_image) {
     input.init_image = init_image
@@ -353,25 +353,17 @@ export async function generatePoseVariants(
 
   const signal = options?.signal
   const base = buildBaseDesc(c)
-  const neg = `${NEG_NUDE}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, male, man, penis, cock, dick, balls, testicles, male genitalia, male body, masculine, man's body, two people, couple, monochrome, grayscale, black and white, black & white, desaturated, greyscale`
+  const neg = `${NEG_NUDE}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, male, man, penis, cock, dick, balls, testicles, male genitalia, male body, masculine, man's body, two people, couple, multiple people, multiple faces, extra heads, extra faces, 2girls, 3girls, duplicate, monochrome, grayscale, black and white, black & white, desaturated, greyscale`
   const prompt = `${SOLO_FEMALE}, ${base}, ${pose.pose}, ${expr.arousal}, hotel bedroom background, luxury bed with white sheets, warm ambient lighting, full color photography, vibrant skin tones, colorful, RAW photo, 8k uhd, DSLR, high quality, photorealistic, nsfw, explicit, adult content`
 
   const baseSeed = Math.floor(Math.random() * 999999999) + 1
   let done = 0
   onProgress(0, count)
 
-  // OpenPose 스켈레톤 fetch
-  let skeletonB64: string | undefined
-  if (POSE_REF_URLS[poseKey]) {
-    try { skeletonB64 = await fetchBase64FromUrl(POSE_REF_URLS[poseKey]) } catch {}
-  }
-
   const tasks = Array.from({ length: count }, (_, i) => {
     const seed = (baseSeed + i) % 999999998 + 1
     const filename = `pose_${poseKey}_${exprKey}_v${i + 1}.png`
-    const imgH = poseKey === 'cowgirl' ? 640 : 512
-    const mode = skeletonB64 ? 'controlnet' : 'txt2img'
-    return generateAndUpload(prompt, neg, 384, imgH, seed, charId, filename, mode, undefined, undefined, skeletonB64, 1.0, undefined, undefined, signal)
+    return generateAndUpload(prompt, neg, 832, 1216, seed, charId, filename, 'txt2img', undefined, undefined, undefined, undefined, undefined, undefined, signal)
       .then(url => { onProgress(++done, count); return url })
       .catch((e: any) => { if (e?.name !== 'AbortError') { onProgress(++done, count) } return '' })
   })
@@ -481,7 +473,7 @@ export async function generatePoseImages(
 ): Promise<Record<string, string>> {
   const charId = c.id ?? 'unknown'
   const base = buildBaseDesc(c)
-  const neg = `${NEG_NUDE}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, male, man, penis, cock, dick, balls, testicles, male genitalia, male body, masculine, man's body, two people, couple`
+  const neg = `${NEG_NUDE}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, male, man, penis, cock, dick, balls, testicles, male genitalia, male body, masculine, man's body, two people, couple, multiple people, multiple faces, extra heads, extra faces, 2girls, 3girls, duplicate`
   const results: Record<string, string> = {}
   const total = POSES.length * POSE_EXPRESSIONS.length
   let done = 0
@@ -517,11 +509,11 @@ export async function generatePoseImages(
         let url: string
         const refB64 = poseRefB64[poseKey]
 
-        // OpenPose 스켈레톤으로 ControlNet 적용
-        if (refB64) {
-          url = await generateAndUpload(prompt, neg, 384, 512, seed, charId, filename, 'controlnet', undefined, undefined, refB64, 1.0)
+        // ControlNet이 SD1.5와 충돌해 다중인물 생성 → ipadapter로 전환 (얼굴 반영 + 단일인물)
+        if (faceB64) {
+          url = await generateAndUpload(prompt, neg, 832, 1216, seed, charId, filename, 'ipadapter', undefined, undefined, faceB64)
         } else {
-          url = await generateAndUpload(prompt, neg, 384, 512, seed, charId, filename)
+          url = await generateAndUpload(prompt, neg, 832, 1216, seed, charId, filename)
         }
         results[`${poseKey}_${exprKey}`] = url
       } catch {
