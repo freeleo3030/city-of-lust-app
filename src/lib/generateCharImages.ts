@@ -253,16 +253,28 @@ function buildBaseDesc(c: FemaleCharacterData, clothed = false) {
 
 async function callPollinations(prompt: string, _neg: string, width: number, height: number, seed: number, signal?: AbortSignal): Promise<string> {
   const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`
-  const timeout = AbortSignal.timeout(60000)
-  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout
-  const resp = await fetch(url, { signal: combined })
-  if (!resp.ok) throw new Error(`Pollinations error: ${resp.status}`)
-  const blob = await resp.blob()
   return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve((reader.result as string).split(',')[1])
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
+    if (signal?.aborted) return reject(new Error('aborted'))
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    const timer = setTimeout(() => { img.src = ''; reject(new Error('Pollinations timeout')) }, 60000)
+    const onAbort = () => { clearTimeout(timer); img.src = ''; reject(new Error('aborted')) }
+    signal?.addEventListener('abort', onAbort, { once: true })
+    img.onload = () => {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', onAbort)
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth || width
+        canvas.height = img.naturalHeight || height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0)
+        const dataUrl = canvas.toDataURL('image/png')
+        resolve(dataUrl.split(',')[1])
+      } catch (e) { reject(e) }
+    }
+    img.onerror = () => { clearTimeout(timer); signal?.removeEventListener('abort', onAbort); reject(new Error('Pollinations image load failed')) }
+    img.src = url
   })
 }
 
