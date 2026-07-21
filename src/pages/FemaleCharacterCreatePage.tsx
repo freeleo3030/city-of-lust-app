@@ -391,23 +391,19 @@ export default function FemaleCharacterCreatePage({
     let count = 0
     const results: string[] = []
 
-    await Promise.all(
-      Array.from({ length: MAX_PROFILE_IMGS }).map(async (_, i) => {
-        try {
-          const url = await generateProfileImage(char as any, true, controller.signal)
-          if (controller.signal.aborted) {
-            deleteImageFromStorage(url)
-            return
-          }
-          results[i] = url
-          count++
-          setGenProgress(`${count} / ${MAX_PROFILE_IMGS}`)
-          setProfileImages([...results].filter(Boolean))
-        } catch (e: any) {
-          if (e?.name !== 'AbortError') console.error(`프로필 ${i+1} 생성 실패:`, e)
-        }
-      })
-    )
+    for (let i = 0; i < MAX_PROFILE_IMGS; i++) {
+      if (controller.signal.aborted) break
+      try {
+        const url = await generateProfileImage(char as any, true, controller.signal)
+        if (controller.signal.aborted) { deleteImageFromStorage(url); break }
+        results[i] = url
+        count++
+        setGenProgress(`${count} / ${MAX_PROFILE_IMGS}`)
+        setProfileImages([...results].filter(Boolean))
+      } catch (e: any) {
+        if (e?.name !== 'AbortError') console.error(`프로필 ${i+1} 생성 실패:`, e)
+      }
+    }
 
     setGenerating(false)
     setGenProgress('')
@@ -536,6 +532,7 @@ export default function FemaleCharacterCreatePage({
         { profileImageUrl: profileImages[selectedProfileIdx], signal: controller.signal, bgKey: selectedBgKey }
       )
       if (!controller.signal.aborted) {
+        const validUrls = urls.filter(Boolean)
         setPoseVariants(prev => {
           // 이전 variants 삭제 (선택된 이미지 제외)
           const prevUrls = prev[poseKey]?.[exprKey] ?? []
@@ -551,6 +548,14 @@ export default function FemaleCharacterCreatePage({
             [poseKey]: { ...(prev[poseKey] ?? {}), [exprKey]: urls }
           }
         })
+        // 생성 완료 즉시 오버레이 열기 → 선택 전까지 다른 버튼 비활성화
+        if (validUrls.length > 0) {
+          setVariantOverlay({ poseKey, exprKey, urls: validUrls })
+          setVariantZoom(validUrls[0])
+          setVariantZoomScale(1)
+          setVariantPan({ x: 0, y: 0 })
+          variantZoomFromSelected.current = false
+        }
       }
     } catch (e: any) {
       if (e?.name !== 'AbortError') console.error('variant 생성 실패:', e)
@@ -666,7 +671,7 @@ export default function FemaleCharacterCreatePage({
 
   // 3단계: 표정·자세 생성 스튜디오
   if (phase === 'image_studio') {
-    const busy = generatingExpr || generatingPose || generating || generatingVariants
+    const busy = generatingExpr || generatingPose || generating || generatingVariants || variantOverlay !== null
     return (
       <div style={S.container}>
 
