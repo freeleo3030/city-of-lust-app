@@ -143,7 +143,7 @@ function translateAppearance(desc: string): string {
 function ageNegative(age: number): string {
   if (age < 30) return 'middle aged, old, wrinkles, mature face, aged, nasolabial folds, crow feet'
   if (age < 40) return 'teenager, baby face, very young face, childlike, 20s, smooth perfect skin, flawless skin, porcelain skin, no pores, glowing youthful skin, old, elderly, deeply wrinkled, 50s, gray hair'
-  return 'teenager, baby face, very young face, childlike, 20s, 30s, youthful face, smooth perfect skin, flawless, porcelain skin, no pores, glowing skin, very old, elderly, 60s, deeply wrinkled, gray hair'
+  return 'teenager, baby face, very young face, childlike, 20s, very old, elderly, 60s, deeply wrinkled, gray hair'
 }
 
 function bodyTypeNegative(bodyType?: string): string {
@@ -176,8 +176,8 @@ function buildBaseDesc(c: FemaleCharacterData, clothed = false) {
   const ageFaceDesc = is20s
     ? `${faceBase}, flawless smooth skin, youthful glow, baby-soft skin`
     : is30s
-    ? `${faceBase}, mature skin, subtle laugh lines, slight eye wrinkles, refined adult beauty`
-    : `${faceBase}, mature aged face, visible laugh lines, crow feet around eyes, forehead lines, elegant mature beauty`
+    ? `${faceBase}, smooth skin, refined elegant beauty, sophisticated, graceful`
+    : `${faceBase}, smooth skin, elegant mature beauty, sophisticated, graceful, well-maintained`
 
   const bodyScore = c.body ?? 50
   const ageSag = is20s ? 0 : is30s ? 10 : 20
