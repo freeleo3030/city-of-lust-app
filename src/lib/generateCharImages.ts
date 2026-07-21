@@ -110,10 +110,10 @@ function buildLocationBg(location?: string): string {
 
 function buildOutfit(location: string | undefined, fashion: number): string {
   const base = LOCATION_OUTFIT[location ?? ''] ?? 'casual outfit'
-  if (fashion >= 80) return `${base}, very short hemline, deep neckline, midriff exposed`
-  if (fashion >= 60) return `${base}, short hemline, fitted`
-  if (fashion >= 40) return `${base}, knee-length, modest`
-  return `${base}, long hemline, fully covered`
+  if (fashion >= 80) return `${base}, stylish, trendy, well-coordinated accessories, high fashion`
+  if (fashion >= 60) return `${base}, neat, well-dressed, coordinated`
+  if (fashion >= 40) return `${base}, casual, simple`
+  return `${base}, plain, basic style`
 }
 
 const KR_TO_EN: [RegExp, string][] = [
