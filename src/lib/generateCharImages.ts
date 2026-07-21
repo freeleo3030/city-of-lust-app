@@ -35,7 +35,7 @@ const POSES = [
   },
   {
     key: 'cowgirl', label: '여성상위',
-    pose: `${SOLO_FEMALE}, spread pussy, vagina fully exposed and visible, completely nude Korean woman in cowgirl position, sitting upright facing camera, both hands placed on own thighs in front of body, hands resting on knees visible in frame, legs spread wide apart, pussy clearly visible between open thighs, face and hair visible at top, large breasts center, explicit vagina fully shown at bottom of frame, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, spread pussy, vagina fully exposed and visible, completely nude Korean woman in cowgirl position, leaning forward toward camera, body tilted forward, both hands reaching forward placed on bed or surface in front of her, arms extended forward supporting upper body weight, breasts hanging forward due to lean, face looking up at camera, legs straddling wide apart, pussy visible between thighs, explicit nude adult photography`,
   },
   {
     key: 'side', label: '버터플라이',
