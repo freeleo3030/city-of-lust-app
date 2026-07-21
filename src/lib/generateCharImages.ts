@@ -287,14 +287,6 @@ async function uploadToSupabase(base64: string, charId: string, filename: string
 
 // ─── 이미지 생성 헬퍼 ────────────────────────────────────────────────────────
 
-// Supabase char-images 버킷의 skeleton 이미지 URL
-const SKELETON_BASE = 'https://lfhrxkpcyfqnorjkdodp.supabase.co/storage/v1/object/public/char-images/skeletons'
-const POSE_REF_URLS: Record<string, string> = {
-  missionary: `${SKELETON_BASE}/missionary.png`,
-  doggy:      `${SKELETON_BASE}/doggy.png`,
-  cowgirl:    `${SKELETON_BASE}/cowgirl.png`,
-  side:       `${SKELETON_BASE}/butterfly.png`,
-}
 
 
 async function generateAndUpload(
@@ -478,16 +470,7 @@ export async function generatePoseImages(
   const total = POSES.length * POSE_EXPRESSIONS.length
   let done = 0
 
-  // OpenPose 스켈레톤 base64 미리 fetch
   onProgress(0, total, '포즈 준비 중...')
-  const poseRefB64: Record<string, string> = {}
-  for (const { key: poseKey } of POSES) {
-    try {
-      poseRefB64[poseKey] = await fetchBase64FromUrl(POSE_REF_URLS[poseKey])
-    } catch {
-      poseRefB64[poseKey] = ''
-    }
-  }
 
   // 프로필 이미지 (얼굴 레퍼런스용)
   let faceB64 = ''
@@ -507,9 +490,8 @@ export async function generatePoseImages(
       const seed = Math.floor(Math.random() * 999999999) + 1
       try {
         let url: string
-        const refB64 = poseRefB64[poseKey]
 
-        // ControlNet이 SD1.5와 충돌해 다중인물 생성 → ipadapter로 전환 (얼굴 반영 + 단일인물)
+        // 얼굴 레퍼런스(ipadapter) 또는 txt2img
         if (faceB64) {
           url = await generateAndUpload(prompt, neg, 832, 1216, seed, charId, filename, 'ipadapter', undefined, undefined, faceB64)
         } else {
