@@ -372,11 +372,11 @@ export async function generateProfileImage(c: FemaleCharacterData, randomSeed = 
   const bg = buildLocationBg(c.location)
   const outfit = buildOutfit(c.location, c.fashion ?? 50)
   const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}`
-  const prompt = `SFW, safe for work, fully clothed, dressed, ${base}, ${outfit}, calm gentle smile, portrait photo, upper body shot, waist up, face and torso visible, cropped at waist, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, film grain, photorealistic, natural lighting`
-  const neg2 = `${neg}, full body, legs, feet, lower body, thighs`
+  const prompt = `SFW, safe for work, fully clothed, dressed, wearing clothes, ${base}, ${outfit}, calm gentle smile, upper body portrait, waist up close-up, tight frame, face and chest visible, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, film grain, photorealistic, natural lighting`
+  const neg2 = `${neg}, full body, legs, feet, lower body, thighs, nude, naked, topless, bare skin, cleavage, exposed`
   const seed = Math.floor(Math.random() * 999999999) + 1
   const filename = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`
-  return generateAndUpload(prompt, neg2, 768, 1024, seed, charId, filename, 'txt2img', undefined, undefined, undefined, undefined, undefined, undefined, signal)
+  return generateAndUpload(prompt, neg2, 832, 832, seed, charId, filename, 'txt2img', undefined, undefined, undefined, undefined, undefined, undefined, signal)
 }
 
 export function deleteImageFromStorage(url: string): void {
