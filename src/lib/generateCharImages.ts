@@ -456,14 +456,14 @@ export async function generateExpressionImages(
   // 5장 모두 img2img (프로필 베이스 있으면) 또는 1장 txt2img 후 나머지 img2img
   const { key: k0, label: l0, expr: e0 } = CONVERSATION_EXPRESSIONS[0]
   onProgress(0, CONVERSATION_EXPRESSIONS.length, l0)
-  const basePrompt = `${base}, ${outfit}, ${e0}, upper body portrait, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
+  const basePrompt = `SFW, safe for work, fully clothed, wearing clothes, ${base}, ${outfit}, ${e0}, upper body portrait, waist up, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
   let baseB64 = profileB64
 
   try {
     if (profileB64) {
-      baseB64 = await callRunPod({ mode: 'img2img', prompt: basePrompt, negative_prompt: neg, width: 400, height: 520, seed, steps: 28, cfg_scale: 7, init_image: profileB64, denoising_strength: 0.6 })
+      baseB64 = await callRunPod({ mode: 'img2img', prompt: basePrompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 28, cfg_scale: 7, init_image: profileB64, denoising_strength: 0.6 })
     } else {
-      baseB64 = await callRunPod({ mode: 'txt2img', prompt: basePrompt, negative_prompt: neg, width: 400, height: 520, seed, steps: 28, cfg_scale: 7 })
+      baseB64 = await callRunPod({ mode: 'txt2img', prompt: basePrompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 28, cfg_scale: 7 })
     }
     const url = await uploadToSupabase(baseB64, charId, `expr_${k0}${suffix}.png`)
     results.push(url)
@@ -475,13 +475,13 @@ export async function generateExpressionImages(
   for (let i = 1; i < CONVERSATION_EXPRESSIONS.length; i++) {
     const { key, label, expr } = CONVERSATION_EXPRESSIONS[i]
     onProgress(i, CONVERSATION_EXPRESSIONS.length, label)
-    const prompt = `${base}, ${outfit}, ${expr}, upper body portrait, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
+    const prompt = `SFW, safe for work, fully clothed, wearing clothes, ${base}, ${outfit}, ${expr}, upper body portrait, waist up, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
     try {
       let url: string
       if (baseB64) {
-        url = await generateAndUpload(prompt, neg, 400, 520, seed + i, charId, `expr_${key}${suffix}.png`, 'img2img', baseB64, 0.55)
+        url = await generateAndUpload(prompt, neg, 832, 832, seed + i, charId, `expr_${key}${suffix}.png`, 'img2img', baseB64, 0.55)
       } else {
-        url = await generateAndUpload(prompt, neg, 400, 520, seed + i, charId, `expr_${key}${suffix}.png`)
+        url = await generateAndUpload(prompt, neg, 832, 832, seed + i, charId, `expr_${key}${suffix}.png`)
       }
       results.push(url)
     } catch {
