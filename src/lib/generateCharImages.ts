@@ -44,7 +44,7 @@ const POSES = [
 ]
 
 const COMMON_NEG = 'black and white, grayscale, monochrome, desaturated, colorless, no color, greyscale, blurry, bad anatomy, watermark, text, logo, low quality, deformed, anime, cartoon, 3d render, painting, illustration, drawing, cgi, art, sketch, bad hands, extra fingers, missing fingers, extra limbs, malformed limbs, fused fingers, mutated hands'
-const NEG_CLOTHED = `nude, naked, nsfw, ${COMMON_NEG}`
+const NEG_CLOTHED = `nude, naked, nsfw, topless, bare breasts, exposed breasts, nipples, no clothes, undressed, partially undressed, lingerie, bikini, revealing clothes, ${COMMON_NEG}`
 const NEG_NUDE = `clothes, underwear, bra, panties, censored, hands covering genitals, hands on pussy, hand covering vagina, covering crotch with hands, hand between legs covering, ${COMMON_NEG}`
 
 export const POSE_BACKGROUNDS = [
@@ -372,7 +372,7 @@ export async function generateProfileImage(c: FemaleCharacterData, randomSeed = 
   const bg = buildLocationBg(c.location)
   const outfit = buildOutfit(c.location, c.fashion ?? 50)
   const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}`
-  const prompt = `${base}, ${outfit}, calm gentle smile, portrait photo, face and upper chest visible, head and shoulders, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, film grain, photorealistic, natural lighting`
+  const prompt = `${base}, ${outfit}, fully clothed, wearing clothes, calm gentle smile, portrait photo, face and upper chest visible, head and shoulders, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, film grain, photorealistic, natural lighting`
   const seed = Math.floor(Math.random() * 999999999) + 1
   const filename = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`
   return generateAndUpload(prompt, neg, 768, 1024, seed, charId, filename, 'txt2img', undefined, undefined, undefined, undefined, undefined, undefined, signal)
