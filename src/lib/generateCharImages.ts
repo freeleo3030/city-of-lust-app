@@ -39,7 +39,7 @@ const POSES = [
   },
   {
     key: 'side', label: '버터플라이',
-    pose: `${SOLO_FEMALE}, completely nude Korean woman sitting on bed facing camera, leaning back slightly, both hands placed behind hips on the bed supporting her body weight, hands behind back on mattress, both legs spread wide open to the sides with knees raised above waist level, thighs higher than hips, lower legs angled outward and downward from knees, vagina and labia fully exposed at center, large breasts visible, face looking at camera, explicit nude adult photography`,
+    pose: `${SOLO_FEMALE}, completely nude Korean woman lying on her back on bed, both legs raised high up in the air, knees bent toward chest, both legs spread wide apart like butterfly wings, soles of feet visible, vagina and labia fully exposed from above angle, large breasts visible, face looking up at camera, camera angle looking down at her, explicit nude adult photography`,
   },
 ]
 
