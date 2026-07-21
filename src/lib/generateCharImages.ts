@@ -485,8 +485,7 @@ export async function generateExpressionImages(
   let baseB64 = ''
 
   try {
-    baseB64 = await callPollinations(basePrompt, '', 832, 832, seed, signal)
-    const url = await uploadToSupabase(baseB64, charId, `expr_${k0}${suffix}.png`)
+    const url = await callPollinations(basePrompt, '', 832, 832, seed, signal)
     results.push(url)
   } catch {
     results.push('')
@@ -498,8 +497,7 @@ export async function generateExpressionImages(
     onProgress(i, CONVERSATION_EXPRESSIONS.length, label)
     const prompt = `${baseCharDesc}, ${expr}, soft lighting, photorealistic, high quality`
     try {
-      const b64 = await callPollinations(prompt, '', 832, 832, seed + i, signal)
-      const url = await uploadToSupabase(b64, charId, `expr_${key}${suffix}.png`)
+      const url = await callPollinations(prompt, '', 832, 832, seed + i, signal)
       results.push(url)
     } catch {
       results.push('')
