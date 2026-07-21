@@ -162,6 +162,39 @@ function charSeed(c: FemaleCharacterData): number {
   return (hash % 999999998) + 1
 }
 
+function pickFaceVariants(seed: number): string {
+  const eyes = [
+    'double eyelid, big expressive eyes',
+    'monolid, almond-shaped eyes',
+    'wide round innocent eyes',
+    'narrow sharp seductive eyes',
+    'large bright doe eyes',
+    'deep-set sultry eyes',
+  ]
+  const lips = [
+    'full plump lips',
+    'thin delicate lips',
+    'heart-shaped cupid bow lips',
+    'soft natural lips',
+    'pouty lips',
+  ]
+  const jaw = [
+    'sharp v-shaped jawline',
+    'soft oval face shape',
+    'round soft face',
+    'defined high cheekbones',
+    'gentle square jaw',
+  ]
+  const nose = [
+    'small button nose',
+    'straight slim nose',
+    'soft natural nose',
+    'petite upturned nose',
+  ]
+  const pick = (arr: string[], offset: number) => arr[Math.abs(Math.floor(seed / Math.pow(7, offset))) % arr.length]
+  return `${pick(eyes, 0)}, ${pick(lips, 1)}, ${pick(jaw, 2)}, ${pick(nose, 3)}`
+}
+
 function buildBaseDesc(c: FemaleCharacterData, clothed = false) {
   const age = c.age ?? 25
   const is20s = age < 30
@@ -173,11 +206,12 @@ function buildBaseDesc(c: FemaleCharacterData, clothed = false) {
     : c.face >= 40 ? 'average face, natural look'
     : 'plain face, ordinary features'
 
+  const faceVariants = pickFaceVariants(charSeed(c))
   const ageFaceDesc = is20s
-    ? `${faceBase}, flawless smooth skin, youthful glow, baby-soft skin`
+    ? `${faceBase}, ${faceVariants}, flawless smooth skin, youthful glow`
     : is30s
-    ? `${faceBase}, smooth skin, refined elegant beauty, sophisticated, graceful`
-    : `${faceBase}, smooth skin, elegant mature beauty, sophisticated, graceful, well-maintained`
+    ? `${faceBase}, ${faceVariants}, smooth skin, refined elegant beauty, sophisticated`
+    : `${faceBase}, ${faceVariants}, smooth skin, elegant mature beauty, sophisticated`
 
   const bodyScore = c.body ?? 50
   const ageSag = is20s ? 0 : is30s ? 10 : 20
