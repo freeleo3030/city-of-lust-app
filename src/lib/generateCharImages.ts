@@ -251,9 +251,11 @@ function buildBaseDesc(c: FemaleCharacterData, clothed = false) {
 
 // ─── Pollinations API 호출 (대표이미지 / 표정 — SFW) ────────────────────────
 
-async function callPollinations(prompt: string, neg: string, width: number, height: number, seed: number, signal?: AbortSignal): Promise<string> {
-  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux&negative=${encodeURIComponent(neg)}`
-  const resp = await fetch(url, { signal })
+async function callPollinations(prompt: string, _neg: string, width: number, height: number, seed: number, signal?: AbortSignal): Promise<string> {
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`
+  const timeout = AbortSignal.timeout(60000)
+  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout
+  const resp = await fetch(url, { signal: combined })
   if (!resp.ok) throw new Error(`Pollinations error: ${resp.status}`)
   const blob = await resp.blob()
   return new Promise<string>((resolve, reject) => {
@@ -417,14 +419,15 @@ export async function generatePoseVariants(
 
 export async function generateProfileImage(c: FemaleCharacterData, randomSeed = false, signal?: AbortSignal): Promise<string> {
   const charId = c.id ?? 'unknown'
-  const base = buildBaseDesc(c, true)
-  const bg = buildLocationBg(c.location)
-  const outfit = buildOutfit(c.location, c.fashion ?? 50)
-  const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, full body, legs, feet, lower body`
-  const prompt = `SFW, safe for work, fully clothed, dressed, wearing clothes, ${base}, ${outfit}, calm gentle smile, upper body portrait, waist up, face and chest visible, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, film grain, photorealistic, natural lighting`
+  const age = c.age ?? 25
+  const ageLabel = age < 30 ? 'mid-20s' : age < 40 ? 'early 30s' : 'early 40s'
+  const faceDesc = (c.face ?? 50) >= 75 ? 'beautiful face' : (c.face ?? 50) >= 55 ? 'pretty face' : 'natural face'
+  const bodyDesc = c.bodyType === '글래머' ? 'voluptuous body' : c.bodyType === '슬랜더' ? 'slim body' : 'fit body'
+  const fashionDesc = (c.fashion ?? 50) >= 70 ? 'stylish outfit' : 'neat casual outfit'
+  const prompt = `Korean adult woman, ${ageLabel}, ${faceDesc}, ${bodyDesc}, ${fashionDesc}, fully clothed, upper body portrait, waist up, soft lighting, photorealistic, high quality`
   const seed = Math.floor(Math.random() * 999999) + 1
   const filename = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`
-  const b64 = await callPollinations(prompt, neg, 832, 832, seed, signal)
+  const b64 = await callPollinations(prompt, '', 832, 832, seed, signal)
   return uploadToSupabase(b64, charId, filename)
 }
 
@@ -455,28 +458,23 @@ export async function generateExpressionImages(
   signal?: AbortSignal
 ): Promise<string[]> {
   const charId = c.id ?? 'unknown'
-  const base = buildBaseDesc(c, true)
-  const bg = buildLocationBg(c.location)
-  const outfit = buildOutfit(c.location, c.fashion ?? 50)
-  const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}`
+  const age = c.age ?? 25
+  const ageLabel = age < 30 ? 'mid-20s' : age < 40 ? 'early 30s' : 'early 40s'
+  const faceDesc = (c.face ?? 50) >= 75 ? 'beautiful face' : (c.face ?? 50) >= 55 ? 'pretty face' : 'natural face'
+  const bodyDesc = c.bodyType === '글래머' ? 'voluptuous body' : c.bodyType === '슬랜더' ? 'slim body' : 'fit body'
+  const fashionDesc = (c.fashion ?? 50) >= 70 ? 'stylish outfit' : 'neat casual outfit'
+  const baseCharDesc = `Korean adult woman, ${ageLabel}, ${faceDesc}, ${bodyDesc}, ${fashionDesc}, fully clothed, upper body portrait, waist up`
   const seed = options?.randomSeed ? Math.floor(Math.random() * 999999999) + 1 : charSeed(c)
   const suffix = options?.randomSeed ? `_${Date.now()}` : ''
   const results: string[] = []
 
-  // 프로필 이미지를 베이스로 사용하면 동일 인물 유지
-  let profileB64 = ''
-  if (options?.profileImageUrl) {
-    try { profileB64 = await fetchBase64FromUrl(options.profileImageUrl) } catch {}
-  }
-
-  // 5장 모두 img2img (프로필 베이스 있으면) 또는 1장 txt2img 후 나머지 img2img
   const { key: k0, label: l0, expr: e0 } = CONVERSATION_EXPRESSIONS[0]
   onProgress(0, CONVERSATION_EXPRESSIONS.length, l0)
-  const basePrompt = `SFW, safe for work, fully clothed, wearing clothes, ${base}, ${outfit}, ${e0}, upper body portrait, waist up, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
-  let baseB64 = profileB64
+  const basePrompt = `${baseCharDesc}, ${e0}, soft lighting, photorealistic, high quality`
+  let baseB64 = ''
 
   try {
-    baseB64 = await callPollinations(basePrompt, neg, 832, 832, seed, signal)
+    baseB64 = await callPollinations(basePrompt, '', 832, 832, seed, signal)
     const url = await uploadToSupabase(baseB64, charId, `expr_${k0}${suffix}.png`)
     results.push(url)
   } catch {
@@ -487,9 +485,9 @@ export async function generateExpressionImages(
   for (let i = 1; i < CONVERSATION_EXPRESSIONS.length; i++) {
     const { key, label, expr } = CONVERSATION_EXPRESSIONS[i]
     onProgress(i, CONVERSATION_EXPRESSIONS.length, label)
-    const prompt = `SFW, safe for work, fully clothed, wearing clothes, ${base}, ${outfit}, ${expr}, upper body portrait, waist up, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
+    const prompt = `${baseCharDesc}, ${expr}, soft lighting, photorealistic, high quality`
     try {
-      const b64 = await callPollinations(prompt, neg, 832, 832, seed + i, signal)
+      const b64 = await callPollinations(prompt, '', 832, 832, seed + i, signal)
       const url = await uploadToSupabase(b64, charId, `expr_${key}${suffix}.png`)
       results.push(url)
     } catch {
