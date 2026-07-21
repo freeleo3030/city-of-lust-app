@@ -372,7 +372,7 @@ export async function generateProfileImage(c: FemaleCharacterData, randomSeed = 
   const bg = buildLocationBg(c.location)
   const outfit = buildOutfit(c.location, c.fashion ?? 50)
   const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}`
-  const prompt = `${base}, ${outfit}, fully clothed, wearing clothes, calm gentle smile, portrait photo, face and upper chest visible, head and shoulders, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, film grain, photorealistic, natural lighting`
+  const prompt = `SFW, safe for work, fully clothed, dressed, ${base}, ${outfit}, calm gentle smile, portrait photo, face and upper chest visible, head and shoulders, ${bg}, full color photography, RAW photo, 8k uhd, DSLR, high quality, film grain, photorealistic, natural lighting`
   const seed = Math.floor(Math.random() * 999999999) + 1
   const filename = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`
   return generateAndUpload(prompt, neg, 768, 1024, seed, charId, filename, 'txt2img', undefined, undefined, undefined, undefined, undefined, undefined, signal)
