@@ -430,16 +430,16 @@ function buildProfileOutfit(fashion: number, bodyType?: string): string {
 
 export async function generateProfileImage(c: FemaleCharacterData, randomSeed = false, signal?: AbortSignal): Promise<string> {
   const charId = c.id ?? 'unknown'
-  const age = c.age ?? 25
-  const ageLabel = age < 30 ? 'mid-20s' : age < 40 ? 'early 30s' : 'early 40s'
-  const faceDesc = (c.face ?? 50) >= 75 ? 'beautiful face' : (c.face ?? 50) >= 55 ? 'pretty face' : 'natural face'
+  const base = buildBaseDesc(c, true)
+  const bg = buildLocationBg(c.location)
   const fashion = c.fashion ?? 50
   const outfitDesc = buildProfileOutfit(fashion, c.bodyType)
-  const clothedTag = fashion >= 85 ? '' : 'wearing clothes,'
-  const prompt = `Korean woman, ${ageLabel}, ${faceDesc}, ${outfitDesc}, ${clothedTag} upper body portrait, waist up, soft lighting, photorealistic, high quality`
+  const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, full body, legs, feet, lower body`
+  const prompt = `SFW, safe for work, ${base}, ${outfitDesc}, calm gentle smile, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, natural lighting`
   const seed = Math.floor(Math.random() * 999999) + 1
   const filename = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`
-  return callPollinations(prompt, '', 832, 832, seed, signal)
+  const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal)
+  return uploadToSupabase(b64, charId, filename)
 }
 
 export function deleteImageFromStorage(url: string): void {
@@ -469,35 +469,33 @@ export async function generateExpressionImages(
   signal?: AbortSignal
 ): Promise<string[]> {
   const charId = c.id ?? 'unknown'
-  const age = c.age ?? 25
-  const ageLabel = age < 30 ? 'mid-20s' : age < 40 ? 'early 30s' : 'early 40s'
-  const faceDesc = (c.face ?? 50) >= 75 ? 'beautiful face' : (c.face ?? 50) >= 55 ? 'pretty face' : 'natural face'
-  const bodyDesc = c.bodyType === '글래머' ? 'voluptuous body' : c.bodyType === '슬랜더' ? 'slim body' : 'fit body'
-  const fashionDesc = (c.fashion ?? 50) >= 70 ? 'stylish outfit' : 'neat casual outfit'
-  const baseCharDesc = `Korean woman, ${ageLabel}, ${faceDesc}, ${bodyDesc}, ${fashionDesc}, fully clothed, upper body portrait, waist up`
+  const base = buildBaseDesc(c, true)
+  const bg = buildLocationBg(c.location)
+  const outfit = buildOutfit(c.location, c.fashion ?? 50)
+  const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, full body, legs, feet, lower body`
   const seed = options?.randomSeed ? Math.floor(Math.random() * 999999999) + 1 : charSeed(c)
   const suffix = options?.randomSeed ? `_${Date.now()}` : ''
   const results: string[] = []
 
   const { key: k0, label: l0, expr: e0 } = CONVERSATION_EXPRESSIONS[0]
   onProgress(0, CONVERSATION_EXPRESSIONS.length, l0)
-  const basePrompt = `${baseCharDesc}, ${e0}, soft lighting, photorealistic, high quality`
-  let baseB64 = ''
+  const basePrompt = `SFW, safe for work, ${base}, ${outfit}, ${e0}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
 
   try {
-    const url = await callPollinations(basePrompt, '', 832, 832, seed, signal)
+    const b64 = await callRunPod({ mode: 'txt2img', prompt: basePrompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal)
+    const url = await uploadToSupabase(b64, charId, `expr_${k0}${suffix}.png`)
     results.push(url)
   } catch {
     results.push('')
   }
 
-  // 나머지 4장: Pollinations로 각각 생성
   for (let i = 1; i < CONVERSATION_EXPRESSIONS.length; i++) {
     const { key, label, expr } = CONVERSATION_EXPRESSIONS[i]
     onProgress(i, CONVERSATION_EXPRESSIONS.length, label)
-    const prompt = `${baseCharDesc}, ${expr}, soft lighting, photorealistic, high quality`
+    const prompt = `SFW, safe for work, ${base}, ${outfit}, ${expr}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
     try {
-      const url = await callPollinations(prompt, '', 832, 832, seed + i, signal)
+      const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed: seed + i, steps: 30, cfg_scale: 7 }, signal)
+      const url = await uploadToSupabase(b64, charId, `expr_${key}${suffix}.png`)
       results.push(url)
     } catch {
       results.push('')

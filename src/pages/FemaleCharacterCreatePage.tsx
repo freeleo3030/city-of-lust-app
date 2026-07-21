@@ -391,19 +391,20 @@ export default function FemaleCharacterCreatePage({
     let count = 0
     const results: string[] = []
 
-    for (let i = 0; i < MAX_PROFILE_IMGS; i++) {
-      if (controller.signal.aborted) break
-      try {
-        const url = await generateProfileImage(char as any, true, controller.signal)
-        if (controller.signal.aborted) { deleteImageFromStorage(url); break }
-        results[i] = url
-        count++
-        setGenProgress(`${count} / ${MAX_PROFILE_IMGS}`)
-        setProfileImages([...results].filter(Boolean))
-      } catch (e: any) {
-        if (e?.name !== 'AbortError') console.error(`프로필 ${i+1} 생성 실패:`, e)
-      }
-    }
+    await Promise.all(
+      Array.from({ length: MAX_PROFILE_IMGS }).map(async (_, i) => {
+        try {
+          const url = await generateProfileImage(char as any, true, controller.signal)
+          if (controller.signal.aborted) { deleteImageFromStorage(url); return }
+          results[i] = url
+          count++
+          setGenProgress(`${count} / ${MAX_PROFILE_IMGS}`)
+          setProfileImages([...results].filter(Boolean))
+        } catch (e: any) {
+          if (e?.name !== 'AbortError') console.error(`프로필 ${i+1} 생성 실패:`, e)
+        }
+      })
+    )
 
     setGenerating(false)
     setGenProgress('')
