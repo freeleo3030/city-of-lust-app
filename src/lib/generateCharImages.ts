@@ -417,14 +417,23 @@ export async function generatePoseVariants(
 
 // ─── 공개 API ────────────────────────────────────────────────────────────────
 
+function buildProfileOutfit(fashion: number, bodyType?: string): string {
+  const body = bodyType === '글래머' ? 'voluptuous curvy body' : bodyType === '슬랜더' ? 'slim slender body' : bodyType === '베이글' ? 'hourglass body' : 'athletic fit body'
+  if (fashion >= 85) return `${body}, revealing outfit, low-cut deep neckline, midriff exposed, mini skirt, high heels, glamorous sexy fashion`
+  if (fashion >= 70) return `${body}, stylish outfit, slightly open neckline, fitted clothes, trendy fashion`
+  if (fashion >= 50) return `${body}, neat casual outfit, simple top, jeans`
+  return `${body}, plain simple clothes, modest outfit`
+}
+
 export async function generateProfileImage(c: FemaleCharacterData, randomSeed = false, signal?: AbortSignal): Promise<string> {
   const charId = c.id ?? 'unknown'
   const age = c.age ?? 25
   const ageLabel = age < 30 ? 'mid-20s' : age < 40 ? 'early 30s' : 'early 40s'
   const faceDesc = (c.face ?? 50) >= 75 ? 'beautiful face' : (c.face ?? 50) >= 55 ? 'pretty face' : 'natural face'
-  const bodyDesc = c.bodyType === '글래머' ? 'voluptuous body' : c.bodyType === '슬랜더' ? 'slim body' : 'fit body'
-  const fashionDesc = (c.fashion ?? 50) >= 70 ? 'stylish outfit' : 'neat casual outfit'
-  const prompt = `Korean adult woman, ${ageLabel}, ${faceDesc}, ${bodyDesc}, ${fashionDesc}, fully clothed, upper body portrait, waist up, soft lighting, photorealistic, high quality`
+  const fashion = c.fashion ?? 50
+  const outfitDesc = buildProfileOutfit(fashion, c.bodyType)
+  const clothedTag = fashion >= 85 ? '' : 'wearing clothes,'
+  const prompt = `Korean adult woman, ${ageLabel}, ${faceDesc}, ${outfitDesc}, ${clothedTag} upper body portrait, waist up, soft lighting, photorealistic, high quality`
   const seed = Math.floor(Math.random() * 999999) + 1
   const filename = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`
   const b64 = await callPollinations(prompt, '', 832, 832, seed, signal)
