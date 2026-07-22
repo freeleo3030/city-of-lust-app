@@ -3,7 +3,9 @@ import { supabase } from './supabase'
 
 const RUNPOD_API_KEY = import.meta.env.VITE_RUNPOD_API_KEY
 const RUNPOD_ENDPOINT_ID = import.meta.env.VITE_RUNPOD_ENDPOINT_ID
+const RUNPOD_ENDPOINT_ID_SFW = import.meta.env.VITE_RUNPOD_ENDPOINT_ID_SFW
 const RUNPOD_BASE = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}`
+const RUNPOD_BASE_SFW = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID_SFW}`
 
 // ─── 상수 ───────────────────────────────────────────────────────────────────
 
@@ -276,13 +278,15 @@ const RUNPOD_HEADERS = {
   'Authorization': `Bearer ${RUNPOD_API_KEY}`,
 }
 
-async function cancelRunPodJob(jobId: string): Promise<void> {
-  await fetch(`${RUNPOD_BASE}/cancel/${jobId}`, { method: 'POST', headers: RUNPOD_HEADERS })
+async function cancelRunPodJob(jobId: string, sfw = false): Promise<void> {
+  const base = sfw ? RUNPOD_BASE_SFW : RUNPOD_BASE
+  await fetch(`${base}/cancel/${jobId}`, { method: 'POST', headers: RUNPOD_HEADERS })
 }
 
-async function callRunPod(input: Record<string, unknown>, signal?: AbortSignal): Promise<string> {
+async function callRunPod(input: Record<string, unknown>, signal?: AbortSignal, sfw = false): Promise<string> {
+  const base = sfw ? RUNPOD_BASE_SFW : RUNPOD_BASE
   // 1. job 제출
-  const submitRes = await fetch(`${RUNPOD_BASE}/run`, {
+  const submitRes = await fetch(`${base}/run`, {
     method: 'POST',
     headers: RUNPOD_HEADERS,
     body: JSON.stringify({ input }),
@@ -303,7 +307,7 @@ async function callRunPod(input: Record<string, unknown>, signal?: AbortSignal):
       await new Promise(r => setTimeout(r, 2000))
       if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
 
-      const statusRes = await fetch(`${RUNPOD_BASE}/status/${jobId}`, { headers: RUNPOD_HEADERS, signal })
+      const statusRes = await fetch(`${base}/status/${jobId}`, { headers: RUNPOD_HEADERS, signal })
       if (!statusRes.ok) throw new Error(`RunPod status error: ${statusRes.status}`)
       const data = await statusRes.json()
 
@@ -438,7 +442,7 @@ export async function generateProfileImage(c: FemaleCharacterData, randomSeed = 
   const prompt = `SFW, safe for work, ${base}, ${outfitDesc}, calm gentle smile, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, natural lighting`
   const seed = Math.floor(Math.random() * 999999) + 1
   const filename = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`
-  const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal)
+  const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal, true)
   return uploadToSupabase(b64, charId, filename)
 }
 
@@ -482,7 +486,7 @@ export async function generateExpressionImages(
   const basePrompt = `SFW, safe for work, ${base}, ${outfit}, ${e0}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
 
   try {
-    const b64 = await callRunPod({ mode: 'txt2img', prompt: basePrompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal)
+    const b64 = await callRunPod({ mode: 'txt2img', prompt: basePrompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal, true)
     const url = await uploadToSupabase(b64, charId, `expr_${k0}${suffix}.png`)
     results.push(url)
   } catch {
@@ -494,7 +498,7 @@ export async function generateExpressionImages(
     onProgress(i, CONVERSATION_EXPRESSIONS.length, label)
     const prompt = `SFW, safe for work, ${base}, ${outfit}, ${expr}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
     try {
-      const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed: seed + i, steps: 30, cfg_scale: 7 }, signal)
+      const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed: seed + i, steps: 30, cfg_scale: 7 }, signal, true)
       const url = await uploadToSupabase(b64, charId, `expr_${key}${suffix}.png`)
       results.push(url)
     } catch {
