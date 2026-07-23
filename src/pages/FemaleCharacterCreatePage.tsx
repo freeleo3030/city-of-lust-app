@@ -964,6 +964,9 @@ export default function FemaleCharacterCreatePage({
               const renderCol = (exprKey: 'aroused' | 'climax', label: string, selectedUrl: string | undefined, variantUrls: string[], colSt: React.CSSProperties) => {
                 const isGeneratingThis = generatingVariants && activePoseKey === poseKey && activeExprStep === exprKey
                 const canGenClimax = false
+                const videoKey = `${poseKey}_${exprKey}`
+                const videoUrl = poseVideos[videoKey]
+                const isGenVideo = videoGenerating[videoKey]
                 return (
                   <div style={colSt}>
                     <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>{label}</span>
@@ -983,7 +986,7 @@ export default function FemaleCharacterCreatePage({
                     ) : (
                       <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff08', borderRadius: 6, border: '1px dashed #ffffff22' }} />
                     )}
-                    {/* 생성/다시 버튼 */}
+                    {/* 이미지 생성/다시 버튼 */}
                     {selectedUrl ? (
                       <button style={{ background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1 }}
                         disabled={busy}
@@ -1015,6 +1018,43 @@ export default function FemaleCharacterCreatePage({
                         🔥 생성
                       </button>
                     )}
+                    {/* 영상 영역 */}
+                    {selectedUrl && (
+                      <>
+                        {videoUrl ? (
+                          <video src={videoUrl}
+                            style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #e9456066', marginTop: 4 }}
+                            autoPlay loop muted playsInline />
+                        ) : (
+                          <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff05', borderRadius: 6, border: '1px dashed #ffffff11', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
+                            <span style={{ fontSize: 18, color: '#ffffff15' }}>🎬</span>
+                          </div>
+                        )}
+                        {isGenVideo ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                            <style>{`@keyframes vspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+                            <div style={{ width: 14, height: 14, border: '2px solid #ffffff22', borderTop: '2px solid #e94560', borderRadius: '50%', animation: 'vspin 0.8s linear infinite', flexShrink: 0 }} />
+                            <span style={{ fontSize: 10, color: '#ffffff55' }}>생성 중...</span>
+                          </div>
+                        ) : (
+                          <button
+                            style={{ background: 'rgba(233,69,96,0.15)', border: '1px solid #e9456055', color: '#e94560', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1 }}
+                            disabled={busy}
+                            onClick={async () => {
+                              setVideoGenerating(prev => ({ ...prev, [videoKey]: true }))
+                              try {
+                                const url = await generatePoseVideo(selectedUrl, charId, videoKey)
+                                setPoseVideos(prev => ({ ...prev, [videoKey]: url }))
+                              } catch (e: any) {
+                                alert(`영상 생성 실패: ${e.message}`)
+                              } finally {
+                                setVideoGenerating(prev => ({ ...prev, [videoKey]: false }))
+                              }
+                            }}
+                          >{videoUrl ? '🔄 영상 재생성' : '▶ 영상 생성'}</button>
+                        )}
+                      </>
+                    )}
                   </div>
                 )
               }
@@ -1028,46 +1068,10 @@ export default function FemaleCharacterCreatePage({
                     </span>
                   </div>
 
-                  {/* 좌(흥분) / 중(절정) / 우(영상) 3분할 */}
+                  {/* 흥분 / 절정 2분할 (각 컬럼 안에 영상 포함) */}
                   <div style={{ display: 'flex', gap: 0 }}>
                     {renderCol('aroused', '흥분', aroused, arousedVariants, colStyle)}
-                    {renderCol('climax', '절정', climax, climaxVariants, colStyle)}
-                    {/* 영상 컬럼 */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, paddingLeft: 8 }}>
-                      <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>영상</span>
-                      {poseVideos[poseKey] ? (
-                        <video src={poseVideos[poseKey]}
-                          style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #e9456066' }}
-                          autoPlay loop muted playsInline />
-                      ) : (
-                        <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff08', borderRadius: 6, border: '1px dashed #ffffff22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: 20, color: '#ffffff22' }}>🎬</span>
-                        </div>
-                      )}
-                      {videoGenerating[poseKey] ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%' }}>
-                          <style>{`@keyframes vspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-                          <div style={{ width: 28, height: 28, border: '3px solid #ffffff22', borderTop: '3px solid #e94560', borderRadius: '50%', animation: 'vspin 0.8s linear infinite' }} />
-                          <span style={{ fontSize: 10, color: '#ffffff66' }}>생성 중...</span>
-                        </div>
-                      ) : (
-                        <button
-                          style={{ background: aroused ? 'rgba(233,69,96,0.2)' : 'none', border: `1px solid ${aroused ? '#e9456066' : '#ffffff22'}`, color: aroused ? '#e94560' : '#ffffff33', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: aroused && !busy ? 'pointer' : 'not-allowed', opacity: aroused && !busy ? 1 : 0.4 }}
-                          disabled={!aroused || busy}
-                          onClick={async () => {
-                            setVideoGenerating(prev => ({ ...prev, [poseKey]: true }))
-                            try {
-                              const url = await generatePoseVideo(aroused!, charId, poseKey)
-                              setPoseVideos(prev => ({ ...prev, [poseKey]: url }))
-                            } catch (e: any) {
-                              alert(`영상 생성 실패: ${e.message}`)
-                            } finally {
-                              setVideoGenerating(prev => ({ ...prev, [poseKey]: false }))
-                            }
-                          }}
-                        >▶ 영상 생성</button>
-                      )}
-                    </div>
+                    {renderCol('climax', '절정', climax, climaxVariants, colStyleR)}
                   </div>
                 </div>
               )
