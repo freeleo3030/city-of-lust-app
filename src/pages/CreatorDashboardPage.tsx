@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
-import { CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES, cleanOrphanImages } from '../lib/generateCharImages'
+import { CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES, cleanOrphanImages, generatePoseVideo } from '../lib/generateCharImages'
 
 interface Props {
   chars: FemaleCharacterData[]
@@ -43,6 +43,8 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
     }
   }
   const [preview, setPreview] = useState<PreviewState | null>(null)
+  const [poseVideos, setPoseVideos] = useState<Record<string, string>>({})
+  const [videoGenerating, setVideoGenerating] = useState<Record<string, boolean>>({})
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [lbScale, setLbScale] = useState(1)
   const [lbPan, setLbPan] = useState({ x: 0, y: 0 })
@@ -190,19 +192,62 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
                 })}
               </div>
             ) : (
-              <div style={S.imgGrid}>
-                {POSES.flatMap(p => POSE_EXPRESSIONS.map(e => {
-                  const key = `${p.key}_${e.key}`
-                  const url = preview.char.poseImages?.[key]
+              <div>
+                {POSES.map(p => {
+                  const arousedUrl = preview.char.poseImages?.[`${p.key}_aroused`]
+                  const climaxUrl = preview.char.poseImages?.[`${p.key}_climax`]
+                  const videoUrl = poseVideos[p.key]
+                  const isGenerating = videoGenerating[p.key]
                   return (
-                    <div key={key} style={S.thumbWrap}>
-                      {url
-                        ? <img src={url} style={{ ...S.thumb, cursor: 'pointer' }} alt={`${p.label} · ${e.label}`} onClick={() => openLightbox(url)} />
-                        : <div style={S.thumbEmpty}>⏳</div>}
-                      <div style={S.thumbLabel}>{p.label} · {e.label}</div>
+                    <div key={p.key} style={{ marginBottom: 24 }}>
+                      <div style={{ color: '#c9a84c', fontWeight: 'bold', fontSize: 14, marginBottom: 8 }}>🔥 {p.label}</div>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                        {/* 흥분 이미지 */}
+                        <div style={S.thumbWrap}>
+                          {arousedUrl
+                            ? <img src={arousedUrl} style={{ ...S.thumb, cursor: 'pointer' }} alt="흥분" onClick={() => openLightbox(arousedUrl)} />
+                            : <div style={S.thumbEmpty}>⏳</div>}
+                          <div style={S.thumbLabel}>흥분</div>
+                        </div>
+                        {/* 절정 이미지 */}
+                        <div style={S.thumbWrap}>
+                          {climaxUrl
+                            ? <img src={climaxUrl} style={{ ...S.thumb, cursor: 'pointer' }} alt="절정" onClick={() => openLightbox(climaxUrl)} />
+                            : <div style={S.thumbEmpty}>⏳</div>}
+                          <div style={S.thumbLabel}>절정</div>
+                        </div>
+                        {/* 영상 */}
+                        <div style={S.thumbWrap}>
+                          {videoUrl
+                            ? <video src={videoUrl} style={{ ...S.thumb, objectFit: 'cover' }} autoPlay loop muted playsInline />
+                            : <div style={{ ...S.thumbEmpty, flexDirection: 'column', gap: 6 }}>
+                                {isGenerating
+                                  ? <><span style={{ fontSize: 14 }}>⏳</span><span style={{ fontSize: 10, color: '#ffffff55' }}>생성 중...</span></>
+                                  : arousedUrl
+                                    ? <button
+                                        style={{ background: 'rgba(233,69,96,0.2)', border: '1px solid #e9456066', borderRadius: 6, color: '#e94560', padding: '6px 10px', cursor: 'pointer', fontSize: 11 }}
+                                        onClick={async () => {
+                                          setVideoGenerating(prev => ({ ...prev, [p.key]: true }))
+                                          try {
+                                            const url = await generatePoseVideo(arousedUrl, preview.char.id, p.key)
+                                            setPoseVideos(prev => ({ ...prev, [p.key]: url }))
+                                          } catch (e: any) {
+                                            alert(`영상 생성 실패: ${e.message}`)
+                                          } finally {
+                                            setVideoGenerating(prev => ({ ...prev, [p.key]: false }))
+                                          }
+                                        }}
+                                      >▶ 영상 생성</button>
+                                    : null
+                                }
+                              </div>
+                          }
+                          <div style={S.thumbLabel}>영상</div>
+                        </div>
+                      </div>
                     </div>
                   )
-                }))}
+                })}
               </div>
             )}
           </div>
