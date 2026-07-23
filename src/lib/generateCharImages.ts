@@ -581,17 +581,16 @@ export async function generateExpressionImages(
   const suffix = options?.randomSeed ? `_${Date.now()}` : ''
   const results: string[] = []
 
-  // 대표이미지가 있으면 IP-Adapter로 스타일 일관성 유지
-  let faceB64 = ''
+  // 대표이미지가 있으면 img2img로 얼굴/옷 일관성 유지
+  let profileB64 = ''
   if (options?.profileImageUrl) {
-    try { faceB64 = await fetchBase64FromUrl(options.profileImageUrl) } catch { faceB64 = '' }
+    try { profileB64 = await fetchBase64FromUrl(options.profileImageUrl) } catch { profileB64 = '' }
   }
-  const useIpa = !!faceB64
-  const ipaStrength = 0.45
+  const useImg2Img = !!profileB64
 
   const makeCallOptions = (prompt: string, s: number) =>
-    useIpa
-      ? { mode: 'ipadapter' as const, prompt, negative_prompt: neg, width: 832, height: 832, seed: s, steps: 30, cfg_scale: 7, face_image: faceB64, ipa_strength: ipaStrength }
+    useImg2Img
+      ? { mode: 'img2img' as const, prompt, negative_prompt: neg, width: 832, height: 832, seed: s, steps: 30, cfg_scale: 7, init_image: profileB64, denoise: 0.5 }
       : { mode: 'txt2img' as const, prompt, negative_prompt: neg, width: 832, height: 832, seed: s, steps: 30, cfg_scale: 7 }
 
   const { key: k0, label: l0, expr: e0 } = CONVERSATION_EXPRESSIONS[0]
