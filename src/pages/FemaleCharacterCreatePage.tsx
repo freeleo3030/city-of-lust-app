@@ -886,7 +886,7 @@ export default function FemaleCharacterCreatePage({
           </div>
         )}
 
-        <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c44', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c44', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 800, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <p style={PR.subtitle}>이미지 스튜디오</p>
           <h2 style={PR.name}>{nickname}</h2>
           {isEdit && (
@@ -1016,16 +1016,17 @@ export default function FemaleCharacterCreatePage({
                 )
               }
 
-              // 영상 컬럼 렌더 (흥분+절정 모두 선택 후 활성화)
-              const renderVideoCol = () => {
-                const previewKey = `${poseKey}_aroused`
-                const previewVideoUrl = poseVideos[previewKey] || poseVideos[`${poseKey}_climax`]
+              // 영상 컬럼 렌더 (흥분+절정 각각, 이미지와 같은 크기)
+              const renderVideoCol = (exprKey: 'aroused' | 'climax', label: string, colSt: React.CSSProperties) => {
+                const videoKey = `${poseKey}_${exprKey}`
+                const videoUrl = poseVideos[videoKey]
+                const isGenVideo = videoGenerating[videoKey]
+                const srcUrl = selectedPoseImages[`${poseKey}_${exprKey}`]
                 return (
-                  <div style={{ width: 100, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, borderLeft: '1px solid #ffffff11', paddingLeft: 10 }}>
-                    <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>영상</span>
-                    {/* 영상 플레이어: 생성된 것 중 첫 번째 표시 */}
-                    {previewVideoUrl ? (
-                      <video src={previewVideoUrl}
+                  <div style={colSt}>
+                    <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>{label} 영상</span>
+                    {videoUrl ? (
+                      <video src={videoUrl}
                         style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #e9456066' }}
                         autoPlay loop muted playsInline />
                     ) : (
@@ -1033,38 +1034,26 @@ export default function FemaleCharacterCreatePage({
                         <span style={{ fontSize: 22, color: '#ffffff15' }}>🎬</span>
                       </div>
                     )}
-                    {/* 흥분/절정 각각 생성 버튼 */}
-                    {(['aroused', 'climax'] as const).map(exprKey => {
-                      const videoKey = `${poseKey}_${exprKey}`
-                      const videoUrl = poseVideos[videoKey]
-                      const isGenVideo = videoGenerating[videoKey]
-                      const srcUrl = selectedPoseImages[`${poseKey}_${exprKey}`]
-                      const label = exprKey === 'aroused' ? '흥분' : '절정'
-                      return (
-                        <div key={exprKey} style={{ width: '100%' }}>
-                          {isGenVideo ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <style>{`@keyframes vspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-                              <div style={{ width: 10, height: 10, border: '2px solid #ffffff22', borderTop: '2px solid #e94560', borderRadius: '50%', animation: 'vspin 0.8s linear infinite', flexShrink: 0 }} />
-                              <span style={{ fontSize: 10, color: '#ffffff55' }}>{label} 생성 중</span>
-                            </div>
-                          ) : (
-                            <button
-                              style={{ background: done ? 'rgba(233,69,96,0.15)' : 'none', border: `1px solid ${done ? '#e9456055' : '#ffffff11'}`, color: done ? '#e94560' : '#ffffff22', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 10, cursor: done && !busy ? 'pointer' : 'not-allowed', opacity: done && !busy ? 1 : 0.5 }}
-                              onClick={() => {
-                                if (!done) { alert('흥분/절정 이미지를 모두 선택한 후 영상을 생성할 수 있습니다.'); return }
-                                if (busy) return
-                                setVideoGenerating(prev => ({ ...prev, [videoKey]: true }))
-                                generatePoseVideo(srcUrl!, charId, videoKey)
-                                  .then(url => setPoseVideos(prev => ({ ...prev, [videoKey]: url })))
-                                  .catch(e => alert(`영상 생성 실패: ${e.message}`))
-                                  .finally(() => setVideoGenerating(prev => ({ ...prev, [videoKey]: false })))
-                              }}
-                            >{videoUrl ? `🔄 ${label}` : `▶ ${label}`}</button>
-                          )}
-                        </div>
-                      )
-                    })}
+                    {isGenVideo ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
+                        <style>{`@keyframes vspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+                        <div style={{ width: 12, height: 12, border: '2px solid #ffffff22', borderTop: '2px solid #e94560', borderRadius: '50%', animation: 'vspin 0.8s linear infinite', flexShrink: 0 }} />
+                        <span style={{ fontSize: 10, color: '#ffffff55' }}>생성 중...</span>
+                      </div>
+                    ) : (
+                      <button
+                        style={{ background: done ? 'rgba(233,69,96,0.15)' : 'none', border: `1px solid ${done ? '#e9456055' : '#ffffff11'}`, color: done ? '#e94560' : '#ffffff22', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: done && !busy ? 'pointer' : 'not-allowed', opacity: done && !busy ? 1 : 0.5 }}
+                        onClick={() => {
+                          if (!done) { alert('흥분/절정 이미지를 모두 선택한 후 영상을 생성할 수 있습니다.'); return }
+                          if (busy) return
+                          setVideoGenerating(prev => ({ ...prev, [videoKey]: true }))
+                          generatePoseVideo(srcUrl!, charId, videoKey)
+                            .then(url => setPoseVideos(prev => ({ ...prev, [videoKey]: url })))
+                            .catch(e => alert(`영상 생성 실패: ${e.message}`))
+                            .finally(() => setVideoGenerating(prev => ({ ...prev, [videoKey]: false })))
+                        }}
+                      >{videoUrl ? '🔄 재생성' : '▶ 영상 생성'}</button>
+                    )}
                   </div>
                 )
               }
@@ -1078,11 +1067,12 @@ export default function FemaleCharacterCreatePage({
                     </span>
                   </div>
 
-                  {/* 흥분 / 절정 / 영상 */}
+                  {/* 흥분 / 절정 / 흥분영상 / 절정영상 — 4열 동일 크기 */}
                   <div style={{ display: 'flex', gap: 0 }}>
                     {renderCol('aroused', '흥분', aroused, arousedVariants, colStyle)}
                     {renderCol('climax', '절정', climax, climaxVariants, colStyle)}
-                    {renderVideoCol()}
+                    {renderVideoCol('aroused', '흥분', colStyle)}
+                    {renderVideoCol('climax', '절정', { ...colStyle, borderRight: 'none', paddingRight: 0 })}
                   </div>
                 </div>
               )
