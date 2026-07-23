@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
-import { CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES } from '../lib/generateCharImages'
+import { CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES, cleanOrphanImages } from '../lib/generateCharImages'
 
 interface Props {
   chars: FemaleCharacterData[]
@@ -27,6 +27,21 @@ const diffColor = (married: string, age: number) => {
 
 export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, onBack, onUpdateChar }: Props) {
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [cleanMsg, setCleanMsg] = useState<string | null>(null)
+  const [cleaning, setCleaning] = useState(false)
+
+  const handleCleanStorage = async () => {
+    setCleaning(true)
+    setCleanMsg(null)
+    try {
+      const { deleted, errors } = await cleanOrphanImages()
+      setCleanMsg(`정리 완료: ${deleted}개 삭제${errors > 0 ? `, ${errors}개 실패` : ''}`)
+    } catch (e: any) {
+      setCleanMsg(`오류: ${e.message}`)
+    } finally {
+      setCleaning(false)
+    }
+  }
   const [preview, setPreview] = useState<PreviewState | null>(null)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [lbScale, setLbScale] = useState(1)
@@ -68,8 +83,13 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
 
         <div style={S.toolbar}>
           <span style={S.count}>총 {chars.length}명 등록됨</span>
-          <button style={S.addBtn} onClick={onAdd}>＋ 새 캐릭터 추가</button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button style={S.addBtn} onClick={onAdd}>＋ 새 캐릭터 추가</button>
+          </div>
         </div>
+        {cleanMsg && (
+          <div style={{ textAlign: 'center', color: '#c9a84c', fontSize: 13, marginBottom: 8 }}>{cleanMsg}</div>
+        )}
 
         {displayChars.length === 0 ? (
           <div style={S.empty}>
