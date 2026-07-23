@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, deleteImageFromStorage, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS } from '../lib/generateCharImages'
+import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, generatePoseVideo, deleteImageFromStorage, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS } from '../lib/generateCharImages'
 import { supabase } from '../lib/supabase'
 
 export interface FemaleCharacterData {
@@ -303,6 +303,8 @@ export default function FemaleCharacterCreatePage({
   const [activeExprStep, setActiveExprStep] = useState<'aroused' | 'climax' | null>(null)
   const [generatingVariants, setGeneratingVariants] = useState(false)
   const [variantProgress, setVariantProgress] = useState('')
+  const [poseVideos, setPoseVideos] = useState<Record<string, string>>({})
+  const [videoGenerating, setVideoGenerating] = useState<Record<string, boolean>>({})
   const [variantOverlay, setVariantOverlay] = useState<{ poseKey: string; exprKey: string; urls: string[] } | null>(null)
   const [variantZoom, setVariantZoom] = useState<string | null>(null)
   const [variantZoomScale, setVariantZoomScale] = useState(1)
@@ -1026,10 +1028,46 @@ export default function FemaleCharacterCreatePage({
                     </span>
                   </div>
 
-                  {/* 좌(흥분) / 우(절정) 2분할 */}
+                  {/* 좌(흥분) / 중(절정) / 우(영상) 3분할 */}
                   <div style={{ display: 'flex', gap: 0 }}>
                     {renderCol('aroused', '흥분', aroused, arousedVariants, colStyle)}
-                    {renderCol('climax', '절정', climax, climaxVariants, colStyleR)}
+                    {renderCol('climax', '절정', climax, climaxVariants, colStyle)}
+                    {/* 영상 컬럼 */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, paddingLeft: 8 }}>
+                      <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>영상</span>
+                      {poseVideos[poseKey] ? (
+                        <video src={poseVideos[poseKey]}
+                          style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #e9456066' }}
+                          autoPlay loop muted playsInline />
+                      ) : (
+                        <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff08', borderRadius: 6, border: '1px dashed #ffffff22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 20, color: '#ffffff22' }}>🎬</span>
+                        </div>
+                      )}
+                      {videoGenerating[poseKey] ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%' }}>
+                          <style>{`@keyframes vspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+                          <div style={{ width: 28, height: 28, border: '3px solid #ffffff22', borderTop: '3px solid #e94560', borderRadius: '50%', animation: 'vspin 0.8s linear infinite' }} />
+                          <span style={{ fontSize: 10, color: '#ffffff66' }}>생성 중...</span>
+                        </div>
+                      ) : (
+                        <button
+                          style={{ background: aroused ? 'rgba(233,69,96,0.2)' : 'none', border: `1px solid ${aroused ? '#e9456066' : '#ffffff22'}`, color: aroused ? '#e94560' : '#ffffff33', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: aroused && !busy ? 'pointer' : 'not-allowed', opacity: aroused && !busy ? 1 : 0.4 }}
+                          disabled={!aroused || busy}
+                          onClick={async () => {
+                            setVideoGenerating(prev => ({ ...prev, [poseKey]: true }))
+                            try {
+                              const url = await generatePoseVideo(aroused!, charId, poseKey)
+                              setPoseVideos(prev => ({ ...prev, [poseKey]: url }))
+                            } catch (e: any) {
+                              alert(`영상 생성 실패: ${e.message}`)
+                            } finally {
+                              setVideoGenerating(prev => ({ ...prev, [poseKey]: false }))
+                            }
+                          }}
+                        >▶ 영상 생성</button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
