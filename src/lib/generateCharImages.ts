@@ -546,6 +546,64 @@ export async function cleanOrphanImages(): Promise<{ deleted: number; errors: nu
   return { deleted, errors, orphans }
 }
 
+async function callRunPodVideo(input: Record<string, unknown>, signal?: AbortSignal): Promise<string> {
+  const submitRes = await fetch(`${RUNPOD_BASE}/run`, {
+    method: 'POST',
+    headers: RUNPOD_HEADERS,
+    body: JSON.stringify({ input }),
+    signal,
+  })
+  if (!submitRes.ok) throw new Error(`RunPod submit error: ${submitRes.status}`)
+  const { id: jobId } = await submitRes.json()
+  if (!jobId) throw new Error('RunPod: no job id returned')
+
+  while (true) {
+    if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
+    await new Promise(r => setTimeout(r, 3000))
+    const statusRes = await fetch(`${RUNPOD_BASE}/status/${jobId}`, { headers: RUNPOD_HEADERS, signal })
+    if (!statusRes.ok) throw new Error(`RunPod status error: ${statusRes.status}`)
+    const data = await statusRes.json()
+    if (data.status === 'COMPLETED') {
+      if (data.output?.status === 'failed') throw new Error(data.output.error)
+      return data.output.video as string  // base64 mp4
+    }
+    if (data.status === 'FAILED' || data.status === 'CANCELLED') {
+      throw new Error(`RunPod job ${data.status}: ${data.error ?? JSON.stringify(data)}`)
+    }
+  }
+}
+
+export async function generatePoseVideo(
+  poseImageUrl: string,
+  charId: string,
+  poseKey: string,
+  options?: { numFrames?: number; fps?: number; motionBucket?: number },
+  signal?: AbortSignal
+): Promise<string> {
+  const initB64 = await fetchBase64FromUrl(poseImageUrl)
+  const videoB64 = await callRunPodVideo({
+    mode: 'svd',
+    init_image: initB64,
+    num_frames: options?.numFrames ?? 14,
+    fps: options?.fps ?? 7,
+    motion_bucket_id: options?.motionBucket ?? 100,
+    steps: 20,
+    seed: 42,
+  }, signal)
+
+  // base64 mp4 → Blob → Supabase 업로드
+  const binary = atob(videoB64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  const blob = new Blob([bytes], { type: 'video/mp4' })
+  const filename = `pose_${poseKey}_video.mp4`
+  const path = `${charId}/${filename}`
+  const { error } = await supabase.storage.from('char-images').upload(path, blob, { upsert: true, contentType: 'video/mp4' })
+  if (error) throw new Error(`Video upload failed: ${error.message}`)
+  const { data } = supabase.storage.from('char-images').getPublicUrl(path)
+  return data.publicUrl
+}
+
 export function deleteImageFromStorage(url: string): void {
   const path = decodeURIComponent(url.split('/char-images/')[1]?.split('?')[0] ?? '')
   if (!path) return
