@@ -575,18 +575,31 @@ export async function generateExpressionImages(
   const charId = c.id ?? 'unknown'
   const base = buildBaseDesc(c, true)
   const bg = buildLocationBg(c.location)
-  const outfit = buildOutfit(c.location, c.fashion ?? 50)
+  const outfit = buildProfileOutfit(c.fashion ?? 50, c.bodyType) // 대표이미지와 동일한 outfit 함수
   const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, full body, legs, feet, lower body`
   const seed = options?.randomSeed ? Math.floor(Math.random() * 999999999) + 1 : charSeed(c)
   const suffix = options?.randomSeed ? `_${Date.now()}` : ''
   const results: string[] = []
 
+  // 대표이미지가 있으면 IP-Adapter로 스타일 일관성 유지
+  let faceB64 = ''
+  if (options?.profileImageUrl) {
+    try { faceB64 = await fetchBase64FromUrl(options.profileImageUrl) } catch { faceB64 = '' }
+  }
+  const useIpa = !!faceB64
+  const ipaStrength = 0.45
+
+  const makeCallOptions = (prompt: string, s: number) =>
+    useIpa
+      ? { mode: 'ipadapter' as const, prompt, negative_prompt: neg, width: 832, height: 832, seed: s, steps: 30, cfg_scale: 7, face_image: faceB64, ipa_strength: ipaStrength }
+      : { mode: 'txt2img' as const, prompt, negative_prompt: neg, width: 832, height: 832, seed: s, steps: 30, cfg_scale: 7 }
+
   const { key: k0, label: l0, expr: e0 } = CONVERSATION_EXPRESSIONS[0]
   onProgress(0, CONVERSATION_EXPRESSIONS.length, l0)
-  const basePrompt = `SFW, safe for work, ${base}, ${outfit}, ${e0}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
+  const basePrompt = `SFW, safe for work, 1girl, solo, ${base}, ${outfit}, ${e0}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
 
   try {
-    const b64 = await callRunPod({ mode: 'txt2img', prompt: basePrompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal)
+    const b64 = await callRunPod(makeCallOptions(basePrompt, seed), signal)
     const url = await uploadToSupabase(b64, charId, `expr_${k0}${suffix}.png`)
     results.push(url)
   } catch {
@@ -596,9 +609,9 @@ export async function generateExpressionImages(
   for (let i = 1; i < CONVERSATION_EXPRESSIONS.length; i++) {
     const { key, label, expr } = CONVERSATION_EXPRESSIONS[i]
     onProgress(i, CONVERSATION_EXPRESSIONS.length, label)
-    const prompt = `SFW, safe for work, ${base}, ${outfit}, ${expr}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
+    const prompt = `SFW, safe for work, 1girl, solo, ${base}, ${outfit}, ${expr}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
     try {
-      const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed: seed + i, steps: 30, cfg_scale: 7 }, signal)
+      const b64 = await callRunPod(makeCallOptions(prompt, seed + i), signal)
       const url = await uploadToSupabase(b64, charId, `expr_${key}${suffix}.png`)
       results.push(url)
     } catch {
