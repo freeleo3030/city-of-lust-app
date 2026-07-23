@@ -46,7 +46,7 @@ const POSES = [
 ]
 
 const COMMON_NEG = 'black and white, grayscale, monochrome, desaturated, colorless, no color, greyscale, blurry, bad anatomy, watermark, text, logo, low quality, deformed, anime, cartoon, 3d render, painting, illustration, drawing, cgi, art, sketch, bad hands, extra fingers, missing fingers, extra limbs, malformed limbs, fused fingers, mutated hands'
-const NEG_CLOTHED = `nude, naked, nsfw, topless, bare breasts, exposed breasts, nipples, no clothes, undressed, partially undressed, lingerie, bikini, revealing clothes, ${COMMON_NEG}`
+const NEG_CLOTHED = `nude, naked, nsfw, topless, bare breasts, exposed breasts, nipples, no clothes, undressed, partially undressed, lingerie, bikini, revealing clothes, multiple people, 2 people, 2 girls, two people, multiple persons, duplicate, ${COMMON_NEG}`
 const NEG_NUDE = `clothes, underwear, bra, panties, censored, hands covering genitals, hands on pussy, hand covering vagina, covering crotch with hands, hand between legs covering, ${COMMON_NEG}`
 
 export const POSE_BACKGROUNDS = [
@@ -172,6 +172,8 @@ function pickFaceVariants(seed: number): string {
     'narrow sharp seductive eyes',
     'large bright doe eyes',
     'deep-set sultry eyes',
+    'upturned fox eyes',
+    'soft downturned eyes',
   ]
   const lips = [
     'full plump lips',
@@ -179,6 +181,7 @@ function pickFaceVariants(seed: number): string {
     'heart-shaped cupid bow lips',
     'soft natural lips',
     'pouty lips',
+    'wide expressive mouth',
   ]
   const jaw = [
     'sharp v-shaped jawline',
@@ -186,15 +189,55 @@ function pickFaceVariants(seed: number): string {
     'round soft face',
     'defined high cheekbones',
     'gentle square jaw',
+    'heart-shaped face',
+    'long narrow face',
+    'wide flat cheekbones',
   ]
   const nose = [
     'small button nose',
     'straight slim nose',
     'soft natural nose',
     'petite upturned nose',
+    'slightly wide nose',
+    'refined aquiline nose',
   ]
-  const pick = (arr: string[], offset: number) => arr[Math.abs(Math.floor(seed / Math.pow(7, offset))) % arr.length]
-  return `${pick(eyes, 0)}, ${pick(lips, 1)}, ${pick(jaw, 2)}, ${pick(nose, 3)}`
+  // 각 특징마다 서로 다른 소수 기반 해시로 분산
+  const p = (arr: string[], salt: number) => arr[(seed * salt) % arr.length < 0 ? ((seed * salt) % arr.length + arr.length) : (seed * salt) % arr.length]
+  return `${p(eyes, 1301)}, ${p(lips, 1973)}, ${p(jaw, 2711)}, ${p(nose, 3541)}`
+}
+
+function buildFaceAtmosphere(c: FemaleCharacterData): string {
+  const loc = c.location ?? ''
+  const married = c.married
+  const p = c.personality ?? { introvert: 3, indirect: 3, friendly: 3 }
+
+  // 장소/직업 기반 분위기
+  const locationVibe =
+    ['클럽', '바', '호텔'].includes(loc) ? 'bold glamorous look, alluring expression' :
+    ['카페', '레스토랑', '고급레스토랑'].includes(loc) ? 'warm friendly face, approachable smile' :
+    ['병원', '약국', '공공기관'].includes(loc) ? 'clean professional look, trustworthy expression' :
+    ['경찰서'].includes(loc) ? 'strong confident look, authoritative aura' :
+    ['헬스장'].includes(loc) ? 'healthy energetic glow, athletic confidence' :
+    ['대학교', '도서관'].includes(loc) ? 'intellectual fresh look, studious vibe' :
+    ['쇼핑몰'].includes(loc) ? 'stylish fashionable look, trendy vibe' :
+    ['비행장'].includes(loc) ? 'polished elegant look, professional grace' :
+    ['해변', '공원'].includes(loc) ? 'natural fresh look, outdoor glow' :
+    'natural everyday look'
+
+  // 결혼 상태 보정
+  const marriedVibe =
+    married === '기혼' ? 'settled mature confidence' :
+    married === '돌싱' ? 'experienced independent resilient look' :
+    'fresh youthful energy'
+
+  // 성격 반영
+  const personalityVibe =
+    p.friendly >= 4 ? 'warm bright smile, open expression' :
+    p.introvert >= 4 ? 'reserved quiet dignity, subtle expression' :
+    p.indirect >= 4 ? 'mysterious subtle look' :
+    'natural composed expression'
+
+  return `${locationVibe}, ${marriedVibe}, ${personalityVibe}`
 }
 
 function buildBaseDesc(c: FemaleCharacterData, clothed = false) {
@@ -209,11 +252,12 @@ function buildBaseDesc(c: FemaleCharacterData, clothed = false) {
     : 'plain face, ordinary features'
 
   const faceVariants = pickFaceVariants(charSeed(c))
+  const faceAtmosphere = buildFaceAtmosphere(c)
   const ageFaceDesc = is20s
-    ? `${faceBase}, ${faceVariants}, flawless smooth skin, youthful glow`
+    ? `${faceBase}, ${faceVariants}, ${faceAtmosphere}, flawless smooth skin, youthful glow`
     : is30s
-    ? `${faceBase}, ${faceVariants}, smooth skin, refined elegant beauty, sophisticated`
-    : `${faceBase}, ${faceVariants}, smooth skin, elegant mature beauty, sophisticated`
+    ? `${faceBase}, ${faceVariants}, ${faceAtmosphere}, smooth skin, refined elegant beauty, sophisticated`
+    : `${faceBase}, ${faceVariants}, ${faceAtmosphere}, smooth skin, elegant mature beauty, sophisticated`
 
   const bodyScore = c.body ?? 50
   const ageSag = is20s ? 0 : is30s ? 10 : 20
@@ -439,11 +483,67 @@ export async function generateProfileImage(c: FemaleCharacterData, randomSeed = 
   const fashion = c.fashion ?? 50
   const outfitDesc = buildProfileOutfit(fashion, c.bodyType)
   const neg = `${NEG_CLOTHED}, ${ageNegative(c.age ?? 25)}, ${bodyTypeNegative(c.bodyType)}, full body, legs, feet, lower body`
-  const prompt = `SFW, safe for work, ${base}, ${outfitDesc}, calm gentle smile, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, natural lighting`
+  const prompt = `SFW, safe for work, 1girl, solo, ${base}, ${outfitDesc}, calm gentle smile, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, natural lighting`
   const seed = Math.floor(Math.random() * 999999) + 1
   const filename = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`
-  const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal, true)
+  const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal)
   return uploadToSupabase(b64, charId, filename)
+}
+
+export async function cleanOrphanImages(): Promise<{ deleted: number; errors: number; orphans: string[] }> {
+  // 1. DB에서 사용 중인 모든 이미지 URL 수집
+  const { data: chars, error } = await supabase
+    .from('female_characters')
+    .select('image_url, expression_images, pose_images')
+
+  if (error) throw new Error(`DB 조회 실패: ${error.message}`)
+
+  const usedPaths = new Set<string>()
+  // URL 인코딩 디코딩 필수 — Supabase 공개 URL은 인코딩, storage list는 원본 파일명
+  const extractPath = (url: string) => {
+    if (!url) return null
+    try {
+      const raw = url.split('/char-images/')[1]?.split('?')[0] ?? null
+      return raw ? decodeURIComponent(raw) : null
+    } catch { return null }
+  }
+
+  for (const c of chars ?? []) {
+    if (c.image_url) { const p = extractPath(c.image_url); if (p) usedPaths.add(p) }
+    for (const url of (c.expression_images ?? [])) { const p = extractPath(url); if (p) usedPaths.add(p) }
+    for (const url of Object.values(c.pose_images ?? {})) { const p = extractPath(url as string); if (p) usedPaths.add(p) }
+  }
+
+  console.log('[cleanOrphan] DB에서 추출한 사용 중 경로:', usedPaths.size, '개')
+
+  // 2. Storage에서 전체 파일 목록 가져오기 (폴더별)
+  const { data: folders } = await supabase.storage.from('char-images').list('', { limit: 1000 })
+  const orphans: string[] = []
+
+  for (const folder of folders ?? []) {
+    if (folder.id !== null) continue // 파일이면 스킵 (폴더는 id가 null)
+    const { data: files } = await supabase.storage.from('char-images').list(folder.name, { limit: 1000 })
+    for (const file of files ?? []) {
+      if (!file.id) continue // 하위 폴더면 스킵
+      const path = `${folder.name}/${file.name}`
+      if (!usedPaths.has(path)) orphans.push(path)
+    }
+  }
+
+  console.log('[cleanOrphan] 고아 파일 발견:', orphans.length, '개', orphans)
+
+  if (orphans.length === 0) return { deleted: 0, errors: 0, orphans: [] }
+
+  // 3. 고아 파일 삭제 (50개씩 배치)
+  let deleted = 0, errors = 0
+  for (let i = 0; i < orphans.length; i += 50) {
+    const batch = orphans.slice(i, i + 50)
+    const { error } = await supabase.storage.from('char-images').remove(batch)
+    if (error) errors += batch.length
+    else deleted += batch.length
+  }
+
+  return { deleted, errors, orphans }
 }
 
 export function deleteImageFromStorage(url: string): void {
@@ -486,7 +586,7 @@ export async function generateExpressionImages(
   const basePrompt = `SFW, safe for work, ${base}, ${outfit}, ${e0}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
 
   try {
-    const b64 = await callRunPod({ mode: 'txt2img', prompt: basePrompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal, true)
+    const b64 = await callRunPod({ mode: 'txt2img', prompt: basePrompt, negative_prompt: neg, width: 832, height: 832, seed, steps: 30, cfg_scale: 7 }, signal)
     const url = await uploadToSupabase(b64, charId, `expr_${k0}${suffix}.png`)
     results.push(url)
   } catch {
@@ -498,7 +598,7 @@ export async function generateExpressionImages(
     onProgress(i, CONVERSATION_EXPRESSIONS.length, label)
     const prompt = `SFW, safe for work, ${base}, ${outfit}, ${expr}, upper body portrait, waist up, ${bg}, RAW photo, 8k uhd, DSLR, high quality, photorealistic, soft lighting`
     try {
-      const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed: seed + i, steps: 30, cfg_scale: 7 }, signal, true)
+      const b64 = await callRunPod({ mode: 'txt2img', prompt, negative_prompt: neg, width: 832, height: 832, seed: seed + i, steps: 30, cfg_scale: 7 }, signal)
       const url = await uploadToSupabase(b64, charId, `expr_${key}${suffix}.png`)
       results.push(url)
     } catch {
