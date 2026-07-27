@@ -714,21 +714,17 @@ export default function FemaleCharacterCreatePage({
       <div style={S.container}>
 
         {/* ── 모달들: S.container 직속 (position:fixed 보장) ── */}
-        {enlargedVideo && (() => {
-          const vidH = Math.min(Math.round(window.innerHeight * 0.65), 520)
-          const vidW = Math.round(vidH * 3 / 4)
-          return (
-            <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              onClick={() => setEnlargedVideo(null)}>
-              <video src={enlargedVideo}
-                style={{ width: vidW, height: vidH, objectFit: 'cover', borderRadius: 12, border: '1px solid #e9456044' }}
-                autoPlay loop muted playsInline
-                onClick={e => e.stopPropagation()} />
-              <button style={{ position: 'fixed', top: 16, right: 20, background: 'none', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 3001 }}
-                onClick={() => setEnlargedVideo(null)}>✕</button>
-            </div>
-          )
-        })()}
+        {enlargedVideo && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
+            onClick={() => setEnlargedVideo(null)}>
+            <video src={enlargedVideo}
+              style={{ width: 672, height: 864, objectFit: 'cover', borderRadius: 12, border: '2px solid #e9456055' }}
+              autoPlay loop muted playsInline
+              onClick={e => e.stopPropagation()} />
+            <button style={{ position: 'fixed', top: 16, right: 20, background: 'none', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 3001 }}
+              onClick={() => setEnlargedVideo(null)}>✕</button>
+          </div>
+        )}
         {enlargedProfile && profileImages[0] && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.93)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
             onClick={() => { setEnlargedProfile(false); setProfileZoomScale(1); setProfilePan({ x: 0, y: 0 }) }}>
