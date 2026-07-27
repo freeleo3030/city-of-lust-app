@@ -344,6 +344,24 @@ export default function FemaleCharacterCreatePage({
   const [enlargedProfile, setEnlargedProfile] = useState(false)
   const [enlargedExpr, setEnlargedExpr] = useState(false)
 
+  // Storage에서 기존 MP4 복원 (DB에 저장 안 된 구버전 데이터 대응)
+  useEffect(() => {
+    if (!charId) return
+    supabase.storage.from('char-images').list(charId).then(({ data: files }) => {
+      if (!files) return
+      const videos: Record<string, string> = {}
+      files.forEach(f => {
+        const m = f.name.match(/^pose_(.+)_video\.mp4$/)
+        if (!m) return
+        const key = m[1]
+        const { data } = supabase.storage.from('char-images').getPublicUrl(`${charId}/${f.name}`)
+        videos[key] = data.publicUrl
+      })
+      if (Object.keys(videos).length > 0)
+        setPoseVideos(prev => ({ ...videos, ...prev }))
+    })
+  }, [charId])
+
   // non-passive wheel: 메인 액자
   useEffect(() => {
     const el = profileImgWrapRef.current
