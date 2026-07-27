@@ -715,7 +715,7 @@ export default function FemaleCharacterCreatePage({
 
         {/* ── 모달들: S.container 직속 (position:fixed 보장) ── */}
         {enlargedVideo && (() => {
-          const w = Math.round(window.innerWidth * 0.95)
+          const w = Math.round(window.innerWidth * 0.72)
           const h = Math.round(w * 4 / 3)
           return (
             <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
