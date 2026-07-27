@@ -718,7 +718,7 @@ export default function FemaleCharacterCreatePage({
           <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
             onClick={() => setEnlargedVideo(null)}>
             <video src={enlargedVideo}
-              style={{ width: 672, height: 864, objectFit: 'cover', borderRadius: 12, border: '2px solid #e9456055' }}
+              style={{ maxHeight: '90vh', maxWidth: '90vw', width: 'auto', height: 'auto', borderRadius: 12, border: '2px solid #e9456055', display: 'block' }}
               autoPlay loop muted playsInline
               onClick={e => e.stopPropagation()} />
             <button style={{ position: 'fixed', top: 16, right: 20, background: 'none', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 3001 }}
