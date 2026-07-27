@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, generatePoseVideo, deleteImageFromStorage, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS } from '../lib/generateCharImages'
+import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, generatePoseSprite, deleteImageFromStorage, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS } from '../lib/generateCharImages'
 import { supabase } from '../lib/supabase'
 
 export interface FemaleCharacterData {
@@ -86,6 +86,17 @@ function buildFemalePrompt(c: Partial<FemaleCharacterData>): string {
     `digital illustration, concept art style, painterly, ` +
     `soft lighting, detailed brushwork, warm color palette, artstation quality`
   )
+}
+
+function SpriteAnimation({ urls, fps = 4, style }: { urls: string[]; fps?: number; style?: React.CSSProperties }) {
+  const [frame, setFrame] = React.useState(0)
+  React.useEffect(() => {
+    if (!urls || urls.length < 2) return
+    const id = setInterval(() => setFrame(f => (f + 1) % urls.length), 1000 / fps)
+    return () => clearInterval(id)
+  }, [urls, fps])
+  if (!urls?.length) return null
+  return <img src={urls[frame]} style={style} alt="" />
 }
 
 function smLabel(v: number) {
@@ -303,18 +314,21 @@ export default function FemaleCharacterCreatePage({
   const [activeExprStep, setActiveExprStep] = useState<'aroused' | 'climax' | null>(null)
   const [generatingVariants, setGeneratingVariants] = useState(false)
   const [variantProgress, setVariantProgress] = useState('')
-  const [poseVideos, setPoseVideos] = useState<Record<string, string>>(() => {
+  const [poseSprites, setPoseSprites] = useState<Record<string, string[]>>(() => {
     if (!d?.poseImages) return {}
-    const videos: Record<string, string> = {}
+    const sprites: Record<string, string[]> = {}
     Object.entries(d.poseImages).forEach(([k, v]) => {
-      if (k.endsWith('_video') && v) videos[k.replace('_video', '')] = v
+      const m = k.match(/^(.+)_sprite_(\d+)$/)
+      if (m && v) {
+        const key = m[1]; const idx = parseInt(m[2])
+        if (!sprites[key]) sprites[key] = []
+        sprites[key][idx] = v
+      }
     })
-    return videos
+    return sprites
   })
-  const [videoGenerating, setVideoGenerating] = useState<Record<string, boolean>>({})
-  const [videoProgress, setVideoProgress] = useState<Record<string, number>>({})
-  const [enlargedVideo, setEnlargedVideo] = useState<string | null>(null)
-  const videoTimers = React.useRef<Record<string, ReturnType<typeof setInterval>>>({})
+  const [spriteGenerating, setSpriteGenerating] = useState<Record<string, boolean>>({})
+  const [enlargedSprite, setEnlargedSprite] = useState<string[] | null>(null)
   const [variantOverlay, setVariantOverlay] = useState<{ poseKey: string; exprKey: string; urls: string[] } | null>(null)
   const [variantZoom, setVariantZoom] = useState<string | null>(null)
   const [variantZoomScale, setVariantZoomScale] = useState(1)
@@ -345,21 +359,22 @@ export default function FemaleCharacterCreatePage({
   const [enlargedProfile, setEnlargedProfile] = useState(false)
   const [enlargedExpr, setEnlargedExpr] = useState(false)
 
-  // Storage에서 기존 MP4 복원 (DB에 저장 안 된 구버전 데이터 대응)
+  // Storage에서 기존 스프라이트 복원
   useEffect(() => {
     if (!charId) return
     supabase.storage.from('char-images').list(charId).then(({ data: files }) => {
       if (!files) return
-      const videos: Record<string, string> = {}
+      const sprites: Record<string, string[]> = {}
       files.forEach(f => {
-        const m = f.name.match(/^pose_(.+)_video\.mp4$/)
+        const m = f.name.match(/^pose_(.+)_sprite_(\d+)\.png$/)
         if (!m) return
-        const key = m[1]
+        const key = m[1]; const idx = parseInt(m[2])
         const { data } = supabase.storage.from('char-images').getPublicUrl(`${charId}/${f.name}`)
-        videos[key] = data.publicUrl
+        if (!sprites[key]) sprites[key] = []
+        sprites[key][idx] = data.publicUrl
       })
-      if (Object.keys(videos).length > 0)
-        setPoseVideos(prev => ({ ...videos, ...prev }))
+      if (Object.keys(sprites).length > 0)
+        setPoseSprites(prev => ({ ...sprites, ...prev }))
     })
   }, [charId])
 
@@ -694,7 +709,11 @@ export default function FemaleCharacterCreatePage({
         expression_images: (expressionSets[selectedExprSet] ?? []).length ? expressionSets[selectedExprSet] : null,
         pose_images: Object.keys(selectedPoseImages).length ? {
           ...selectedPoseImages,
-          ...Object.fromEntries(Object.entries(poseVideos).map(([k, v]) => [`${k}_video`, v])),
+          ...Object.fromEntries(
+            Object.entries(poseSprites).flatMap(([k, urls]) =>
+              urls.map((url, i) => [`${k}_sprite_${i}`, url])
+            )
+          ),
         } : null,
       })
     } catch (e) { console.error('DB 저장 실패:', e) }
@@ -714,17 +733,15 @@ export default function FemaleCharacterCreatePage({
       <div style={S.container}>
 
         {/* ── 모달들: S.container 직속 (position:fixed 보장) ── */}
-        {enlargedVideo && (() => {
+        {enlargedSprite && (() => {
           const w = Math.min(927, Math.round(window.innerWidth * 0.95))
           const h = Math.round(w * 4 / 3)
           return (
             <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
-              onClick={() => setEnlargedVideo(null)}>
+              onClick={() => setEnlargedSprite(null)}>
               <div style={{ width: w, height: h, borderRadius: 12, border: '2px solid #e9456055', overflow: 'hidden', flexShrink: 0 }}
                 onClick={e => e.stopPropagation()}>
-                <video src={enlargedVideo}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  autoPlay loop muted playsInline />
+                <SpriteAnimation urls={enlargedSprite} fps={4} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               </div>
               <button style={{ position: 'fixed', top: 16, right: 20, background: 'none', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 3001 }}
                 onClick={() => setEnlargedVideo(null)}>✕</button>
@@ -1100,78 +1117,49 @@ export default function FemaleCharacterCreatePage({
                 )
               }
 
-              // 영상 컬럼 렌더 (흥분+절정 각각, 이미지와 같은 크기)
+              // 스프라이트 애니메이션 컬럼 렌더 (흥분+절정 각각)
               const renderVideoCol = (exprKey: 'aroused' | 'climax', label: string, colSt: React.CSSProperties) => {
-                const videoKey = `${poseKey}_${exprKey}`
-                const videoUrl = poseVideos[videoKey]
-                const isGenVideo = videoGenerating[videoKey]
+                const spriteKey = `${poseKey}_${exprKey}`
+                const spriteUrls = poseSprites[spriteKey]
+                const isGen = spriteGenerating[spriteKey]
                 const srcUrl = selectedPoseImages[`${poseKey}_${exprKey}`]
+                const done = !!spriteUrls?.length
                 return (
                   <div style={colSt}>
-                    <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>{label} 영상</span>
-                    {videoUrl ? (
-                      <video src={videoUrl}
-                        style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #e9456066', cursor: 'zoom-in' }}
-                        autoPlay loop muted playsInline
-                        onClick={() => setEnlargedVideo(videoUrl)} />
+                    <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>{label} 애니</span>
+                    {done ? (
+                      <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 6, border: '1px solid #e9456066', overflow: 'hidden', cursor: 'zoom-in' }}
+                        onClick={() => setEnlargedSprite(spriteUrls)}>
+                        <SpriteAnimation urls={spriteUrls} fps={4} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
                     ) : (
                       <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff05', borderRadius: 6, border: '1px dashed #ffffff11', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 22, color: '#ffffff15' }}>🎬</span>
+                        <span style={{ fontSize: 22, color: '#ffffff15' }}>🎞️</span>
                       </div>
                     )}
-                    {isGenVideo ? (
-                      <button style={{ position: 'relative', overflow: 'hidden', border: '1px solid #e9456055', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: 'not-allowed', background: 'none', color: '#e94560' }}>
-                        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${videoProgress[videoKey] ?? 0}%`, background: 'rgba(233,69,96,0.3)', transition: 'width 1s linear' }} />
-                        <span style={{ position: 'relative', zIndex: 1 }}>⏳ 생성 중... {Math.round(videoProgress[videoKey] ?? 0)}%</span>
+                    {isGen ? (
+                      <button style={{ border: '1px solid #e9456055', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: 'not-allowed', background: 'none', color: '#e94560' }}>
+                        ⏳ 생성 중...
                       </button>
                     ) : (
                       <button
-                        style={{ background: done ? 'rgba(233,69,96,0.15)' : 'none', border: `1px solid ${done ? '#e9456055' : '#ffffff11'}`, color: done ? '#e94560' : '#ffffff22', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: done && !busy ? 'pointer' : 'not-allowed', opacity: done && !busy ? 1 : 0.5 }}
-                        onClick={() => {
-                          const allPosesDone = POSES.every(({ key }) => selectedPoseImages[`${key}_aroused`] && selectedPoseImages[`${key}_climax`])
-                          if (!allPosesDone) { alert('모든 자세(4개)의 흥분/절정 이미지를 완성한 후\n영상을 생성할 수 있습니다.'); return }
-                          if (!done) { alert('이 자세의 흥분/절정 이미지를 모두 선택해주세요.'); return }
-                          if (busy) return
-                          if (!window.confirm(
-                            '🎬 영상 생성 안내\n\n' +
-                            '• 첫 번째 영상: 약 3~5분 소요 (SVD 모델 로딩 포함)\n' +
-                            '• 이후 영상: 약 1~2분 소요\n\n' +
-                            '⚠️ 영상 → 이미지 생성 → 영상 순으로 전환하면\n' +
-                            '매번 모델 교체로 3~5분씩 추가 소요됩니다.\n\n' +
-                            '💡 영상은 한 번에 몰아서 생성하는 것을 추천합니다!\n\n' +
-                            '생성을 시작할까요?'
-                          )) return
-                          // 진행률 시뮬레이션: 300초 기준 90%까지
-                          setVideoProgress(prev => ({ ...prev, [videoKey]: 0 }))
-                          const totalMs = 300000
-                          const intervalMs = 1000
-                          const stepPct = 90 / (totalMs / intervalMs)
-                          videoTimers.current[videoKey] = setInterval(() => {
-                            setVideoProgress(prev => {
-                              const cur = prev[videoKey] ?? 0
-                              if (cur >= 90) { clearInterval(videoTimers.current[videoKey]); return prev }
-                              return { ...prev, [videoKey]: Math.min(90, cur + stepPct) }
-                            })
-                          }, intervalMs)
-                          setVideoGenerating(prev => ({ ...prev, [videoKey]: true }))
-                          generatePoseVideo(srcUrl!, charId, videoKey)
-                            .then(async url => {
-                              clearInterval(videoTimers.current[videoKey])
-                              setVideoProgress(prev => ({ ...prev, [videoKey]: 100 }))
-                              setTimeout(() => setPoseVideos(prev => ({ ...prev, [videoKey]: url })), 300)
-                              // pose_images에 video URL 즉시 저장
-                              const { data: row } = await supabase.from('female_characters').select('pose_images').eq('id', charId).single()
-                              const merged = { ...(row?.pose_images ?? {}), [`${videoKey}_video`]: url }
-                              await supabase.from('female_characters').update({ pose_images: merged }).eq('id', charId)
-                            })
-                            .catch(e => {
-                              clearInterval(videoTimers.current[videoKey])
-                              setVideoProgress(prev => ({ ...prev, [videoKey]: 0 }))
-                              alert(`영상 생성 실패: ${e.message}`)
-                            })
-                            .finally(() => setVideoGenerating(prev => ({ ...prev, [videoKey]: false })))
+                        style={{ background: srcUrl ? 'rgba(233,69,96,0.15)' : 'none', border: `1px solid ${srcUrl ? '#e9456055' : '#ffffff11'}`, color: srcUrl ? '#e94560' : '#ffffff22', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: srcUrl && !busy ? 'pointer' : 'not-allowed', opacity: srcUrl && !busy ? 1 : 0.5 }}
+                        onClick={async () => {
+                          if (!srcUrl || busy) return
+                          setSpriteGenerating(prev => ({ ...prev, [spriteKey]: true }))
+                          try {
+                            const urls = await generatePoseSprite(srcUrl, charId, spriteKey)
+                            setPoseSprites(prev => ({ ...prev, [spriteKey]: urls }))
+                            const { data: row } = await supabase.from('female_characters').select('pose_images').eq('id', charId).single()
+                            const merged = { ...(row?.pose_images ?? {}), ...Object.fromEntries(urls.map((u, i) => [`${spriteKey}_sprite_${i}`, u])) }
+                            await supabase.from('female_characters').update({ pose_images: merged }).eq('id', charId)
+                          } catch (e: any) {
+                            alert(`애니메이션 생성 실패: ${e.message}`)
+                          } finally {
+                            setSpriteGenerating(prev => ({ ...prev, [spriteKey]: false }))
+                          }
                         }}
-                      >{videoUrl ? '🔄 재생성' : '▶ 영상 생성'}</button>
+                      >{done ? '🔄 재생성' : '▶ 애니 생성'}</button>
                     )}
                   </div>
                 )

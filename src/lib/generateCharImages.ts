@@ -546,6 +546,87 @@ export async function cleanOrphanImages(): Promise<{ deleted: number; errors: nu
   return { deleted, errors, orphans }
 }
 
+async function callRunPodFrames(input: Record<string, unknown>, signal?: AbortSignal): Promise<string[]> {
+  const submitRes = await fetch(`${RUNPOD_BASE}/run`, {
+    method: 'POST',
+    headers: RUNPOD_HEADERS,
+    body: JSON.stringify({ input }),
+    signal,
+  })
+  if (!submitRes.ok) throw new Error(`RunPod submit error: ${submitRes.status}`)
+  const { id: jobId } = await submitRes.json()
+  if (!jobId) throw new Error('RunPod: no job id returned')
+
+  while (true) {
+    if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
+    await new Promise(r => setTimeout(r, 2000))
+    const statusRes = await fetch(`${RUNPOD_BASE}/status/${jobId}`, { headers: RUNPOD_HEADERS, signal })
+    if (!statusRes.ok) throw new Error(`RunPod status error: ${statusRes.status}`)
+    const data = await statusRes.json()
+    if (data.status === 'COMPLETED') {
+      if (data.output?.status === 'failed') throw new Error(data.output.error)
+      return data.output.frames as string[]
+    }
+    if (data.status === 'FAILED' || data.status === 'CANCELLED') {
+      throw new Error(`RunPod job ${data.status}: ${data.error ?? JSON.stringify(data)}`)
+    }
+  }
+}
+
+const POSE_SPRITE_PROMPTS: Record<string, { neutral: string; peak: string }> = {
+  missionary: {
+    neutral: 'nude Korean woman, missionary sex position, lying on back, legs spread, hips flat on bed, relaxed, explicit, adult, photorealistic',
+    peak: 'nude Korean woman, missionary sex position, lying on back, legs spread wide, hips raised arched upward, back lifted off bed, explicit, adult, photorealistic',
+  },
+  doggy: {
+    neutral: 'nude Korean woman, doggy style, on all fours, back level, buttocks toward camera, explicit, adult, photorealistic',
+    peak: 'nude Korean woman, doggy style, on all fours, back arched, buttocks pushed back and up, hips thrust backward, explicit, adult, photorealistic',
+  },
+  cowgirl: {
+    neutral: 'nude Korean woman, cowgirl position, sitting upright, hips level, body straight, explicit, adult, photorealistic',
+    peak: 'nude Korean woman, cowgirl position, hips raised, body leaning forward, breasts hanging, explicit, adult, photorealistic',
+  },
+  side: {
+    neutral: 'nude Korean woman, butterfly position, lying on back, legs raised, relaxed, explicit, adult, photorealistic',
+    peak: 'nude Korean woman, butterfly position, lying on back, legs raised higher, hips tilted up, body arched, explicit, adult, photorealistic',
+  },
+}
+const SPRITE_NEG = 'static, blurry, bad anatomy, watermark, text, 3d, cartoon, anime, clothes, clothed, male, man, penis'
+
+export async function generatePoseSprite(
+  poseImageUrl: string,
+  charId: string,
+  poseKey: string,
+  signal?: AbortSignal
+): Promise<string[]> {
+  const basePoseKey = poseKey.replace(/_aroused$|_climax$/, '')
+  const prompts = POSE_SPRITE_PROMPTS[basePoseKey] ?? POSE_SPRITE_PROMPTS['missionary']
+  const initB64 = await fetchBase64FromUrl(poseImageUrl)
+  const baseSeed = Math.floor(Math.random() * 999999999) + 1
+
+  const frames = await callRunPodFrames({
+    mode: 'sprite',
+    init_image: initB64,
+    prompt: prompts.neutral,
+    negative_prompt: SPRITE_NEG,
+    width: 832,
+    height: 1216,
+    steps: 20,
+    cfg_scale: 7,
+    denoise: 0.25,
+    num_frames: 3,
+    frame_prompts: [prompts.neutral, prompts.peak, prompts.neutral],
+    frame_seeds: [baseSeed, baseSeed + 1, baseSeed + 2],
+  }, signal)
+
+  const urls: string[] = []
+  for (let i = 0; i < frames.length; i++) {
+    const url = await uploadToSupabase(frames[i], charId, `pose_${poseKey}_sprite_${i}.png`)
+    urls.push(url)
+  }
+  return urls
+}
+
 async function callRunPodVideo(input: Record<string, unknown>, signal?: AbortSignal): Promise<string> {
   const submitRes = await fetch(`${RUNPOD_BASE}/run`, {
     method: 'POST',
@@ -807,4 +888,4 @@ export async function generateMaleProfileImage(char: {
   return `data:image/png;base64,${base64}`
 }
 
-export { EXPRESSION_LEVELS, CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES }
+export { EXPRESSION_LEVELS, CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES, POSE_SPRITE_PROMPTS }
