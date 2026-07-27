@@ -573,22 +573,31 @@ async function callRunPodVideo(input: Record<string, unknown>, signal?: AbortSig
   }
 }
 
+const POSE_VIDEO_PROMPTS: Record<string, string> = {
+  missionary: '1girl, nude Korean woman, missionary sex position, lying on back, legs spread wide, bouncing breasts, rhythmic hip thrusting motion, explicit, adult, animated',
+  doggy: '1girl, nude Korean woman, doggy style sex position, on all fours, ass toward camera, buttocks bouncing rhythmically, hip thrusting motion, explicit, adult, animated',
+  cowgirl: '1girl, nude Korean woman, cowgirl sex position, riding on top, bouncing up and down, breasts bouncing, hip grinding motion, explicit, adult, animated',
+  side: '1girl, nude Korean woman, butterfly position, lying on back, legs raised high and spread, rhythmic thrusting motion, bouncing breasts, explicit, adult, animated',
+}
+const POSE_VIDEO_NEG = 'static, still, no motion, motionless, frozen, bad anatomy, blurry, low quality, watermark, text, 3d, cartoon, anime'
+
 export async function generatePoseVideo(
   poseImageUrl: string,
   charId: string,
   poseKey: string,
-  options?: { numFrames?: number; fps?: number; motionBucket?: number },
+  options?: { numFrames?: number; fps?: number },
   signal?: AbortSignal
 ): Promise<string> {
-  const initB64 = await fetchBase64FromUrl(poseImageUrl)
+  const basePoseKey = poseKey.replace(/_aroused$|_climax$/, '')
+  const prompt = POSE_VIDEO_PROMPTS[basePoseKey] ?? POSE_VIDEO_PROMPTS['missionary']
   const videoB64 = await callRunPodVideo({
-    mode: 'svd',
-    init_image: initB64,
-    num_frames: options?.numFrames ?? 14,
-    fps: options?.fps ?? 7,
-    motion_bucket_id: options?.motionBucket ?? 100,
-    steps: 20,
-    seed: 42,
+    mode: 'animatediff',
+    prompt,
+    negative_prompt: POSE_VIDEO_NEG,
+    num_frames: options?.numFrames ?? 16,
+    fps: options?.fps ?? 8,
+    steps: 25,
+    seed: Math.floor(Math.random() * 2 ** 32),
   }, signal)
 
   // base64 mp4 → Blob → Supabase 업로드
