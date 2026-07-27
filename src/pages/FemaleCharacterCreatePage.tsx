@@ -313,6 +313,7 @@ export default function FemaleCharacterCreatePage({
   })
   const [videoGenerating, setVideoGenerating] = useState<Record<string, boolean>>({})
   const [videoProgress, setVideoProgress] = useState<Record<string, number>>({})
+  const [enlargedVideo, setEnlargedVideo] = useState<string | null>(null)
   const videoTimers = React.useRef<Record<string, ReturnType<typeof setInterval>>>({})
   const [variantOverlay, setVariantOverlay] = useState<{ poseKey: string; exprKey: string; urls: string[] } | null>(null)
   const [variantZoom, setVariantZoom] = useState<string | null>(null)
@@ -713,6 +714,17 @@ export default function FemaleCharacterCreatePage({
       <div style={S.container}>
 
         {/* ── 모달들: S.container 직속 (position:fixed 보장) ── */}
+        {enlargedVideo && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => setEnlargedVideo(null)}>
+            <video src={enlargedVideo}
+              style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 12, border: '1px solid #e9456044' }}
+              autoPlay loop muted playsInline
+              onClick={e => e.stopPropagation()} />
+            <button style={{ position: 'fixed', top: 16, right: 20, background: 'none', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 3001 }}
+              onClick={() => setEnlargedVideo(null)}>✕</button>
+          </div>
+        )}
         {enlargedProfile && profileImages[0] && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.93)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
             onClick={() => { setEnlargedProfile(false); setProfileZoomScale(1); setProfilePan({ x: 0, y: 0 }) }}>
@@ -1093,8 +1105,9 @@ export default function FemaleCharacterCreatePage({
                     <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>{label} 영상</span>
                     {videoUrl ? (
                       <video src={videoUrl}
-                        style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #e9456066' }}
-                        autoPlay loop muted playsInline />
+                        style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #e9456066', cursor: 'zoom-in' }}
+                        autoPlay loop muted playsInline
+                        onClick={() => setEnlargedVideo(videoUrl)} />
                     ) : (
                       <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff05', borderRadius: 6, border: '1px dashed #ffffff11', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ fontSize: 22, color: '#ffffff15' }}>🎬</span>
