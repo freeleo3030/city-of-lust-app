@@ -585,18 +585,21 @@ export async function generatePoseVideo(
   poseImageUrl: string,
   charId: string,
   poseKey: string,
-  options?: { numFrames?: number; fps?: number },
+  options?: { numFrames?: number; fps?: number; strength?: number },
   signal?: AbortSignal
 ): Promise<string> {
   const basePoseKey = poseKey.replace(/_aroused$|_climax$/, '')
   const prompt = POSE_VIDEO_PROMPTS[basePoseKey] ?? POSE_VIDEO_PROMPTS['missionary']
+  const initB64 = await fetchBase64FromUrl(poseImageUrl)
   const videoB64 = await callRunPodVideo({
     mode: 'animatediff',
+    init_image: initB64,
     prompt,
     negative_prompt: POSE_VIDEO_NEG,
     num_frames: options?.numFrames ?? 16,
     fps: options?.fps ?? 8,
     steps: 25,
+    strength: options?.strength ?? 0.7,
     seed: Math.floor(Math.random() * 2 ** 32),
   }, signal)
 
