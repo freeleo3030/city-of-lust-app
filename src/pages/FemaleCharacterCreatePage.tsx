@@ -303,11 +303,21 @@ export default function FemaleCharacterCreatePage({
   const [activeExprStep, setActiveExprStep] = useState<'aroused' | 'climax' | null>(null)
   const [generatingVariants, setGeneratingVariants] = useState(false)
   const [variantProgress, setVariantProgress] = useState('')
-  const [poseVideos, setPoseVideos] = useState<Record<string, string>>({})
+  const [poseVideos, setPoseVideos] = useState<Record<string, string>>(() => {
+    if (!d?.poseImages) return {}
+    const videos: Record<string, string> = {}
+    Object.entries(d.poseImages).forEach(([k, v]) => {
+      if (k.endsWith('_video') && v) videos[k.replace('_video', '')] = v
+    })
+    return videos
+  })
   const [videoGenerating, setVideoGenerating] = useState<Record<string, boolean>>({})
+  const [videoProgress, setVideoProgress] = useState<Record<string, number>>({})
+  const videoTimers = React.useRef<Record<string, ReturnType<typeof setInterval>>>({})
   const [variantOverlay, setVariantOverlay] = useState<{ poseKey: string; exprKey: string; urls: string[] } | null>(null)
   const [variantZoom, setVariantZoom] = useState<string | null>(null)
   const [variantZoomScale, setVariantZoomScale] = useState(1)
+  const exprSectionRef = React.useRef<HTMLDivElement>(null)
   const variantZoomFromSelected = React.useRef(false)
   const [variantPan, setVariantPan] = useState({ x: 0, y: 0 })
   const variantDrag = React.useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
@@ -465,6 +475,7 @@ export default function FemaleCharacterCreatePage({
     setSelectedPoseImages({})
 
     setPhase('image_studio')
+    setTimeout(() => exprSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)
   }
 
   const MAX_SETS = 5
@@ -495,6 +506,7 @@ export default function FemaleCharacterCreatePage({
 
   // 자세 8장 생성 (최대 5세트) - 기존 방식 유지
   const handleGenPoses = async () => {
+    if (expressionSets.length === 0) { alert('표정 이미지를 먼저 생성해주세요.\n표정 이미지 생성 후 자세 이미지를 만들 수 있습니다.'); return }
     if (poseSets.length >= MAX_SETS) return
     setGeneratingPose(true)
     try {
@@ -519,6 +531,7 @@ export default function FemaleCharacterCreatePage({
   }
 
   const handleGenVariants = async (poseKey: string, exprKey: 'aroused' | 'climax') => {
+    if (expressionSets.length === 0) { alert('표정 이미지를 먼저 생성해주세요.\n표정 이미지 생성 후 자세 이미지를 만들 수 있습니다.'); return }
     const controller = new AbortController()
     variantAbortController.current = controller
     setActivePoseKey(poseKey)
@@ -660,7 +673,10 @@ export default function FemaleCharacterCreatePage({
         },
         image_url: imageUrl ?? null,
         expression_images: (expressionSets[selectedExprSet] ?? []).length ? expressionSets[selectedExprSet] : null,
-        pose_images: Object.keys(selectedPoseImages).length ? selectedPoseImages : null,
+        pose_images: Object.keys(selectedPoseImages).length ? {
+          ...selectedPoseImages,
+          ...Object.fromEntries(Object.entries(poseVideos).map(([k, v]) => [`${k}_video`, v])),
+        } : null,
       })
     } catch (e) { console.error('DB 저장 실패:', e) }
 
@@ -892,12 +908,20 @@ export default function FemaleCharacterCreatePage({
           {isEdit && (
             <button style={{ background: 'transparent', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer', alignSelf: 'flex-start' }} onClick={() => setPhase('form')}>← 기본 정보 수정</button>
           )}
-          {profileImages[0] && (
-            <img src={profileImages[0]} style={{ width: 330, height: 420, objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c44', cursor: 'zoom-in' }} alt="대표" onClick={() => setEnlargedProfile(true)} />
-          )}
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'stretch', width: '100%' }}>
+            {/* 대표이미지 왼쪽 - 표정이미지 높이에 맞춤 */}
+            <div style={{ flex: '0 0 70%', minWidth: 0 }}>
+              {profileImages[0] ? (
+                <img src={profileImages[0]} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c44', cursor: 'zoom-in', display: 'block' }} alt="대표" onClick={() => setEnlargedProfile(true)} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: '#ffffff05', borderRadius: 12, border: '1px dashed #ffffff22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: '#ffffff22', fontSize: 13 }}>대표이미지</span>
+                </div>
+              )}
+            </div>
 
-          {/* 표정 5장 */}
-          <div style={IS.section}>
+            {/* 표정 5장 오른쪽 */}
+          <div ref={exprSectionRef} style={{ ...IS.section, flex: 1, minWidth: 0, marginBottom: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={IS.sectionTitle}>😊 표정 이미지 (5장)</div>
               {expressionSets.length > 1 && (
@@ -914,13 +938,36 @@ export default function FemaleCharacterCreatePage({
                     ))}
                   </div>
                 )}
-                <div style={{ ...IS.thumbRow, cursor: 'zoom-in' }} onClick={() => setEnlargedExpr(true)}>
-                  {(expressionSets[selectedExprSet] ?? []).map((url, i) => (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                      {url ? <img src={url} style={IS.thumb} alt={`expr${i}`} /> : <div style={IS.thumbEmpty} />}
-                      <span style={{ color: '#ffffff88', fontSize: 13 }}>{CONVERSATION_EXPRESSIONS[i]?.label}</span>
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, cursor: 'zoom-in', width: '100%' }} onClick={() => setEnlargedExpr(true)}>
+                  {[0, 1].map(row => {
+                    const indices = row === 0 ? [0, 1] : [2, 3]
+                    return (
+                      <div key={row} style={{ display: 'flex', gap: 4, width: '100%' }}>
+                        {indices.map(i => {
+                          const url = (expressionSets[selectedExprSet] ?? [])[i]
+                          return (
+                            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                              {url ? <img src={url} style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #ffffff22' }} alt={`expr${i}`} /> : <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff08', borderRadius: 6, border: '1px dashed #ffffff22' }} />}
+                              <span style={{ color: '#ffffff88', fontSize: 10 }}>{CONVERSATION_EXPRESSIONS[i]?.label}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })}
+                  {/* 마지막 1개 - 절반 너비 */}
+                  {(() => {
+                    const url = (expressionSets[selectedExprSet] ?? [])[4]
+                    return (
+                      <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                          {url ? <img src={url} style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 6, border: '1px solid #ffffff22' }} alt="expr4" /> : <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff08', borderRadius: 6, border: '1px dashed #ffffff22' }} />}
+                          <span style={{ color: '#ffffff88', fontSize: 10 }}>{CONVERSATION_EXPRESSIONS[4]?.label}</span>
+                        </div>
+                        <div style={{ flex: 1 }} />
+                      </div>
+                    )
+                  })()}
                 </div>
                 {expressionSets.length > 1 && (
                   <button
@@ -939,6 +986,7 @@ export default function FemaleCharacterCreatePage({
             >
               {generatingExpr ? `⏳ ${genProgress}` : expressionSets.length > 0 ? '🔄 표정 재생성' : '🎭 표정 5장 생성'}
             </button>
+          </div>
           </div>
 
           {/* 자세 이미지 — 포즈별 선택 방식 */}
@@ -1035,21 +1083,55 @@ export default function FemaleCharacterCreatePage({
                       </div>
                     )}
                     {isGenVideo ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
-                        <style>{`@keyframes vspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-                        <div style={{ width: 12, height: 12, border: '2px solid #ffffff22', borderTop: '2px solid #e94560', borderRadius: '50%', animation: 'vspin 0.8s linear infinite', flexShrink: 0 }} />
-                        <span style={{ fontSize: 10, color: '#ffffff55' }}>생성 중...</span>
-                      </div>
+                      <button style={{ position: 'relative', overflow: 'hidden', border: '1px solid #e9456055', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: 'not-allowed', background: 'none', color: '#e94560' }}>
+                        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${videoProgress[videoKey] ?? 0}%`, background: 'rgba(233,69,96,0.3)', transition: 'width 1s linear' }} />
+                        <span style={{ position: 'relative', zIndex: 1 }}>⏳ 생성 중... {Math.round(videoProgress[videoKey] ?? 0)}%</span>
+                      </button>
                     ) : (
                       <button
                         style={{ background: done ? 'rgba(233,69,96,0.15)' : 'none', border: `1px solid ${done ? '#e9456055' : '#ffffff11'}`, color: done ? '#e94560' : '#ffffff22', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: done && !busy ? 'pointer' : 'not-allowed', opacity: done && !busy ? 1 : 0.5 }}
                         onClick={() => {
-                          if (!done) { alert('흥분/절정 이미지를 모두 선택한 후 영상을 생성할 수 있습니다.'); return }
+                          const allPosesDone = POSES.every(({ key }) => selectedPoseImages[`${key}_aroused`] && selectedPoseImages[`${key}_climax`])
+                          if (!allPosesDone) { alert('모든 자세(4개)의 흥분/절정 이미지를 완성한 후\n영상을 생성할 수 있습니다.'); return }
+                          if (!done) { alert('이 자세의 흥분/절정 이미지를 모두 선택해주세요.'); return }
                           if (busy) return
+                          if (!window.confirm(
+                            '🎬 영상 생성 안내\n\n' +
+                            '• 첫 번째 영상: 약 3~5분 소요 (SVD 모델 로딩 포함)\n' +
+                            '• 이후 영상: 약 1~2분 소요\n\n' +
+                            '⚠️ 영상 → 이미지 생성 → 영상 순으로 전환하면\n' +
+                            '매번 모델 교체로 3~5분씩 추가 소요됩니다.\n\n' +
+                            '💡 영상은 한 번에 몰아서 생성하는 것을 추천합니다!\n\n' +
+                            '생성을 시작할까요?'
+                          )) return
+                          // 진행률 시뮬레이션: 300초 기준 90%까지
+                          setVideoProgress(prev => ({ ...prev, [videoKey]: 0 }))
+                          const totalMs = 300000
+                          const intervalMs = 1000
+                          const stepPct = 90 / (totalMs / intervalMs)
+                          videoTimers.current[videoKey] = setInterval(() => {
+                            setVideoProgress(prev => {
+                              const cur = prev[videoKey] ?? 0
+                              if (cur >= 90) { clearInterval(videoTimers.current[videoKey]); return prev }
+                              return { ...prev, [videoKey]: Math.min(90, cur + stepPct) }
+                            })
+                          }, intervalMs)
                           setVideoGenerating(prev => ({ ...prev, [videoKey]: true }))
                           generatePoseVideo(srcUrl!, charId, videoKey)
-                            .then(url => setPoseVideos(prev => ({ ...prev, [videoKey]: url })))
-                            .catch(e => alert(`영상 생성 실패: ${e.message}`))
+                            .then(async url => {
+                              clearInterval(videoTimers.current[videoKey])
+                              setVideoProgress(prev => ({ ...prev, [videoKey]: 100 }))
+                              setTimeout(() => setPoseVideos(prev => ({ ...prev, [videoKey]: url })), 300)
+                              // pose_images에 video URL 즉시 저장
+                              const { data: row } = await supabase.from('female_characters').select('pose_images').eq('id', charId).single()
+                              const merged = { ...(row?.pose_images ?? {}), [`${videoKey}_video`]: url }
+                              await supabase.from('female_characters').update({ pose_images: merged }).eq('id', charId)
+                            })
+                            .catch(e => {
+                              clearInterval(videoTimers.current[videoKey])
+                              setVideoProgress(prev => ({ ...prev, [videoKey]: 0 }))
+                              alert(`영상 생성 실패: ${e.message}`)
+                            })
                             .finally(() => setVideoGenerating(prev => ({ ...prev, [videoKey]: false })))
                         }}
                       >{videoUrl ? '🔄 재생성' : '▶ 영상 생성'}</button>
