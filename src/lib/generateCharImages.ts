@@ -575,20 +575,20 @@ async function callRunPodFrames(input: Record<string, unknown>, signal?: AbortSi
 
 const POSE_SPRITE_PROMPTS: Record<string, { neutral: string; peak: string }> = {
   missionary: {
-    neutral: 'nude Korean woman, missionary sex position, lying on back, legs spread, hips flat on bed, relaxed, explicit, adult, photorealistic',
-    peak: 'nude Korean woman, missionary sex position, lying on back, legs spread wide, hips raised arched upward, back lifted off bed, explicit, adult, photorealistic',
+    neutral: 'nude Korean woman, missionary sex position, lying on back, legs spread wide, hips flat on bed, body relaxed, breasts resting, explicit, adult, photorealistic',
+    peak: 'nude Korean woman, missionary sex position, lying on back, hips thrust high up into the air, back arched dramatically off bed, legs spread wide bent at knees, breasts bouncing upward, body in full thrust motion, explicit, adult, photorealistic',
   },
   doggy: {
-    neutral: 'nude Korean woman, doggy style, on all fours, back level, buttocks toward camera, explicit, adult, photorealistic',
-    peak: 'nude Korean woman, doggy style, on all fours, back arched, buttocks pushed back and up, hips thrust backward, explicit, adult, photorealistic',
+    neutral: 'nude Korean woman, doggy style, on all fours, back straight and level, round buttocks facing camera, explicit, adult, photorealistic',
+    peak: 'nude Korean woman, doggy style, back deeply arched downward spine curved, large buttocks pushed far back and high up toward camera, hips thrust backward forcefully, explicit, adult, photorealistic',
   },
   cowgirl: {
-    neutral: 'nude Korean woman, cowgirl position, sitting upright, hips level, body straight, explicit, adult, photorealistic',
-    peak: 'nude Korean woman, cowgirl position, hips raised, body leaning forward, breasts hanging, explicit, adult, photorealistic',
+    neutral: 'nude Korean woman, cowgirl position, sitting straight upright, hips down, body tall, breasts forward, explicit, adult, photorealistic',
+    peak: 'nude Korean woman, cowgirl position, hips raised high up, body leaning far forward, breasts hanging and swaying, waist dipped, riding motion peak, explicit, adult, photorealistic',
   },
   side: {
-    neutral: 'nude Korean woman, butterfly position, lying on back, legs raised, relaxed, explicit, adult, photorealistic',
-    peak: 'nude Korean woman, butterfly position, lying on back, legs raised higher, hips tilted up, body arched, explicit, adult, photorealistic',
+    neutral: 'nude Korean woman, butterfly position, lying on back, legs raised and spread apart, hips flat, body relaxed, explicit, adult, photorealistic',
+    peak: 'nude Korean woman, butterfly position, hips lifted and tilted far upward off bed, legs raised high and spread very wide, lower back arched up, breasts bouncing, explicit, adult, photorealistic',
   },
 }
 const SPRITE_NEG = 'static, blurry, bad anatomy, watermark, text, 3d, cartoon, anime, clothes, clothed, male, man, penis'
@@ -613,7 +613,7 @@ export async function generatePoseSprite(
     height: 1216,
     steps: 20,
     cfg_scale: 7,
-    denoise: 0.25,
+    denoise: 0.45,
     num_frames: 3,
     frame_prompts: [prompts.neutral, prompts.peak, prompts.neutral],
     frame_seeds: [baseSeed, baseSeed + 1, baseSeed + 2],
