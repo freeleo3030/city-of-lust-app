@@ -219,7 +219,7 @@ export default function SexScenePage({
   return (
     <div style={{
       background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', userSelect: 'none',
+      alignItems: 'center', userSelect: 'none', fontSize: 32,
     }}>
 
       {/* 상단 게이지 */}
