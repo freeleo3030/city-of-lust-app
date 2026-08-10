@@ -6,7 +6,7 @@ import type { HotspotZone } from '../lib/generateCharImages'
 
 type Tool = 'hand' | 'lips' | 'tongue' | 'finger' | 'toy'
 type ScenePhase = 'foreplay' | 'aroused' | 'climax' | 'afterglow'
-type ErogenousKey = 'breast' | 'neckEar' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
+type ErogenousKey = 'breast' | 'neck' | 'ear' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
 
 // ─── 핫스팟 좌표 — fallback용 하드코딩 (Gemini 분석 좌표 없을 때 사용) ───────
 
@@ -14,7 +14,9 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
   // 정상위: 오버헤드, 머리 상단, 다리 벌린 채 하단
   missionary: [
     { key: 'mouth',    label: '입',         cx: 50, cy: 18, rx: 10, ry: 5,  color: '#ff6b9d' },
-    { key: 'neckEar',  label: '목',         cx: 50, cy: 27, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'neck',     label: '목',         cx: 50, cy: 27, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'ear',      label: '귀L',        cx: 36, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'ear',      label: '귀R',        cx: 64, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴',       cx: 37, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',       cx: 63, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
     { key: 'thigh',    label: '허벅지',     cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
@@ -25,7 +27,8 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
   // 후배위: 측면+후방, 얼굴 좌상단 뒤돌아봄, 엉덩이+음부 중앙
   doggy: [
     { key: 'mouth',    label: '입',         cx: 23, cy: 22, rx: 12, ry: 9,  color: '#ff6b9d' },
-    { key: 'neckEar',  label: '목',         cx: 32, cy: 30, rx: 8,  ry: 5,  color: '#c77dff' },
+    { key: 'neck',     label: '목',         cx: 32, cy: 30, rx: 8,  ry: 5,  color: '#c77dff' },
+    { key: 'ear',      label: '귀',         cx: 22, cy: 22, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴',       cx: 42, cy: 60, rx: 10, ry: 10, color: '#ff6b9d' },
     { key: 'anal',     label: '항문',       cx: 56, cy: 53, rx: 7,  ry: 5,  color: '#c9a84c' },
     { key: 'vagina',   label: '질',         cx: 55, cy: 62, rx: 8,  ry: 5,  color: '#e94560' },
@@ -36,7 +39,9 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
   // 여성상위: 정면, 앉아서 올라탄 자세
   cowgirl: [
     { key: 'mouth',    label: '입',         cx: 47, cy: 13, rx: 12, ry: 8,  color: '#ff6b9d' },
-    { key: 'neckEar',  label: '목',         cx: 47, cy: 23, rx: 7,  ry: 4,  color: '#c77dff' },
+    { key: 'neck',     label: '목',         cx: 47, cy: 23, rx: 7,  ry: 4,  color: '#c77dff' },
+    { key: 'ear',      label: '귀L',        cx: 33, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'ear',      label: '귀R',        cx: 61, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴',       cx: 35, cy: 38, rx: 16, ry: 13, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',       cx: 60, cy: 37, rx: 14, ry: 12, color: '#ff6b9d' },
     { key: 'thigh',    label: '허벅지',     cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
@@ -47,7 +52,8 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
   // 버터플라이(side): 오버헤드, 두 다리 위로 들린 채, 얼굴 중앙
   side: [
     { key: 'mouth',    label: '입',         cx: 50, cy: 28, rx: 11, ry: 7,  color: '#ff6b9d' },
-    { key: 'neckEar',  label: '목',         cx: 50, cy: 37, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'neck',     label: '목',         cx: 50, cy: 37, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'ear',      label: '귀',         cx: 38, cy: 27, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴',       cx: 36, cy: 48, rx: 14, ry: 11, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',       cx: 62, cy: 47, rx: 14, ry: 11, color: '#ff6b9d' },
     { key: 'thigh',    label: '허벅지',     cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
@@ -178,10 +184,15 @@ export default function SexScenePage({
     return () => clearInterval(id)
   }, [ended])
 
+  const getEroSensitivity = (key: string) => {
+    const eroKey = (key === 'neck' || key === 'ear') ? 'neckEar' : key
+    return femaleChar.erogenous?.[eroKey as keyof typeof femaleChar.erogenous] ?? 2
+  }
+
   // 핫스팟 클릭
   const handleZoneClick = useCallback((zone: BodyZone) => {
     if (ended || phase === 'climax') return
-    const sensitivity = femaleChar.erogenous?.[zone.key] ?? 2
+    const sensitivity = getEroSensitivity(zone.key)
     const gain = Math.max(1, sensitivity) * toolMult * ageMult * 4
     setFemaleArousal(prev => Math.min(100, prev + gain))
     setFemaleFlash(true)
@@ -196,11 +207,13 @@ export default function SexScenePage({
     feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
   }, [ended, phase, femaleChar.erogenous, toolMult, ageMult])
 
-  // DB에 저장된 Gemini 분석 좌표 우선, 없으면 하드코딩 fallback
-  const storedHotspots = poseImages[`${poseKey}_hotspots`] as unknown as HotspotZone[] | undefined
-  const hotspots: HotspotZone[] = (storedHotspots && storedHotspots.length > 0)
-    ? storedHotspots
-    : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary'])
+  // 페이즈별 핫스팟: climax → aroused → HOTSPOTS fallback
+  const exprKey = phase === 'climax' ? 'climax' : 'aroused'
+  const climaxStored  = poseImages[`${poseKey}_climax_hotspots`]  as unknown as HotspotZone[] | undefined
+  const arousedStored = poseImages[`${poseKey}_aroused_hotspots`] as unknown as HotspotZone[] | undefined
+  const hotspots: HotspotZone[] = (exprKey === 'climax' && climaxStored?.length)
+    ? climaxStored
+    : (arousedStored?.length ? arousedStored : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary']))
 
   // 현재 표시할 이미지/스프라이트
   const showSprite = phase === 'aroused' && spriteUrls.length >= 2
@@ -249,7 +262,7 @@ export default function SexScenePage({
           >
             {hotspots.map((zone, i) => {
               const isHovered = hoveredZone === `${zone.key}-${i}`
-              const sensitivity = femaleChar.erogenous?.[zone.key] ?? 2
+              const sensitivity = getEroSensitivity(zone.key)
               return (
                 <ellipse
                   key={i}

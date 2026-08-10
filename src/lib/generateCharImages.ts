@@ -890,24 +890,75 @@ export async function generateMaleProfileImage(char: {
 
 export { EXPRESSION_LEVELS, CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES, POSE_SPRITE_PROMPTS }
 
-// ─── Gemini Vision 핫스팟 자동 분석 ─────────────────────────────────────────
+// ─── Ollama Vision 핫스팟 자동 분석 ──────────────────────────────────────────
 
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY
+const OLLAMA_URL = import.meta.env.VITE_OLLAMA_URL ?? 'http://localhost:11434'
 
 export interface HotspotZone {
-  key: 'breast' | 'neckEar' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
+  key: 'breast' | 'neck' | 'ear' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
   label: string
   cx: number; cy: number; rx: number; ry: number
+  rotation?: number
   color: string
 }
 
 const ZONE_COLORS: Record<string, string> = {
-  mouth: '#ff6b9d', neckEar: '#c77dff', breast: '#ff6b9d',
+  mouth: '#ff6b9d', neck: '#c77dff', ear: '#a855f7', breast: '#ff6b9d',
   thigh: '#f77f00', clitoris: '#e94560', vagina: '#e94560', anal: '#c9a84c',
 }
 const ZONE_LABELS: Record<string, string> = {
-  mouth: '입', neckEar: '목', breast: '가슴',
+  mouth: '입', neck: '목', ear: '귀', breast: '가슴',
   thigh: '허벅지', clitoris: '클리토리스', vagina: '질', anal: '항문',
+}
+
+export const POSE_HOTSPOTS: Record<string, HotspotZone[]> = {
+  missionary: [
+    { key: 'mouth',    label: '입',         cx: 50, cy: 18, rx: 5,  ry: 2.5,color: '#ff6b9d' },
+    { key: 'neck',     label: '목',         cx: 50, cy: 26, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'ear',      label: '귀L',        cx: 36, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'ear',      label: '귀R',        cx: 64, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'breast',   label: '가슴L',      cx: 37, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴R',      cx: 63, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
+    { key: 'thigh',    label: '허벅지L',    cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'thigh',    label: '허벅지R',    cx: 78, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 81, rx: 4,  ry: 2,  color: '#e94560' },
+    { key: 'vagina',   label: '질',         cx: 50, cy: 86, rx: 3.5,ry: 2,  color: '#e94560' },
+  ],
+  doggy: [
+    { key: 'mouth',    label: '입',         cx: 23, cy: 22, rx: 6,  ry: 4.5,color: '#ff6b9d' },
+    { key: 'neck',     label: '목',         cx: 32, cy: 29, rx: 8,  ry: 5,  color: '#c77dff' },
+    { key: 'ear',      label: '귀',         cx: 22, cy: 22, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'breast',   label: '가슴',       cx: 42, cy: 60, rx: 10, ry: 10, color: '#ff6b9d' },
+    { key: 'anal',     label: '항문',       cx: 56, cy: 53, rx: 7,  ry: 5,  color: '#c9a84c' },
+    { key: 'vagina',   label: '질',         cx: 55, cy: 62, rx: 4,  ry: 2.5,color: '#e94560' },
+    { key: 'clitoris', label: '클리토리스', cx: 54, cy: 68, rx: 3.5,ry: 2,  color: '#e94560' },
+    { key: 'thigh',    label: '허벅지L',    cx: 30, cy: 82, rx: 18, ry: 11, color: '#f77f00' },
+    { key: 'thigh',    label: '허벅지R',    cx: 72, cy: 82, rx: 14, ry: 11, color: '#f77f00' },
+  ],
+  cowgirl: [
+    { key: 'mouth',    label: '입',         cx: 47, cy: 13, rx: 6,  ry: 4,  color: '#ff6b9d' },
+    { key: 'neck',     label: '목',         cx: 47, cy: 22, rx: 7,  ry: 4,  color: '#c77dff' },
+    { key: 'ear',      label: '귀L',        cx: 33, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'ear',      label: '귀R',        cx: 61, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'breast',   label: '가슴L',      cx: 35, cy: 38, rx: 16, ry: 13, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴R',      cx: 60, cy: 37, rx: 14, ry: 12, color: '#ff6b9d' },
+    { key: 'thigh',    label: '허벅지L',    cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
+    { key: 'thigh',    label: '허벅지R',    cx: 75, cy: 75, rx: 11, ry: 16, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스', cx: 49, cy: 79, rx: 4,  ry: 2,  color: '#e94560' },
+    { key: 'vagina',   label: '질',         cx: 49, cy: 84, rx: 3.5,ry: 2,  color: '#e94560' },
+  ],
+  side: [
+    { key: 'mouth',    label: '입',         cx: 50, cy: 28, rx: 5.5,ry: 3.5,color: '#ff6b9d' },
+    { key: 'neck',     label: '목',         cx: 50, cy: 36, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'ear',      label: '귀',         cx: 38, cy: 27, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'breast',   label: '가슴L',      cx: 36, cy: 48, rx: 14, ry: 11, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴R',      cx: 62, cy: 47, rx: 14, ry: 11, color: '#ff6b9d' },
+    { key: 'thigh',    label: '허벅지L',    cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'thigh',    label: '허벅지R',    cx: 76, cy: 63, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 76, rx: 4,  ry: 2,  color: '#e94560' },
+    { key: 'vagina',   label: '질',         cx: 50, cy: 81, rx: 3.5,ry: 2,  color: '#e94560' },
+    { key: 'anal',     label: '항문',       cx: 50, cy: 87, rx: 6,  ry: 4,  color: '#c9a84c' },
+  ],
 }
 
 export async function analyzePoseHotspots(imageUrl: string): Promise<HotspotZone[]> {
@@ -919,51 +970,51 @@ export async function analyzePoseHotspots(imageUrl: string): Promise<HotspotZone
     reader.onloadend = () => resolve((reader.result as string).split(',')[1])
     reader.readAsDataURL(blob)
   })
-  const mimeType = blob.type || 'image/jpeg'
 
-  const prompt = `This is an adult nude photo. Analyze the body part positions and return ONLY a JSON object.
-For each visible body part, estimate the center position as a percentage (0-100) of image width (cx) and height (cy), and the ellipse radius (rx, ry).
-Return JSON in this exact format (omit parts not visible):
-{
-  "mouth": {"cx": 50, "cy": 15, "rx": 8, "ry": 4},
-  "neckEar": {"cx": 50, "cy": 22, "rx": 7, "ry": 3},
-  "breast_left": {"cx": 38, "cy": 40, "rx": 13, "ry": 11},
-  "breast_right": {"cx": 62, "cy": 40, "rx": 13, "ry": 11},
-  "thigh_left": {"cx": 20, "cy": 70, "rx": 14, "ry": 13},
-  "thigh_right": {"cx": 80, "cy": 70, "rx": 14, "ry": 13},
-  "clitoris": {"cx": 50, "cy": 80, "rx": 8, "ry": 4},
-  "vagina": {"cx": 50, "cy": 86, "rx": 7, "ry": 4},
-  "anal": {"cx": 50, "cy": 91, "rx": 6, "ry": 4}
-}
-Return ONLY the JSON, no explanation.`
+  const prompt = `You are analyzing a photo to detect human body part positions.
+Look carefully at where each body part appears in the image.
+For each visible part, measure its actual position as a percentage of the image dimensions (0=left/top, 100=right/bottom).
+cx = horizontal center %, cy = vertical center %, rx = horizontal radius %, ry = vertical radius %.
 
-  const body = {
-    contents: [{
-      parts: [
-        { text: prompt },
-        { inline_data: { mime_type: mimeType, data: base64 } }
-      ]
-    }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 512 }
-  }
+Return ONLY a JSON object with these keys for visible parts: mouth, neckEar, breast_left, breast_right, thigh_left, thigh_right, groin_front, groin_center, groin_lower.
+Each value: {"cx": <number>, "cy": <number>, "rx": <number>, "ry": <number>}
+Do NOT copy example values. Measure the actual positions from this specific image.
+Return ONLY valid JSON, nothing else.`
 
-  const geminiResp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-  )
-  const geminiData = await geminiResp.json()
-  const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  const ollamaResp = await fetch(`${OLLAMA_URL}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'llava', prompt, images: [base64], stream: false })
+  })
+  if (!ollamaResp.ok) throw new Error(`Ollama 연결 실패: ${ollamaResp.status}`)
+  const ollamaData = await ollamaResp.json()
+  const text: string = ollamaData.response ?? ''
+  console.log('[hotspot] ollama:', text)
 
   // JSON 파싱
   const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Gemini 좌표 분석 실패')
+  if (!jsonMatch) throw new Error(`좌표 분석 실패: ${text.slice(0, 100)}`)
   const raw = JSON.parse(jsonMatch[0])
+
+  // 0~1 범위로 반환된 경우 100 곱해서 보정, rx/ry는 부위별 기본값 + 최대 25 제한
+  const scale = (v: number) => v <= 1 ? v * 100 : v
+  const DEFAULT_RX: Record<string, number> = { mouth: 8, neckEar: 7, breast: 13, thigh: 14, clitoris: 7, vagina: 7, anal: 6 }
+  const DEFAULT_RY: Record<string, number> = { mouth: 4, neckEar: 3, breast: 11, thigh: 13, clitoris: 4, vagina: 4, anal: 4 }
+  const clamp = (v: number, max: number) => Math.min(v, max)
+  const norm = (d: any, key: string) => {
+    if (!d) return null
+    const cx = scale(d.cx), cy = scale(d.cy)
+    const rx = d.rx != null ? clamp(scale(d.rx), 25) : DEFAULT_RX[key] ?? 8
+    const ry = d.ry != null ? clamp(scale(d.ry), 20) : DEFAULT_RY[key] ?? 5
+    return { cx, cy, rx, ry }
+  }
 
   // HotspotZone 배열로 변환
   const zones: HotspotZone[] = []
   const add = (key: HotspotZone['key'], d: any) => {
-    if (!d) return
-    zones.push({ key, label: ZONE_LABELS[key], cx: d.cx, cy: d.cy, rx: d.rx, ry: d.ry, color: ZONE_COLORS[key] })
+    const n = norm(d, key)
+    if (!n) return
+    zones.push({ key, label: ZONE_LABELS[key], cx: n.cx, cy: n.cy, rx: n.rx, ry: n.ry, color: ZONE_COLORS[key] })
   }
   add('mouth', raw.mouth)
   add('neckEar', raw.neckEar)
@@ -972,9 +1023,9 @@ Return ONLY the JSON, no explanation.`
   if (!raw.breast_left && !raw.breast_right && raw.breast) add('breast', raw.breast)
   if (raw.thigh_left)  add('thigh', raw.thigh_left)
   if (raw.thigh_right) add('thigh', raw.thigh_right)
-  add('clitoris', raw.clitoris)
-  add('vagina', raw.vagina)
-  add('anal', raw.anal)
+  add('clitoris', raw.clitoris ?? raw.groin_front)
+  add('vagina', raw.vagina ?? raw.groin_center)
+  add('anal', raw.anal ?? raw.groin_lower)
 
   return zones
 }

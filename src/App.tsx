@@ -42,6 +42,48 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // DB에서 여캐 목록 로드 (localStorage와 병합)
+  useEffect(() => {
+    supabase.from('female_characters').select('*').then(({ data, error }) => {
+      console.log('[DB] female_characters:', data, 'error:', error)
+      if (error || !data) return
+      const dbChars: FemaleCharacterData[] = data.map((row: any) => ({
+        id: row.id,
+        nickname: row.nickname,
+        age: row.age,
+        bodyType: row.body_type,
+        location: row.location,
+        job: row.job,
+        married: row.married,
+        intro: row.intro,
+        memo: row.memo ?? '',
+        face: row.face ?? 3,
+        body: row.body ?? 3,
+        fashion: row.fashion ?? 3,
+        erogenous: row.erogenous ?? { breast:3, neckEar:3, thigh:3, clitoris:3, vagina:3, anal:1, mouth:3 },
+        prefAge: row.pref_age ?? { age20:34, age30:33, age40:33 },
+        prefLook: row.pref_look ?? { face:25, height:25, body:25, fashion:25 },
+        prefWealth: row.pref_wealth ?? 50,
+        smSelf: row.sm_self ?? 0,
+        smPreferMale: row.sm_prefer_male ?? 0,
+        interests: row.interests ?? [],
+        dislikes: row.dislikes ?? [],
+        imageUrl: row.image_url ?? '',
+        expressionImages: row.expression_images ?? [],
+        poseImages: row.pose_images ?? {},
+        dateCostShare: row.stats?.dateCostShare ?? 0,
+        createdAt: row.created_at ?? '',
+      }))
+      setFemaleChars(prev => {
+        // DB 우선, localStorage에만 있는 것도 유지
+        const merged = [...dbChars]
+        prev.forEach(lc => { if (!merged.find(d => d.id === lc.id)) merged.push(lc) })
+        localStorage.setItem('col_female_chars', JSON.stringify(merged))
+        return merged
+      })
+    })
+  }, [])
+
   if (loading) return <div style={{ background: '#0d0d1a', minHeight: '100vh' }} />
   // TODO: 개발 완료 후 로그인 연결
   // if (!user) return <LoginPage />

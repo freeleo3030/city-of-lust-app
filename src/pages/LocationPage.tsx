@@ -37,6 +37,7 @@ export default function LocationPage({ location, femaleChars, onBack, onStartSex
   const [showPoseSelect, setShowPoseSelect] = useState(false)
 
   const chars = femaleChars.filter(c => c.location === location.name)
+  console.log('[Location]', location.name, '| femaleChars:', femaleChars.length, '| chars:', chars.length, '| locations:', femaleChars.map(c => `${c.nickname}:${c.location}`))
 
   return (
     <div style={S.container}>
@@ -156,7 +157,7 @@ export default function LocationPage({ location, femaleChars, onBack, onStartSex
 }
 
 const S: Record<string, React.CSSProperties> = {
-  container: { minHeight: '100vh', background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)', display: 'flex', flexDirection: 'column' },
+  container: { position: 'fixed', inset: 0, background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   header: { padding: '16px 20px', background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid #ffffff11' },
   backBtn: { background: 'none', border: '1px solid #ffffff22', color: '#ffffff66', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 13, marginBottom: 10 },
   headerTitle: { display: 'flex', alignItems: 'center', gap: 10 },

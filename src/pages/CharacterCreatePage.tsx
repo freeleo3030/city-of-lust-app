@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { generateMaleProfileImage } from '../lib/generateCharImages'
+import { generateWalkingAnimation } from '../lib/generateWalkingAnimation'
 
 interface Props {
   onComplete: (character: CharacterData & { generatedImageUrl?: string }) => void
@@ -22,6 +23,7 @@ export interface CharacterData {
   // 발기 (S3)
   erectPower: number; erectDuration: number; erectHardness: number; erectTechnique: number
   appearanceDesc?: string
+  walkingVideoUrl?: string
 }
 
 const AVATARS = ['🧑', '👨', '🧔', '👱']
@@ -105,6 +107,9 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
 
   const [appearanceDesc, setAppearanceDesc] = useState(d?.appearanceDesc ?? '')
   const [genProgress, setGenProgress] = useState('')
+  const [generatedImageUrl, setGeneratedImageUrl] = useState(d?.generatedImageUrl ?? '')
+  const [walkingVideoUrl, setWalkingVideoUrl] = useState(d?.walkingVideoUrl ?? '')
+  const [animProgress, setAnimProgress] = useState('')
 
   // 자기소개 자동 생성 (스탯 변경 시 항상 반영)
   const autoIntro = (() => {
@@ -132,23 +137,26 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
     if (!age || isNaN(ageNum) || ageNum < 19 || ageNum > 99) { setError('나이를 올바르게 입력해주세요. (19세 이상)'); return }
 
     console.log('[완료] 검증 통과, RunPod 호출 시작')
-    setGenProgress('대표 이미지 생성 중...')
-    let generatedImageUrl: string | undefined
-    try {
-      generatedImageUrl = await generateMaleProfileImage({
-        nickname: nickname.trim(),
-        age: ageNum,
-        job: job.trim(),
-        face: look.face,
-        height: look.height,
-        body: look.body,
-        fashion,
-        appearanceDesc: appearanceDesc.trim() || undefined,
-      })
-    } catch (e) {
-      console.error('남캐 이미지 생성 실패:', e)
+    let imgUrl = generatedImageUrl
+    if (!imgUrl) {
+      setGenProgress('대표 이미지 생성 중...')
+      try {
+        imgUrl = await generateMaleProfileImage({
+          nickname: nickname.trim(),
+          age: ageNum,
+          job: job.trim(),
+          face: look.face,
+          height: look.height,
+          body: look.body,
+          fashion,
+          appearanceDesc: appearanceDesc.trim() || undefined,
+        }) ?? ''
+        setGeneratedImageUrl(imgUrl)
+      } catch (e) {
+        console.error('남캐 이미지 생성 실패:', e)
+      }
+      setGenProgress('')
     }
-    setGenProgress('')
 
     onComplete({
       avatar,
@@ -159,7 +167,8 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
       erectPower: erect.erectPower, erectDuration: erect.erectDuration,
       erectHardness: erect.erectHardness, erectTechnique,
       appearanceDesc: appearanceDesc.trim() || undefined,
-      generatedImageUrl,
+      generatedImageUrl: imgUrl || undefined,
+      walkingVideoUrl: walkingVideoUrl || undefined,
     })
   }
 
@@ -428,6 +437,47 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
 
         </div>
 
+        {/* 생성된 이미지 미리보기 + 걷기 애니메이션 생성 */}
+        {(generatedImageUrl || walkingVideoUrl) && (
+          <div style={S.previewBox}>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', justifyContent: 'center', flexWrap: 'wrap' as const }}>
+              {generatedImageUrl && (
+                <div style={{ textAlign: 'center' as const }}>
+                  <div style={{ color: '#ffffff55', fontSize: 12, marginBottom: 6 }}>📷 캐릭터 이미지</div>
+                  <img src={generatedImageUrl} alt="남캐" style={{ width: 120, height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid #c9a84c55' }} />
+                </div>
+              )}
+              {walkingVideoUrl && (
+                <div style={{ textAlign: 'center' as const }}>
+                  <div style={{ color: '#c9a84c', fontSize: 12, marginBottom: 6 }}>🎬 걷기 애니메이션</div>
+                  <video src={walkingVideoUrl} autoPlay loop muted playsInline
+                    style={{ width: 120, height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid #c9a84c' }} />
+                </div>
+              )}
+            </div>
+
+            {generatedImageUrl && !walkingVideoUrl && (
+              <button
+                style={{ ...S.animBtn, opacity: animProgress ? 0.6 : 1, pointerEvents: animProgress ? 'none' : 'auto', marginTop: 16 }}
+                onClick={async () => {
+                  setAnimProgress('걷기 애니메이션 생성 중... (약 1~2분)')
+                  try {
+                    const url = await generateWalkingAnimation(generatedImageUrl)
+                    setWalkingVideoUrl(url)
+                  } catch (e: any) {
+                    console.error('애니메이션 생성 실패:', e)
+                    setError(`애니메이션 생성 실패: ${e.message}`)
+                  } finally {
+                    setAnimProgress('')
+                  }
+                }}
+              >
+                {animProgress ? '⏳ ' + animProgress : '🎬 걷기 애니메이션 생성'}
+              </button>
+            )}
+          </div>
+        )}
+
         {error && <p style={S.error}>{error}</p>}
         {genProgress && <p style={{ color: '#c9a84c', fontSize: 13, textAlign: 'center', margin: '8px 0' }}>🎨 {genProgress}</p>}
         <button
@@ -533,6 +583,17 @@ const S: Record<string, React.CSSProperties> = {
   },
   growthRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   // 공통
+  previewBox: {
+    background: 'rgba(201,168,76,0.06)', border: '1px solid #c9a84c33',
+    borderRadius: 12, padding: '20px', marginBottom: 16,
+    display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
+  },
+  animBtn: {
+    background: 'linear-gradient(90deg, #1a1a3e, #2a1a5e)',
+    border: '1px solid #c9a84c',
+    color: '#c9a84c', borderRadius: 8, padding: '10px 24px',
+    fontSize: 14, fontWeight: 'bold', cursor: 'pointer',
+  },
   error: { color: '#e94560', fontSize: 13, margin: '0 0 12px' },
   btn: {
     width: '100%', background: 'linear-gradient(90deg, #c9a84c, #e94560)',

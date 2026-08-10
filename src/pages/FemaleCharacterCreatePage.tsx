@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, generatePoseSprite, deleteImageFromStorage, analyzePoseHotspots, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS } from '../lib/generateCharImages'
+import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, generatePoseSprite, deleteImageFromStorage, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS, POSE_HOTSPOTS } from '../lib/generateCharImages'
+import type { HotspotZone } from '../lib/generateCharImages'
 import { supabase } from '../lib/supabase'
 
 export interface FemaleCharacterData {
@@ -39,6 +40,7 @@ export interface FemaleCharacterData {
   prefPose: { missionary: number; doggy: number; cowgirl: number; side: number }
   smTendency: number     // 여캐 자신의 S/M 성향: -100(완전 M) ~ +100(완전 S)
   prefSmTendency: number // 선호하는 남성 S/M 성향: -100(M남 선호) ~ +100(S남 선호)
+  dateCostShare: number  // 데이트 비용 부담율 0~100%
   // 외모 설명 (이미지 생성용)
   appearanceDesc?: string
   hairColor?: string
@@ -85,6 +87,257 @@ function buildFemalePrompt(c: Partial<FemaleCharacterData>): string {
     `gentle expression, upper body portrait, ` +
     `digital illustration, concept art style, painterly, ` +
     `soft lighting, detailed brushwork, warm color palette, artstation quality`
+  )
+}
+
+// ─── 전체 성감대 옵션 목록 ────────────────────────────────────────────────────
+const ALL_ZONE_OPTIONS: HotspotZone[] = [
+  { key: 'mouth',    label: '입',         cx: 50, cy: 15, rx: 5,   ry: 2.5, color: '#ff6b9d' },
+  { key: 'neck',     label: '목',         cx: 50, cy: 24, rx: 7,   ry: 3,   color: '#c77dff' },
+  { key: 'ear',      label: '귀L',        cx: 36, cy: 15, rx: 4,   ry: 5,   color: '#a855f7' },
+  { key: 'ear',      label: '귀R',        cx: 64, cy: 15, rx: 4,   ry: 5,   color: '#a855f7' },
+  { key: 'breast',   label: '가슴L',      cx: 37, cy: 41, rx: 13,  ry: 11,  color: '#ff6b9d' },
+  { key: 'breast',   label: '가슴R',      cx: 63, cy: 41, rx: 13,  ry: 11,  color: '#ff6b9d' },
+  { key: 'thigh',    label: '허벅지L',    cx: 22, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
+  { key: 'thigh',    label: '허벅지R',    cx: 78, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
+  { key: 'clitoris', label: '클리토리스', cx: 50, cy: 80, rx: 4,   ry: 2,   color: '#e94560' },
+  { key: 'vagina',   label: '질',         cx: 50, cy: 85, rx: 3.5, ry: 2,   color: '#e94560' },
+  { key: 'anal',     label: '항문',       cx: 50, cy: 91, rx: 6,   ry: 4,   color: '#c9a84c' },
+]
+
+// ─── 핫스팟 드래그 에디터 ────────────────────────────────────────────────────
+function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
+  imageUrl: string
+  poseKey: string
+  initialZones?: HotspotZone[]
+  onSave: (zones: HotspotZone[]) => void
+  onClose: () => void
+}) {
+  const [zones, setZones] = React.useState<HotspotZone[]>(() => {
+    const raw: HotspotZone[] = JSON.parse(JSON.stringify(
+      initialZones?.length ? initialZones : (POSE_HOTSPOTS[poseKey] ?? POSE_HOTSPOTS['missionary'])
+    ))
+    return raw.filter(z => (z.key as string) !== 'neckEar')
+  })
+  const [dragging, setDragging] = React.useState<number | null>(null)
+  const [rotating, setRotating] = React.useState<number | null>(null)
+  const [selected, setSelected] = React.useState<number | null>(null)
+  const [history, setHistory] = React.useState<HotspotZone[][]>([])
+  const svgRef = React.useRef<SVGSVGElement>(null)
+
+  const pushHistory = (prev: HotspotZone[]) =>
+    setHistory(h => [...h.slice(-30), JSON.parse(JSON.stringify(prev))])
+
+  const undo = () => {
+    if (history.length === 0) return
+    setZones(history[history.length - 1])
+    setHistory(h => h.slice(0, -1))
+    setSelected(null)
+  }
+
+  const isActive = (opt: HotspotZone) => zones.some(z => z.key === opt.key && z.label === opt.label)
+
+  const removeZone = (idx: number) => {
+    setZones(prev => { pushHistory(prev); return prev.filter((_, i) => i !== idx) })
+    setSelected(null)
+  }
+
+  const toggleZone = (opt: HotspotZone) => {
+    if (isActive(opt)) {
+      setZones(prev => {
+        const idx = prev.findIndex(z => z.key === opt.key && z.label === opt.label)
+        if (idx === -1) return prev
+        pushHistory(prev)
+        setSelected(null)
+        return prev.filter((_, i) => i !== idx)
+      })
+    } else {
+      setZones(prev => { pushHistory(prev); return [...prev, { ...opt }] })
+    }
+  }
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selected !== null) {
+        removeZone(selected)
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault()
+        undo()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selected, zones, history])
+
+  const getPos = (e: React.MouseEvent) => {
+    if (!svgRef.current) return null
+    const rect = svgRef.current.getBoundingClientRect()
+    return {
+      cx: Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)),
+      cy: Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100)),
+    }
+  }
+
+  const onMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const pos = getPos(e)
+    if (!pos) return
+    if (dragging !== null) {
+      setZones(prev => prev.map((z, i) => i === dragging ? { ...z, ...pos } : z))
+    } else if (rotating !== null) {
+      const zone = zones[rotating]
+      const dx = pos.cx - zone.cx
+      const dy = pos.cy - zone.cy
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI + 90
+      setZones(prev => prev.map((z, i) => i === rotating ? { ...z, rotation: angle } : z))
+    }
+  }
+  const onMouseUp = () => {
+    if (dragging !== null || rotating !== null) pushHistory(zones)
+    setDragging(null)
+    setRotating(null)
+  }
+
+  const selectedZone = selected !== null ? zones[selected] : null
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: '#1a1a2e', borderRadius: 12, padding: 20, maxWidth: 700, width: '95%', border: '1px solid #c9a84c55' }}>
+        <div style={{ color: '#c9a84c', fontWeight: 'bold', fontSize: 15, marginBottom: 4 }}>
+          📍 성감대 위치 조정 — {poseKey}
+        </div>
+        <div style={{ color: '#ffffff55', fontSize: 11, marginBottom: 12 }}>원 드래그 = 위치 이동 · 원 클릭 = 선택 · Delete = 삭제 · 우클릭 = 비활성화</div>
+
+        <div style={{ display: 'flex', gap: 14 }}>
+          {/* 왼쪽: 이미지 + SVG */}
+          <div style={{ flex: 1, position: 'relative' }}>
+            <img src={imageUrl} style={{ width: '100%', display: 'block', borderRadius: 8, userSelect: 'none', pointerEvents: 'none' }} draggable={false} />
+            <svg
+              ref={svgRef}
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: dragging !== null ? 'grabbing' : 'default' }}
+              onMouseMove={onMouseMove}
+              onMouseUp={onMouseUp}
+              onMouseLeave={onMouseUp}
+            >
+              {zones.map((z, i) => {
+                const rot = z.rotation ?? 0
+                const handleDist = z.ry + 4
+                return (
+                  <g key={i} transform={`rotate(${rot}, ${z.cx}, ${z.cy})`}>
+                    <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry}
+                      fill={z.color + (selected === i ? '77' : '44')}
+                      stroke={z.color} strokeWidth={selected === i ? 1.2 : 0.8}
+                      style={{ cursor: 'grab' }}
+                      onMouseDown={e => { e.preventDefault(); setDragging(i); setSelected(i) }}
+                      onClick={() => setSelected(i)}
+                      onContextMenu={e => { e.preventDefault(); removeZone(i) }}
+                    />
+                    <text x={z.cx} y={z.cy} textAnchor="middle" dominantBaseline="middle"
+                      fill="#fff" fontSize={3.5} fontWeight="bold"
+                      style={{ pointerEvents: 'none', userSelect: 'none' }}>
+                      {z.label}
+                    </text>
+                    {/* 회전 핸들 */}
+                    <line x1={z.cx} y1={z.cy - z.ry} x2={z.cx} y2={z.cy - handleDist}
+                      stroke={z.color} strokeWidth={0.4} style={{ pointerEvents: 'none' }} />
+                    <circle cx={z.cx} cy={z.cy - handleDist} r={1.8}
+                      fill="#1a1a2e" stroke={z.color} strokeWidth={0.8}
+                      style={{ cursor: 'crosshair' }}
+                      onMouseDown={e => { e.preventDefault(); e.stopPropagation(); setRotating(i); setSelected(i) }}
+                    />
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+
+          {/* 오른쪽: 옵션 토글 + 크기 조절 */}
+          <div style={{ width: 150, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ color: '#ffffff66', fontSize: 11, marginBottom: 2 }}>성감대 선택</div>
+            {ALL_ZONE_OPTIONS.map((opt, i) => {
+              const active = isActive(opt)
+              return (
+                <button key={i} onClick={() => toggleZone(opt)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    background: active ? opt.color + '22' : '#ffffff08',
+                    border: `1px solid ${active ? opt.color + '88' : '#ffffff22'}`,
+                    borderRadius: 6, padding: '5px 8px', cursor: 'pointer',
+                    color: active ? '#fff' : '#ffffff44', fontSize: 11, textAlign: 'left',
+                    textDecoration: active ? 'none' : 'line-through',
+                  }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: active ? opt.color : '#ffffff22', flexShrink: 0 }} />
+                  {opt.label}
+                </button>
+              )
+            })}
+
+            {/* 선택된 원 크기 조절 */}
+            {selectedZone && selected !== null && (
+              <div style={{ marginTop: 8, borderTop: '1px solid #ffffff11', paddingTop: 8 }}>
+                <div style={{ color: selectedZone.color, fontSize: 11, fontWeight: 'bold', marginBottom: 6 }}>
+                  ✏️ {selectedZone.label}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div>
+                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>각도 °</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input type="range" min={-180} max={180} step={1} value={Math.round(((selectedZone.rotation ?? 0) + 180) % 360 - 180)}
+                        onMouseDown={() => pushHistory(zones)}
+                        onChange={e => setZones(prev => prev.map((z, i) => i === selected ? { ...z, rotation: +e.target.value } : z))}
+                        style={{ flex: 1 }} />
+                      <input type="number" min={-180} max={180} step={1} value={Math.round(((selectedZone.rotation ?? 0) + 180) % 360 - 180)}
+                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) { pushHistory(zones); setZones(prev => prev.map((z, i) => i === selected ? { ...z, rotation: v } : z)) } }}
+                        style={{ width: 38, background: '#ffffff11', border: '1px solid #ffffff22', borderRadius: 4, color: '#fff', fontSize: 11, padding: '2px 4px', textAlign: 'center' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>가로 rx</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input type="range" min={1} max={30} step={0.5} value={selectedZone.rx}
+                        onMouseDown={() => pushHistory(zones)}
+                        onChange={e => setZones(prev => prev.map((z, i) => i === selected ? { ...z, rx: +e.target.value } : z))}
+                        style={{ flex: 1 }} />
+                      <input type="number" min={1} max={30} step={0.5} value={selectedZone.rx}
+                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) { pushHistory(zones); setZones(prev => prev.map((z, i) => i === selected ? { ...z, rx: Math.max(1, Math.min(30, v)) } : z)) } }}
+                        style={{ width: 38, background: '#ffffff11', border: '1px solid #ffffff22', borderRadius: 4, color: '#fff', fontSize: 11, padding: '2px 4px', textAlign: 'center' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>세로 ry</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input type="range" min={1} max={20} step={0.5} value={selectedZone.ry}
+                        onMouseDown={() => pushHistory(zones)}
+                        onChange={e => setZones(prev => prev.map((z, i) => i === selected ? { ...z, ry: +e.target.value } : z))}
+                        style={{ flex: 1 }} />
+                      <input type="number" min={1} max={20} step={0.5} value={selectedZone.ry}
+                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) { pushHistory(zones); setZones(prev => prev.map((z, i) => i === selected ? { ...z, ry: Math.max(1, Math.min(20, v)) } : z)) } }}
+                        style={{ width: 38, background: '#ffffff11', border: '1px solid #ffffff22', borderRadius: 4, color: '#fff', fontSize: 11, padding: '2px 4px', textAlign: 'center' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <button onClick={() => onSave(zones)}
+            style={{ flex: 2, background: '#c9a84c', border: 'none', color: '#000', borderRadius: 8, padding: '8px 0', fontWeight: 'bold', fontSize: 13, cursor: 'pointer' }}>
+            💾 저장
+          </button>
+          <button onClick={undo} disabled={history.length === 0}
+            style={{ flex: 1, background: 'none', border: '1px solid #ffffff33', color: history.length > 0 ? '#fff' : '#ffffff33', borderRadius: 8, padding: '8px 0', fontSize: 13, cursor: history.length > 0 ? 'pointer' : 'default' }}>
+            ↩ 되돌리기
+          </button>
+          <button onClick={onClose}
+            style={{ flex: 1, background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 8, padding: '8px 0', fontSize: 13, cursor: 'pointer' }}>
+            취소
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -239,6 +492,7 @@ export default function FemaleCharacterCreatePage({
   const [prefPose, setPrefPose] = useState(d?.prefPose ?? { missionary:0, doggy:0, cowgirl:0, side:0 })
   const [smTendency, setSmTendency] = useState(d?.smTendency ?? 0)
   const prefSmTendency = -smTendency  // 여캐 M → 남캐 S 자동 연동
+  const [dateCostShare, setDateCostShare] = useState(d?.dateCostShare ?? 0)
   const [appearanceDesc, setAppearanceDesc] = useState(d?.appearanceDesc ?? '')
   const [hairColor, setHairColor] = useState<string>(d?.hairColor ?? '')
   const [hairLength, setHairLength] = useState<string>(d?.hairLength ?? '')
@@ -290,7 +544,7 @@ export default function FemaleCharacterCreatePage({
   const [generating, setGenerating] = useState(false)
   const [genProgress, setGenProgress] = useState('')
   const isEdit = !!d
-  const [phase, setPhase] = useState<'form' | 'profile_review' | 'image_studio'>(isEdit ? 'image_studio' : 'form')
+  const [phase, setPhase] = useState<'form' | 'profile_review' | 'image_studio'>('form')
   const [profileImages, setProfileImages] = useState<string[]>(d?.imageUrl ? [d.imageUrl] : [])
   const [selectedProfileIdx, setSelectedProfileIdx] = useState(0)
   const [profileFinalized, setProfileFinalized] = useState(isEdit && !!d?.imageUrl)
@@ -307,9 +561,17 @@ export default function FemaleCharacterCreatePage({
   // 새 자세 선택 시스템
   const [poseVariants, setPoseVariants] = useState<Record<string, Record<string, string[]>>>({})
   // poseVariants[poseKey][exprKey] = [url, ...]
-  const [selectedPoseImages, setSelectedPoseImages] = useState<Record<string, string>>(
-    d?.poseImages ?? {}
-  )
+  const [selectedPoseImages, setSelectedPoseImages] = useState<Record<string, string>>(() => {
+    const base = d?.poseImages ?? {}
+    try {
+      const lsKey = `hotspots_${d?.id ?? ''}`
+      if (d?.id) {
+        const saved = JSON.parse(localStorage.getItem(lsKey) ?? '{}')
+        return { ...base, ...saved }
+      }
+    } catch {}
+    return base
+  })
   const [activePoseKey, setActivePoseKey] = useState<string | null>(null)
   const [activeExprStep, setActiveExprStep] = useState<'aroused' | 'climax' | null>(null)
   const [generatingVariants, setGeneratingVariants] = useState(false)
@@ -328,7 +590,9 @@ export default function FemaleCharacterCreatePage({
     return sprites
   })
   const [spriteGenerating, setSpriteGenerating] = useState<Record<string, boolean>>({})
-  const [enlargedSprite, setEnlargedSprite] = useState<string[] | null>(null)
+  const [hotspotAnalyzing, setHotspotAnalyzing] = useState<Record<string, boolean>>({})
+  const [hotspotEditorInfo, setHotspotEditorInfo] = useState<{ poseKey: string; exprKey: 'aroused' | 'climax'; imageUrl: string; savedZones?: HotspotZone[] } | null>(null)
+  const [enlargedSprite, setEnlargedSprite] = useState<{ urls: string[]; poseKey: string; exprKey: 'aroused' | 'climax' } | null>(null)
   const [variantOverlay, setVariantOverlay] = useState<{ poseKey: string; exprKey: string; urls: string[] } | null>(null)
   const [variantZoom, setVariantZoom] = useState<string | null>(null)
   const [variantZoomScale, setVariantZoomScale] = useState(1)
@@ -464,6 +728,7 @@ export default function FemaleCharacterCreatePage({
     const ageNum = parseInt(age)
     if (isNaN(ageNum) || ageNum < 20 || ageNum > 49) { setError('나이를 올바르게 입력해주세요. (20~49)'); return }
     setError('')
+    if (isEdit) { setPhase('image_studio'); return }
     setPhase('profile_review')
     await generateProfileSet(profileImages)
   }
@@ -636,18 +901,6 @@ export default function FemaleCharacterCreatePage({
     }))
     setSelectedPoseImages(prev => ({ ...prev, [slotKey]: url }))
 
-    // aroused 이미지 선택 시 Gemini로 핫스팟 좌표 자동 분석 → DB 저장
-    if (exprKey === 'aroused') {
-      try {
-        const hotspots = await analyzePoseHotspots(url)
-        const hotspotKey = `${poseKey}_hotspots`
-        const { data: row } = await supabase.from('female_characters').select('pose_images').eq('id', charId).single()
-        const merged = { ...(row?.pose_images ?? {}), [hotspotKey]: hotspots }
-        await supabase.from('female_characters').update({ pose_images: merged }).eq('id', charId)
-      } catch (e) {
-        console.warn('핫스팟 분석 실패 (무시):', e)
-      }
-    }
   }
 
   // 최종 저장 및 완료
@@ -668,7 +921,7 @@ export default function FemaleCharacterCreatePage({
       prefWealth,
       prefPersonality: { intel: prefIntel, humor: prefHumor, virtue: prefVirtue, manner: prefManner },
       prefErect: { power: prefPower, duration: prefDuration, hardness: prefHardness, tech: prefTech },
-      prefPose, smTendency, prefSmTendency,
+      prefPose, smTendency, prefSmTendency, dateCostShare,
       appearanceDesc: buildAppearanceDesc(),
       hairColor: hairColor || undefined,
       hairLength: hairLength || undefined,
@@ -710,7 +963,7 @@ export default function FemaleCharacterCreatePage({
           personality, memo, erogenous,
           prefAge: char.prefAge, prefLook: char.prefLook, prefWealth,
           prefPersonality: char.prefPersonality, prefErect: char.prefErect,
-          prefPose, smTendency, prefSmTendency,
+          prefPose, smTendency, prefSmTendency, dateCostShare,
           appearanceDesc: buildAppearanceDesc(),
           hairColor: hairColor || undefined,
           hairLength: hairLength || undefined,
@@ -740,22 +993,58 @@ export default function FemaleCharacterCreatePage({
   // 3단계: 표정·자세 생성 스튜디오
   if (phase === 'image_studio') {
     const busy = generatingExpr || generatingPose || generating || generatingVariants || variantOverlay !== null
+    const bodyZoom = parseFloat(getComputedStyle(document.body).zoom) || 1
+    const fitH = (ratio: number) => Math.round(window.innerHeight * ratio / bodyZoom)
     return (
       <div style={S.container}>
 
         {/* ── 모달들: S.container 직속 (position:fixed 보장) ── */}
         {enlargedSprite && (() => {
-          const w = Math.min(927, Math.round(window.innerWidth * 0.95))
-          const h = Math.round(w * 4 / 3)
+          const { urls, poseKey: sPoseKey, exprKey: sExprKey } = enlargedSprite
+          const sHotspots: HotspotZone[] = (
+            (selectedPoseImages[`${sPoseKey}_${sExprKey}_hotspots`] as any) ??
+            (selectedPoseImages[`${sPoseKey}_aroused_hotspots`] as any) ?? []
+          )
           return (
             <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
               onClick={() => setEnlargedSprite(null)}>
-              <div style={{ width: w, height: h, borderRadius: 12, border: '2px solid #e9456055', overflow: 'hidden', flexShrink: 0 }}
+              <div style={{ position: 'relative', height: fitH(0.85), aspectRatio: '3/4', borderRadius: 12, border: '2px solid #e9456055', overflow: 'hidden', flexShrink: 0 }}
                 onClick={e => e.stopPropagation()}>
-                <SpriteAnimation urls={enlargedSprite} fps={4} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <SpriteAnimation urls={urls} fps={4} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                {sHotspots.length > 0 && (
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                    {sHotspots.map((z, i) => (
+                      <g key={i} transform={`rotate(${z.rotation ?? 0}, ${z.cx}, ${z.cy})`}>
+                        <ellipse cx={z.cx} cy={z.cy} rx={z.rx} ry={z.ry}
+                          fill={z.color + '33'} stroke={z.color} strokeWidth={0.8} />
+                        <text x={z.cx} y={z.cy} textAnchor="middle" dominantBaseline="middle"
+                          fill="#fff" fontSize={3.5} fontWeight="bold" style={{ userSelect: 'none' }}>
+                          {z.label}
+                        </text>
+                      </g>
+                    ))}
+                  </svg>
+                )}
+                {/* 📍 위치조정 버튼 */}
+                <button
+                  style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(201,168,76,0.85)', border: 'none', color: '#000', borderRadius: 6, padding: '4px 8px', fontSize: 12, fontWeight: 'bold', cursor: 'pointer', zIndex: 10 }}
+                  onClick={e => {
+                    e.stopPropagation()
+                    const savedZones = (selectedPoseImages[`${sPoseKey}_${sExprKey}_hotspots`] as any)
+                      ?? (selectedPoseImages[`${sPoseKey}_aroused_hotspots`] as any)
+                    setHotspotEditorInfo({ poseKey: sPoseKey, exprKey: sExprKey, imageUrl: urls[0], savedZones })
+                  }}>
+                  📍 위치조정
+                </button>
+                {sHotspots.length === 0 && (
+                  <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', color: '#e9456088', fontSize: 11 }}>
+                    📍 성감대 미설정
+                  </div>
+                )}
               </div>
               <button style={{ position: 'fixed', top: 16, right: 20, background: 'none', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 3001 }}
-                onClick={() => setEnlargedVideo(null)}>✕</button>
+                onClick={() => setEnlargedSprite(null)}>✕</button>
             </div>
           )
         })()}
@@ -839,7 +1128,7 @@ export default function FemaleCharacterCreatePage({
 
         {/* 5장 선택 오버레이 */}
         {variantOverlay && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflowY: 'auto', padding: '16px 20px 24px' }}
+          <div style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '8px 20px 12px' }}
             onClick={() => {
               if (variantWasDragging.current) return
               if (variantZoom) {
@@ -859,7 +1148,7 @@ export default function FemaleCharacterCreatePage({
 
               {/* 줌 상태: 1장 크게 + 스크롤 확대 + 드래그 이동 */}
               {variantZoom ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: '100%', maxHeight: '100vh', overflow: 'hidden' }}>
                   <div style={{ position: 'relative', display: 'inline-flex' }}>
                     <button onClick={() => { setVariantZoom(null); setVariantZoomScale(1); setVariantPan({ x: 0, y: 0 }); setVariantOverlay(null) }}
                       style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'rgba(0,0,0,0.6)', border: '1px solid #ffffff55', color: '#fff', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
@@ -892,7 +1181,7 @@ export default function FemaleCharacterCreatePage({
                     onClick={e => e.stopPropagation()}
                   >
                     <img src={variantZoom} alt="확대" draggable={false}
-                      style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c', transform: `translate(${variantPan.x}px, ${variantPan.y}px) scale(${variantZoomScale})`, transformOrigin: 'center', transition: variantDrag.current ? 'none' : 'transform 0.05s' }} />
+                      style={{ height: fitH(0.85), width: 'auto', maxWidth: '90vw', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c', transform: `translate(${variantPan.x}px, ${variantPan.y}px) scale(${variantZoomScale})`, transformOrigin: 'center', transition: variantDrag.current ? 'none' : 'transform 0.05s' }} />
                   </div>
                   </div>{/* position:relative wrapper */}
                   <div style={{ color: '#ffffff44', fontSize: 11 }}>휠: 확대/축소 · 드래그: 이동</div>
@@ -1096,13 +1385,26 @@ export default function FemaleCharacterCreatePage({
                       <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff08', borderRadius: 6, border: '1px dashed #ffffff22' }} />
                     )}
                     {selectedUrl ? (
-                      <button style={{ background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1 }}
-                        disabled={busy}
-                        onClick={() => {
-                          setSelectedPoseImages(prev => { const n = { ...prev }; delete n[`${poseKey}_${exprKey}`]; return n })
-                          setActivePoseKey(poseKey); setActiveExprStep(exprKey)
-                          handleGenVariants(poseKey, exprKey)
-                        }}>🔄 다시</button>
+                      <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+                        <button style={{ background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 6, padding: '4px 0', flex: 1, fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1 }}
+                          disabled={busy}
+                          onClick={() => {
+                            setSelectedPoseImages(prev => { const n = { ...prev }; delete n[`${poseKey}_${exprKey}`]; return n })
+                            setActivePoseKey(poseKey); setActiveExprStep(exprKey)
+                            handleGenVariants(poseKey, exprKey)
+                          }}>🔄 다시</button>
+                        <button
+                          style={{ background: 'rgba(201,168,76,0.15)', border: '1px solid #c9a84c66', color: '#c9a84c', borderRadius: 6, padding: '4px 6px', fontSize: 11, cursor: 'pointer' }}
+                          title="성감대 위치 조정"
+                          onClick={() => {
+                            const savedKey = `${poseKey}_${exprKey}_hotspots`
+                            const fallbackKey = `${poseKey}_aroused_hotspots`
+                            const savedZones = (selectedPoseImages[savedKey] ?? selectedPoseImages[fallbackKey]) as any
+                            setHotspotEditorInfo({ poseKey, exprKey, imageUrl: selectedUrl, savedZones })
+                          }}>
+                          📍
+                        </button>
+                      </div>
                     ) : isGeneratingThis ? (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', padding: '8px 0' }}>
                         <style>{`@keyframes col-spin2{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
@@ -1140,7 +1442,7 @@ export default function FemaleCharacterCreatePage({
                     <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>{label} 애니</span>
                     {done ? (
                       <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 6, border: '1px solid #e9456066', overflow: 'hidden', cursor: 'zoom-in' }}
-                        onClick={() => setEnlargedSprite(spriteUrls)}>
+                        onClick={() => setEnlargedSprite({ urls: spriteUrls, poseKey, exprKey })}>
                         <SpriteAnimation urls={spriteUrls} fps={4} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                     ) : (
@@ -1172,6 +1474,14 @@ export default function FemaleCharacterCreatePage({
                         }}
                       >{done ? '🔄 재생성' : '▶ 애니 생성'}</button>
                     )}
+                    {srcUrl && (() => {
+                      const hasHotspot = !!(selectedPoseImages[`${poseKey}_${exprKey}_hotspots`] ?? selectedPoseImages[`${poseKey}_aroused_hotspots`])
+                      return (
+                        <div style={{ fontSize: 10, textAlign: 'center', padding: '3px 0', color: hasHotspot ? '#66BB6A' : '#e9456088' }}>
+                          {hasHotspot ? '📍 성감대 적용됨' : '📍 성감대 미설정'}
+                        </div>
+                      )
+                    })()}
                   </div>
                 )
               }
@@ -1196,6 +1506,47 @@ export default function FemaleCharacterCreatePage({
               )
             })}
           </div>
+
+          {/* 핫스팟 드래그 에디터 모달 */}
+          {hotspotEditorInfo && (
+            <HotspotEditor
+              imageUrl={hotspotEditorInfo.imageUrl}
+              poseKey={hotspotEditorInfo.poseKey}
+              initialZones={hotspotEditorInfo.savedZones}
+              onSave={async (zones) => {
+                const key = `${hotspotEditorInfo.poseKey}_${hotspotEditorInfo.exprKey}_hotspots`
+                setSelectedPoseImages(prev => ({ ...prev, [key]: zones as any }))
+                setHotspotEditorInfo(null)
+
+                // localStorage 백업 (DB 실패해도 새로고침 후 복원)
+                try {
+                  const lsKey = `hotspots_${charId}`
+                  const existing = JSON.parse(localStorage.getItem(lsKey) ?? '{}')
+                  localStorage.setItem(lsKey, JSON.stringify({ ...existing, [key]: zones }))
+                } catch {}
+
+                // DB update (row가 없으면 아무것도 안 함 — 완료 저장 시 포함됨)
+                try {
+                  const { data: row, error: selErr } = await supabase
+                    .from('female_characters').select('pose_images').eq('id', charId).maybeSingle()
+                  if (selErr) throw selErr
+                  if (row) {
+                    const { error: upErr } = await supabase
+                      .from('female_characters')
+                      .update({ pose_images: { ...(row.pose_images ?? {}), [key]: zones } })
+                      .eq('id', charId)
+                    if (upErr) throw upErr
+                  }
+                } catch (e: any) {
+                  console.error('핫스팟 DB 저장 실패:', e)
+                  alert(`⚠️ DB 저장 실패: ${e?.message ?? e}\n새로고침해도 이번 세션에선 유지됩니다.`)
+                  return
+                }
+                alert(`✅ ${hotspotEditorInfo.poseKey} ${hotspotEditorInfo.exprKey === 'aroused' ? '흥분' : '절정'} 성감대 저장 완료`)
+              }}
+              onClose={() => setHotspotEditorInfo(null)}
+            />
+          )}
 
           {/* 완료 버튼 */}
           <button
@@ -1474,6 +1825,20 @@ export default function FemaleCharacterCreatePage({
               <span style={{ ...S.sliderVal, color }}>{personality[key]}</span>
             </div>
           ))}
+          {/* 데이트 비용 부담율 */}
+          <div style={{ ...S.personalityRow, marginTop: 8 }}>
+            <span style={{ ...S.persLabel, color: '#c9a84c' }}>비용</span>
+            <span style={S.persEdge}>0%</span>
+            <input type="range" min={0} max={100} step={5} value={dateCostShare}
+              onChange={e => setDateCostShare(Number(e.target.value))}
+              style={S.slider} />
+            <span style={S.persEdge}>100%</span>
+            <span style={{ ...S.sliderVal, color: '#c9a84c', minWidth: 32 }}>{dateCostShare}%</span>
+          </div>
+          <div style={{ color: '#ffffff44', fontSize: 10, marginBottom: 4, paddingLeft: 2 }}>
+            💳 데이트 비용 부담율 — 0%: 남성 전액 / 50%: 더치페이 / 100%: 여성 전액
+          </div>
+
           <div style={S.row}>
             <label style={S.label}>창조자 메모 <span style={S.hint}>(선택)</span></label>
             <textarea style={S.textarea} value={memo} onChange={e => setMemo(e.target.value)} placeholder="AI 대화에 직접 주입되는 메모 (100자 이내)" maxLength={100} rows={2} />
@@ -1727,7 +2092,7 @@ export default function FemaleCharacterCreatePage({
           onClick={handleComplete}
           disabled={generating}
         >
-          {generating ? `🎨 ${genProgress || '이미지 생성 중...'}` : '✅ 캐릭터 등록'}
+          {generating ? `🎨 ${genProgress || '이미지 생성 중...'}` : isEdit ? '다음 → 이미지 편집' : '✅ 캐릭터 등록'}
         </button>
         {generating && (
           <button
