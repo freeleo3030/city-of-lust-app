@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, generatePoseSprite, deleteImageFromStorage, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS } from '../lib/generateCharImages'
+import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, generatePoseSprite, deleteImageFromStorage, analyzePoseHotspots, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS } from '../lib/generateCharImages'
 import { supabase } from '../lib/supabase'
 
 export interface FemaleCharacterData {
@@ -624,12 +624,10 @@ export default function FemaleCharacterCreatePage({
     setSelectedExprSet(0)
   }
 
-  const handleSelectVariant = (poseKey: string, exprKey: string, url: string) => {
+  const handleSelectVariant = async (poseKey: string, exprKey: string, url: string) => {
     const slotKey = `${poseKey}_${exprKey}`
-    // 같은 슬롯의 다른 variants 삭제
     const variants = poseVariants[poseKey]?.[exprKey] ?? []
     variants.forEach(u => { if (u && u !== url) deleteImageFromStorage(u) })
-    // 이전에 이미 선택되어 있던 이미지 삭제 (이전 세션 포함)
     const prevUrl = selectedPoseImages[slotKey]
     if (prevUrl && prevUrl !== url) deleteImageFromStorage(prevUrl)
     setPoseVariants(prev => ({
@@ -637,6 +635,19 @@ export default function FemaleCharacterCreatePage({
       [poseKey]: { ...(prev[poseKey] ?? {}), [exprKey]: [url] }
     }))
     setSelectedPoseImages(prev => ({ ...prev, [slotKey]: url }))
+
+    // aroused 이미지 선택 시 Gemini로 핫스팟 좌표 자동 분석 → DB 저장
+    if (exprKey === 'aroused') {
+      try {
+        const hotspots = await analyzePoseHotspots(url)
+        const hotspotKey = `${poseKey}_hotspots`
+        const { data: row } = await supabase.from('female_characters').select('pose_images').eq('id', charId).single()
+        const merged = { ...(row?.pose_images ?? {}), [hotspotKey]: hotspots }
+        await supabase.from('female_characters').update({ pose_images: merged }).eq('id', charId)
+      } catch (e) {
+        console.warn('핫스팟 분석 실패 (무시):', e)
+      }
+    }
   }
 
   // 최종 저장 및 완료

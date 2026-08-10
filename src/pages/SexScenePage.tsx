@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
+import type { HotspotZone } from '../lib/generateCharImages'
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
@@ -7,22 +8,9 @@ type Tool = 'hand' | 'lips' | 'tongue' | 'finger' | 'toy'
 type ScenePhase = 'foreplay' | 'aroused' | 'climax' | 'afterglow'
 type ErogenousKey = 'breast' | 'neckEar' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
 
-interface BodyZone {
-  key: ErogenousKey
-  label: string
-  cx: number   // % of image width
-  cy: number   // % of image height
-  rx: number   // ellipse radius x %
-  ry: number   // ellipse radius y %
-  color: string
-}
+// ─── 핫스팟 좌표 — fallback용 하드코딩 (Gemini 분석 좌표 없을 때 사용) ───────
 
-// ─── 핫스팟 좌표 (포즈별) ────────────────────────────────────────────────────
-// 이미지 기준 % 좌표, 포즈 구도에 맞게 설정
-
-// ─── 핫스팟 좌표 — 실제 Supabase 이미지 분석 기반 ───────────────────────────
-
-const HOTSPOTS: Record<string, BodyZone[]> = {
+const HOTSPOTS: Record<string, HotspotZone[]> = {
   // 정상위: 오버헤드, 머리 상단, 다리 벌린 채 하단
   missionary: [
     { key: 'mouth',    label: '입',         cx: 50, cy: 18, rx: 10, ry: 5,  color: '#ff6b9d' },
@@ -208,7 +196,11 @@ export default function SexScenePage({
     feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
   }, [ended, phase, femaleChar.erogenous, toolMult, ageMult])
 
-  const hotspots = HOTSPOTS[poseKey] ?? HOTSPOTS['missionary']
+  // DB에 저장된 Gemini 분석 좌표 우선, 없으면 하드코딩 fallback
+  const storedHotspots = poseImages[`${poseKey}_hotspots`] as unknown as HotspotZone[] | undefined
+  const hotspots: HotspotZone[] = (storedHotspots && storedHotspots.length > 0)
+    ? storedHotspots
+    : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary'])
 
   // 현재 표시할 이미지/스프라이트
   const showSprite = phase === 'aroused' && spriteUrls.length >= 2

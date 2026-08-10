@@ -889,3 +889,92 @@ export async function generateMaleProfileImage(char: {
 }
 
 export { EXPRESSION_LEVELS, CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES, POSE_SPRITE_PROMPTS }
+
+// ─── Gemini Vision 핫스팟 자동 분석 ─────────────────────────────────────────
+
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY
+
+export interface HotspotZone {
+  key: 'breast' | 'neckEar' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
+  label: string
+  cx: number; cy: number; rx: number; ry: number
+  color: string
+}
+
+const ZONE_COLORS: Record<string, string> = {
+  mouth: '#ff6b9d', neckEar: '#c77dff', breast: '#ff6b9d',
+  thigh: '#f77f00', clitoris: '#e94560', vagina: '#e94560', anal: '#c9a84c',
+}
+const ZONE_LABELS: Record<string, string> = {
+  mouth: '입', neckEar: '목', breast: '가슴',
+  thigh: '허벅지', clitoris: '클리토리스', vagina: '질', anal: '항문',
+}
+
+export async function analyzePoseHotspots(imageUrl: string): Promise<HotspotZone[]> {
+  // 이미지를 base64로 변환
+  const resp = await fetch(imageUrl)
+  const blob = await resp.blob()
+  const base64 = await new Promise<string>(resolve => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve((reader.result as string).split(',')[1])
+    reader.readAsDataURL(blob)
+  })
+  const mimeType = blob.type || 'image/jpeg'
+
+  const prompt = `This is an adult nude photo. Analyze the body part positions and return ONLY a JSON object.
+For each visible body part, estimate the center position as a percentage (0-100) of image width (cx) and height (cy), and the ellipse radius (rx, ry).
+Return JSON in this exact format (omit parts not visible):
+{
+  "mouth": {"cx": 50, "cy": 15, "rx": 8, "ry": 4},
+  "neckEar": {"cx": 50, "cy": 22, "rx": 7, "ry": 3},
+  "breast_left": {"cx": 38, "cy": 40, "rx": 13, "ry": 11},
+  "breast_right": {"cx": 62, "cy": 40, "rx": 13, "ry": 11},
+  "thigh_left": {"cx": 20, "cy": 70, "rx": 14, "ry": 13},
+  "thigh_right": {"cx": 80, "cy": 70, "rx": 14, "ry": 13},
+  "clitoris": {"cx": 50, "cy": 80, "rx": 8, "ry": 4},
+  "vagina": {"cx": 50, "cy": 86, "rx": 7, "ry": 4},
+  "anal": {"cx": 50, "cy": 91, "rx": 6, "ry": 4}
+}
+Return ONLY the JSON, no explanation.`
+
+  const body = {
+    contents: [{
+      parts: [
+        { text: prompt },
+        { inline_data: { mime_type: mimeType, data: base64 } }
+      ]
+    }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 512 }
+  }
+
+  const geminiResp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+  )
+  const geminiData = await geminiResp.json()
+  const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+
+  // JSON 파싱
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('Gemini 좌표 분석 실패')
+  const raw = JSON.parse(jsonMatch[0])
+
+  // HotspotZone 배열로 변환
+  const zones: HotspotZone[] = []
+  const add = (key: HotspotZone['key'], d: any) => {
+    if (!d) return
+    zones.push({ key, label: ZONE_LABELS[key], cx: d.cx, cy: d.cy, rx: d.rx, ry: d.ry, color: ZONE_COLORS[key] })
+  }
+  add('mouth', raw.mouth)
+  add('neckEar', raw.neckEar)
+  if (raw.breast_left)  add('breast', raw.breast_left)
+  if (raw.breast_right) add('breast', raw.breast_right)
+  if (!raw.breast_left && !raw.breast_right && raw.breast) add('breast', raw.breast)
+  if (raw.thigh_left)  add('thigh', raw.thigh_left)
+  if (raw.thigh_right) add('thigh', raw.thigh_right)
+  add('clitoris', raw.clitoris)
+  add('vagina', raw.vagina)
+  add('anal', raw.anal)
+
+  return zones
+}
