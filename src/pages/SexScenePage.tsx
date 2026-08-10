@@ -234,7 +234,7 @@ export default function SexScenePage({
       </div>
 
       {/* 이미지 + 핫스팟 */}
-      <div style={{ position: 'relative', width: '100%' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '50vw' }}>
         {showSprite ? (
           <SpriteAnimation urls={spriteUrls} fps={4} style={{ width: '100%', display: 'block', borderRadius: 8 }} />
         ) : (
