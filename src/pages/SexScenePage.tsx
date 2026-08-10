@@ -216,29 +216,31 @@ export default function SexScenePage({
 
   const imgSrc = showClimax ? climaxImg : arousedImg
 
+  // body에 zoom:2 있으므로 이 페이지에서만 상쇄 → viewport 단위가 정상 동작
   return (
     <div style={{
-      background: '#0d0d1a', width: '100vw', height: '100vh', overflow: 'hidden',
-      userSelect: 'none', position: 'fixed', top: 0, left: 0,
+      background: '#0d0d1a', overflow: 'hidden', userSelect: 'none',
+      position: 'fixed', top: 0, left: 0,
+      width: window.innerWidth, height: window.innerHeight,
+      zoom: 0.5,   // body zoom:2 상쇄
+      fontSize: 24, // zoom 상쇄 후 폰트 재설정
     }}>
 
-      {/* 상단 게이지 — fixed */}
+      {/* 상단 게이지 */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
         background: 'rgba(13,13,26,0.95)', borderBottom: '1px solid #ffffff11',
-        padding: '8px 16px 4px', display: 'flex', flexDirection: 'column', gap: 3,
+        padding: '8px 16px 4px', display: 'flex', flexDirection: 'column', gap: 4,
       }}>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <ArousalGauge value={femaleArousal} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
-          <ArousalGauge value={maleArousal}   label="💙 남캐"   color="#4a90e2" flash={maleFlash} />
-        </div>
-        <div style={{ color: '#ffffff44', fontSize: 9, letterSpacing: 2, textAlign: 'center' }}>
+        <ArousalGauge value={femaleArousal} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
+        <ArousalGauge value={maleArousal}   label="💙 남캐"   color="#4a90e2" flash={maleFlash} />
+        <div style={{ color: '#ffffff44', fontSize: 11, letterSpacing: 2, textAlign: 'center' }}>
           {phase === 'foreplay' ? '전희' : phase === 'aroused' ? '흥분' : phase === 'climax' ? '절정 ✨' : '여운'}
         </div>
       </div>
 
-      {/* 이미지 + 핫스팟 — 상하 UI 사이 공간 꽉 채움 */}
-      <div style={{ position: 'absolute', top: 56, bottom: 56, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      {/* 이미지 + 핫스팟 */}
+      <div style={{ position: 'absolute', top: 80, bottom: 52, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
       <div style={{ position: 'relative', height: '100%', width: 'auto' }}>
         {showSprite ? (
           <SpriteAnimation urls={spriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
