@@ -1,3 +1,35 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  zoom: 2;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.4; transform: translateX(-50%) scale(1.6); }
+}
+
+@keyframes legL {
+  0%, 100% { transform: rotate(-34deg); }
+  50%       { transform: rotate(34deg);  }
+}
+@keyframes legR {
+  0%, 100% { transform: rotate(34deg);  }
+  50%       { transform: rotate(-34deg); }
+}
+@keyframes armL {
+  0%, 100% { transform: rotate(-28deg); }
+  50%       { transform: rotate(28deg);  }
+}
+@keyframes armR {
+  0%, 100% { transform: rotate(28deg);  }
+  50%       { transform: rotate(-28deg); }
+}
+@keyframes bodyBob {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-3px); }
+}
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
