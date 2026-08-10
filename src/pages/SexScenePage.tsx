@@ -20,42 +20,53 @@ interface BodyZone {
 // ─── 핫스팟 좌표 (포즈별) ────────────────────────────────────────────────────
 // 이미지 기준 % 좌표, 포즈 구도에 맞게 설정
 
+// ─── 핫스팟 좌표 — 실제 Supabase 이미지 분석 기반 ───────────────────────────
+
 const HOTSPOTS: Record<string, BodyZone[]> = {
+  // 정상위: 오버헤드, 머리 상단, 다리 벌린 채 하단
   missionary: [
-    { key: 'mouth',    label: '입',      cx: 50, cy: 7,  rx: 8,  ry: 5,  color: '#ff6b9d' },
-    { key: 'neckEar',  label: '목',      cx: 50, cy: 14, rx: 7,  ry: 4,  color: '#c77dff' },
-    { key: 'breast',   label: '가슴',    cx: 50, cy: 33, rx: 22, ry: 14, color: '#ff6b9d' },
-    { key: 'thigh',    label: '허벅지L', cx: 22, cy: 72, rx: 14, ry: 12, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지R', cx: 78, cy: 72, rx: 14, ry: 12, color: '#f77f00' },
-    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 60, rx: 10, ry: 6, color: '#e94560' },
-    { key: 'vagina',   label: '질',      cx: 50, cy: 67, rx: 9,  ry: 5,  color: '#e94560' },
+    { key: 'mouth',    label: '입',         cx: 50, cy: 18, rx: 10, ry: 5,  color: '#ff6b9d' },
+    { key: 'neckEar',  label: '목',         cx: 50, cy: 27, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'breast',   label: '가슴',       cx: 37, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴',       cx: 63, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
+    { key: 'thigh',    label: '허벅지',     cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'thigh',    label: '허벅지',     cx: 78, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 81, rx: 8,  ry: 4,  color: '#e94560' },
+    { key: 'vagina',   label: '질',         cx: 50, cy: 86, rx: 7,  ry: 4,  color: '#e94560' },
   ],
+  // 후배위: 측면+후방, 얼굴 좌상단 뒤돌아봄, 엉덩이+음부 중앙
   doggy: [
-    { key: 'anal',     label: '항문',    cx: 50, cy: 43, rx: 7,  ry: 5,  color: '#c9a84c' },
-    { key: 'vagina',   label: '질',      cx: 50, cy: 55, rx: 10, ry: 6,  color: '#e94560' },
-    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 62, rx: 8, ry: 5, color: '#e94560' },
-    { key: 'thigh',    label: '허벅지L', cx: 20, cy: 72, rx: 13, ry: 11, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지R', cx: 80, cy: 72, rx: 13, ry: 11, color: '#f77f00' },
-    { key: 'neckEar',  label: '허리',    cx: 50, cy: 22, rx: 18, ry: 8,  color: '#c77dff' },
-    { key: 'breast',   label: '가슴',    cx: 50, cy: 33, rx: 15, ry: 10, color: '#ff6b9d' },
+    { key: 'mouth',    label: '입',         cx: 23, cy: 22, rx: 12, ry: 9,  color: '#ff6b9d' },
+    { key: 'neckEar',  label: '목',         cx: 32, cy: 30, rx: 8,  ry: 5,  color: '#c77dff' },
+    { key: 'breast',   label: '가슴',       cx: 42, cy: 60, rx: 10, ry: 10, color: '#ff6b9d' },
+    { key: 'anal',     label: '항문',       cx: 56, cy: 53, rx: 7,  ry: 5,  color: '#c9a84c' },
+    { key: 'vagina',   label: '질',         cx: 55, cy: 62, rx: 8,  ry: 5,  color: '#e94560' },
+    { key: 'clitoris', label: '클리토리스', cx: 54, cy: 68, rx: 7,  ry: 4,  color: '#e94560' },
+    { key: 'thigh',    label: '허벅지',     cx: 30, cy: 82, rx: 18, ry: 11, color: '#f77f00' },
+    { key: 'thigh',    label: '허벅지',     cx: 72, cy: 82, rx: 14, ry: 11, color: '#f77f00' },
   ],
+  // 여성상위: 정면, 앉아서 올라탄 자세
   cowgirl: [
-    { key: 'mouth',    label: '입',      cx: 50, cy: 8,  rx: 8,  ry: 5,  color: '#ff6b9d' },
-    { key: 'breast',   label: '가슴',    cx: 50, cy: 37, rx: 22, ry: 16, color: '#ff6b9d' },
-    { key: 'neckEar',  label: '목',      cx: 50, cy: 17, rx: 7,  ry: 4,  color: '#c77dff' },
-    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 68, rx: 10, ry: 6, color: '#e94560' },
-    { key: 'vagina',   label: '질',      cx: 50, cy: 75, rx: 9,  ry: 5,  color: '#e94560' },
-    { key: 'thigh',    label: '허벅지L', cx: 18, cy: 70, rx: 13, ry: 18, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지R', cx: 82, cy: 70, rx: 13, ry: 18, color: '#f77f00' },
+    { key: 'mouth',    label: '입',         cx: 47, cy: 13, rx: 12, ry: 8,  color: '#ff6b9d' },
+    { key: 'neckEar',  label: '목',         cx: 47, cy: 23, rx: 7,  ry: 4,  color: '#c77dff' },
+    { key: 'breast',   label: '가슴',       cx: 35, cy: 38, rx: 16, ry: 13, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴',       cx: 60, cy: 37, rx: 14, ry: 12, color: '#ff6b9d' },
+    { key: 'thigh',    label: '허벅지',     cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
+    { key: 'thigh',    label: '허벅지',     cx: 75, cy: 75, rx: 11, ry: 16, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스', cx: 49, cy: 79, rx: 8,  ry: 4,  color: '#e94560' },
+    { key: 'vagina',   label: '질',         cx: 49, cy: 84, rx: 7,  ry: 4,  color: '#e94560' },
   ],
+  // 버터플라이(side): 오버헤드, 두 다리 위로 들린 채, 얼굴 중앙
   side: [
-    { key: 'breast',   label: '가슴',    cx: 50, cy: 32, rx: 22, ry: 14, color: '#ff6b9d' },
-    { key: 'mouth',    label: '입',      cx: 50, cy: 7,  rx: 8,  ry: 5,  color: '#ff6b9d' },
-    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 58, rx: 10, ry: 6, color: '#e94560' },
-    { key: 'vagina',   label: '질',      cx: 50, cy: 65, rx: 9,  ry: 5,  color: '#e94560' },
-    { key: 'anal',     label: '항문',    cx: 50, cy: 72, rx: 7,  ry: 5,  color: '#c9a84c' },
-    { key: 'thigh',    label: '허벅지L', cx: 18, cy: 68, rx: 13, ry: 14, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지R', cx: 82, cy: 68, rx: 13, ry: 14, color: '#f77f00' },
+    { key: 'mouth',    label: '입',         cx: 50, cy: 28, rx: 11, ry: 7,  color: '#ff6b9d' },
+    { key: 'neckEar',  label: '목',         cx: 50, cy: 37, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'breast',   label: '가슴',       cx: 36, cy: 48, rx: 14, ry: 11, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴',       cx: 62, cy: 47, rx: 14, ry: 11, color: '#ff6b9d' },
+    { key: 'thigh',    label: '허벅지',     cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'thigh',    label: '허벅지',     cx: 76, cy: 63, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 76, rx: 8,  ry: 4,  color: '#e94560' },
+    { key: 'vagina',   label: '질',         cx: 50, cy: 81, rx: 7,  ry: 4,  color: '#e94560' },
+    { key: 'anal',     label: '항문',       cx: 50, cy: 87, rx: 6,  ry: 4,  color: '#c9a84c' },
   ],
 }
 
@@ -212,18 +223,18 @@ export default function SexScenePage({
     }}>
 
       {/* 상단 게이지 */}
-      <div style={{ width: '100%', maxWidth: 480, padding: '12px 16px 8px', display: 'flex', gap: 12 }}>
+      <div style={{ width: '100%', padding: '12px 16px 6px', display: 'flex', gap: 12 }}>
         <ArousalGauge value={femaleArousal} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
         <ArousalGauge value={maleArousal}   label="💙 남캐"   color="#4a90e2" flash={maleFlash} />
       </div>
 
       {/* 페이즈 텍스트 */}
-      <div style={{ color: '#ffffff44', fontSize: 11, marginBottom: 6, letterSpacing: 2 }}>
+      <div style={{ color: '#ffffff44', fontSize: 11, marginBottom: 4, letterSpacing: 2 }}>
         {phase === 'foreplay' ? '전희' : phase === 'aroused' ? '흥분' : phase === 'climax' ? '절정 ✨' : '여운'}
       </div>
 
       {/* 이미지 + 핫스팟 */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: 400 }}>
+      <div style={{ position: 'relative', width: '100%' }}>
         {showSprite ? (
           <SpriteAnimation urls={spriteUrls} fps={4} style={{ width: '100%', display: 'block', borderRadius: 8 }} />
         ) : (
