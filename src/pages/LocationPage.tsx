@@ -13,6 +13,7 @@ interface Props {
   location: Location
   femaleChars: FemaleCharacterData[]
   onBack: () => void
+  onStartSexScene?: (char: FemaleCharacterData, pose: string) => void
 }
 
 const marriedLabel = { '미혼': '미혼', '기혼': '기혼', '돌싱': '돌싱' }
@@ -24,8 +25,16 @@ const diffColor = (married: string, age: number) => {
   return '#64b5f6'
 }
 
-export default function LocationPage({ location, femaleChars, onBack }: Props) {
+const POSES = [
+  { key: 'missionary', label: '정상위', emoji: '🛏️' },
+  { key: 'doggy',      label: '후배위', emoji: '🐾' },
+  { key: 'cowgirl',    label: '여성상위', emoji: '⭐' },
+  { key: 'side',       label: '버터플라이', emoji: '🦋' },
+]
+
+export default function LocationPage({ location, femaleChars, onBack, onStartSexScene }: Props) {
   const [selected, setSelected] = useState<FemaleCharacterData | null>(null)
+  const [showPoseSelect, setShowPoseSelect] = useState(false)
 
   const chars = femaleChars.filter(c => c.location === location.name)
 
@@ -104,9 +113,42 @@ export default function LocationPage({ location, femaleChars, onBack }: Props) {
               <div style={S.bottomMeta}>{selected.job} · {selected.age}세 · {marriedLabel[selected.married]}</div>
             </div>
           </div>
-          <button style={{ ...S.approachBtn, background: location.color }}>
-            접근하기 →
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-end' }}>
+            <button style={{ ...S.approachBtn, background: location.color }}>
+              접근하기 →
+            </button>
+            {onStartSexScene && (
+              <button
+                style={{ ...S.approachBtn, background: '#e94560', fontSize: 12, padding: '8px 16px' }}
+                onClick={() => setShowPoseSelect(true)}
+              >
+                ❤️‍🔥 SEX 시작
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 포즈 선택 모달 */}
+      {showPoseSelect && selected && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#1a1a2e', border: '1px solid #e9456044', borderRadius: 16, padding: 24, width: 280 }}>
+            <div style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>자세 선택</div>
+            <div style={{ color: '#ffffff66', fontSize: 12, marginBottom: 16 }}>{selected.nickname}와(과) 어떤 자세로?</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {POSES.map(p => (
+                <button
+                  key={p.key}
+                  onClick={() => { setShowPoseSelect(false); onStartSexScene?.(selected, p.key) }}
+                  style={{ background: 'rgba(233,69,96,0.1)', border: '1px solid #e9456044', borderRadius: 10, padding: '12px 16px', color: '#fff', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+                >
+                  <span style={{ fontSize: 20 }}>{p.emoji}</span>
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowPoseSelect(false)} style={{ marginTop: 12, width: '100%', background: 'none', border: '1px solid #ffffff22', borderRadius: 8, padding: '8px 0', color: '#ffffff66', cursor: 'pointer', fontSize: 13 }}>취소</button>
+          </div>
         </div>
       )}
     </div>

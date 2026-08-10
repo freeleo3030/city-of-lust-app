@@ -8,6 +8,7 @@ import MapPage from './pages/MapPage'
 import FemaleCharacterCreatePage from './pages/FemaleCharacterCreatePage'
 import type { FemaleCharacterData } from './pages/FemaleCharacterCreatePage'
 import CreatorDashboardPage from './pages/CreatorDashboardPage'
+import SexScenePage from './pages/SexScenePage'
 
 export default function App() {
   const [user, setUser] = useState<any>(null)
@@ -25,6 +26,7 @@ export default function App() {
   const [creatorMode, setCreatorMode] = useState(false)
   const [creatorDashboard, setCreatorDashboard] = useState(false)
   const [editingChar, setEditingChar] = useState<FemaleCharacterData | null>(null)
+  const [sexScene, setSexScene] = useState<{ char: FemaleCharacterData; pose: string } | null>(null)
   const [femaleChars, setFemaleChars] = useState<FemaleCharacterData[]>(() => {
     try { const s = localStorage.getItem('col_female_chars'); return s ? JSON.parse(s) : [] } catch { return [] }
   })
@@ -62,6 +64,15 @@ export default function App() {
   if (!character) return <CharacterCreatePage onComplete={saveCharacter} initialData={JSON.parse(localStorage.getItem('col_character') ?? 'null')} gold={gold} />
   if (!characterRevealed) return <CharacterRevealPage character={character} onEnter={() => saveRevealed(true)} onBack={goBackToEdit} />
 
+  if (sexScene) return (
+    <SexScenePage
+      femaleChar={sexScene.char}
+      poseKey={sexScene.pose}
+      maleChar={character}
+      onEnd={(_result) => setSexScene(null)}
+    />
+  )
+
   if (creatorDashboard) return (
     <CreatorDashboardPage
       chars={femaleChars}
@@ -98,5 +109,5 @@ export default function App() {
     />
   )
 
-  return <MapPage character={character} onViewCharacter={() => setCharacterRevealed(false)} gold={gold} onCreatorMode={() => setCreatorDashboard(true)} femaleChars={femaleChars} />
+  return <MapPage character={character} onViewCharacter={() => setCharacterRevealed(false)} gold={gold} onCreatorMode={() => setCreatorDashboard(true)} femaleChars={femaleChars} onStartSexScene={(char, pose) => setSexScene({ char, pose })} />
 }
