@@ -216,20 +216,17 @@ export default function SexScenePage({
 
   const imgSrc = showClimax ? climaxImg : arousedImg
 
-  // 게이지 영역 높이 (fixed header)
-  const GAUGE_H = 64
-
   return (
     <div style={{
-      background: '#0d0d1a', height: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', userSelect: 'none', overflow: 'hidden',
+      background: '#0d0d1a', width: '100vw', height: '100vh', overflow: 'hidden',
+      userSelect: 'none', position: 'fixed', top: 0, left: 0,
     }}>
 
       {/* 상단 게이지 — fixed */}
       <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
         background: 'rgba(13,13,26,0.95)', borderBottom: '1px solid #ffffff11',
-        padding: '10px 16px 6px', display: 'flex', flexDirection: 'column', gap: 4,
+        padding: '8px 16px 4px', display: 'flex', flexDirection: 'column', gap: 3,
       }}>
         <div style={{ display: 'flex', gap: 12 }}>
           <ArousalGauge value={femaleArousal} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
@@ -240,9 +237,9 @@ export default function SexScenePage({
         </div>
       </div>
 
-      {/* 이미지 + 핫스팟 — 화면 높이에 맞게 */}
-      <div style={{ position: 'relative', marginTop: GAUGE_H, flex: 1, display: 'flex', alignItems: 'flex-start' }}>
-      <div style={{ position: 'relative', height: `calc(100vh - ${GAUGE_H}px)`, width: 'auto' }}>
+      {/* 이미지 + 핫스팟 — 상하 UI 사이 공간 꽉 채움 */}
+      <div style={{ position: 'absolute', top: 56, bottom: 56, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ position: 'relative', height: '100%', width: 'auto' }}>
         {showSprite ? (
           <SpriteAnimation urls={spriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
         ) : (
@@ -325,9 +322,9 @@ export default function SexScenePage({
       </div>
       </div>
 
-      {/* 하단 도구 선택 — fixed */}
+      {/* 하단 도구 선택 — absolute bottom */}
       <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100,
         background: 'rgba(13,13,26,0.95)', borderTop: '1px solid #ffffff11',
         padding: '8px 12px', display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center',
       }}>
