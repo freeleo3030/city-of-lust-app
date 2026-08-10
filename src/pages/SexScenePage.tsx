@@ -216,29 +216,37 @@ export default function SexScenePage({
 
   const imgSrc = showClimax ? climaxImg : arousedImg
 
+  // 게이지 영역 높이 (fixed header)
+  const GAUGE_H = 64
+
   return (
     <div style={{
-      background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', userSelect: 'none',
+      background: '#0d0d1a', height: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', userSelect: 'none', overflow: 'hidden',
     }}>
 
-      {/* 상단 게이지 */}
-      <div style={{ width: '100%', padding: '12px 16px 6px', display: 'flex', gap: 12 }}>
-        <ArousalGauge value={femaleArousal} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
-        <ArousalGauge value={maleArousal}   label="💙 남캐"   color="#4a90e2" flash={maleFlash} />
+      {/* 상단 게이지 — fixed */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        background: 'rgba(13,13,26,0.95)', borderBottom: '1px solid #ffffff11',
+        padding: '10px 16px 6px', display: 'flex', flexDirection: 'column', gap: 4,
+      }}>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <ArousalGauge value={femaleArousal} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
+          <ArousalGauge value={maleArousal}   label="💙 남캐"   color="#4a90e2" flash={maleFlash} />
+        </div>
+        <div style={{ color: '#ffffff44', fontSize: 9, letterSpacing: 2, textAlign: 'center' }}>
+          {phase === 'foreplay' ? '전희' : phase === 'aroused' ? '흥분' : phase === 'climax' ? '절정 ✨' : '여운'}
+        </div>
       </div>
 
-      {/* 페이즈 텍스트 */}
-      <div style={{ color: '#ffffff44', fontSize: 11, marginBottom: 4, letterSpacing: 2 }}>
-        {phase === 'foreplay' ? '전희' : phase === 'aroused' ? '흥분' : phase === 'climax' ? '절정 ✨' : '여운'}
-      </div>
-
-      {/* 이미지 + 핫스팟 */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: '50vw' }}>
+      {/* 이미지 + 핫스팟 — 화면 높이에 맞게 */}
+      <div style={{ position: 'relative', marginTop: GAUGE_H, flex: 1, display: 'flex', alignItems: 'flex-start' }}>
+      <div style={{ position: 'relative', height: `calc(100vh - ${GAUGE_H}px)`, width: 'auto' }}>
         {showSprite ? (
-          <SpriteAnimation urls={spriteUrls} fps={4} style={{ width: '100%', display: 'block', borderRadius: 8 }} />
+          <SpriteAnimation urls={spriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
         ) : (
-          <img src={imgSrc} style={{ width: '100%', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
+          <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
         )}
 
         {/* SVG 핫스팟 오버레이 */}
@@ -315,9 +323,14 @@ export default function SexScenePage({
           </div>
         )}
       </div>
+      </div>
 
-      {/* 도구 선택 */}
-      <div style={{ display: 'flex', gap: 6, padding: '10px 0', flexWrap: 'wrap', justifyContent: 'center' }}>
+      {/* 하단 도구 선택 — fixed */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
+        background: 'rgba(13,13,26,0.95)', borderTop: '1px solid #ffffff11',
+        padding: '8px 12px', display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center',
+      }}>
         {TOOLS.map(t => (
           <button
             key={t.key}
@@ -332,15 +345,13 @@ export default function SexScenePage({
             {t.emoji} {t.label} <span style={{ fontSize: 10, color: '#ffffff44' }}>×{t.mult}</span>
           </button>
         ))}
+        <button
+          onClick={() => onEnd('fail')}
+          style={{ background: 'none', border: '1px solid #ffffff22', borderRadius: 8, padding: '6px 14px', color: '#ffffff33', fontSize: 11, cursor: 'pointer' }}
+        >
+          포기
+        </button>
       </div>
-
-      {/* 종료 버튼 */}
-      <button
-        onClick={() => onEnd('fail')}
-        style={{ marginTop: 8, background: 'none', border: '1px solid #ffffff22', borderRadius: 8, padding: '6px 20px', color: '#ffffff33', fontSize: 12, cursor: 'pointer' }}
-      >
-        포기
-      </button>
 
       <style>{`
         @keyframes fadeUp {
