@@ -4,75 +4,262 @@ import type { HotspotZone } from '../lib/generateCharImages'
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
-type Tool = 'hand' | 'lips' | 'tongue' | 'finger' | 'toy'
+type ToolKey = 'penis' | 'tongue' | 'hand' | 'dildo' | 'vibrator' | 'gel' | 'whip' | 'anal_dildo'
+type SectorKey = 'body' | 'toy' | 'sm'
+type RestraintKey = 'handcuff' | 'legcuff' | 'blindfold' | 'collar'
 type ScenePhase = 'foreplay' | 'aroused' | 'climax' | 'afterglow'
 type ErogenousKey = 'breast' | 'neck' | 'ear' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
 
-// ─── 핫스팟 좌표 — fallback용 하드코딩 (Gemini 분석 좌표 없을 때 사용) ───────
+// ─── 핫스팟 좌표 — fallback용 하드코딩 ─────────────────────────────────────
 
 const HOTSPOTS: Record<string, HotspotZone[]> = {
-  // 정상위: 오버헤드, 머리 상단, 다리 벌린 채 하단
   missionary: [
-    { key: 'mouth',    label: '입',         cx: 50, cy: 18, rx: 10, ry: 5,  color: '#ff6b9d' },
-    { key: 'neck',     label: '목',         cx: 50, cy: 27, rx: 7,  ry: 3,  color: '#c77dff' },
-    { key: 'ear',      label: '귀L',        cx: 36, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
-    { key: 'ear',      label: '귀R',        cx: 64, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
-    { key: 'breast',   label: '가슴',       cx: 37, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
-    { key: 'breast',   label: '가슴',       cx: 63, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
-    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
-    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 78, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
-    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 81, rx: 8,  ry: 4,  color: '#e94560' },
-    { key: 'vagina',   label: '질',         cx: 50, cy: 86, rx: 7,  ry: 4,  color: '#e94560' },
+    { key: 'mouth',    label: '입',             cx: 50, cy: 18, rx: 10, ry: 5,  color: '#ff6b9d' },
+    { key: 'neck',     label: '목',             cx: 50, cy: 27, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'ear',      label: '귀L',            cx: 36, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'ear',      label: '귀R',            cx: 64, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'breast',   label: '가슴',           cx: 37, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴',           cx: 63, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
+    { key: 'thigh',    label: '엉덩이/허벅지', cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지', cx: 78, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스',     cx: 50, cy: 81, rx: 8,  ry: 4,  color: '#e94560' },
+    { key: 'vagina',   label: '질',             cx: 50, cy: 86, rx: 7,  ry: 4,  color: '#e94560' },
   ],
-  // 후배위: 측면+후방, 얼굴 좌상단 뒤돌아봄, 엉덩이+음부 중앙
   doggy: [
-    { key: 'mouth',    label: '입',         cx: 23, cy: 22, rx: 12, ry: 9,  color: '#ff6b9d' },
-    { key: 'neck',     label: '목',         cx: 32, cy: 30, rx: 8,  ry: 5,  color: '#c77dff' },
-    { key: 'ear',      label: '귀',         cx: 22, cy: 22, rx: 4,  ry: 5,  color: '#a855f7' },
-    { key: 'breast',   label: '가슴',       cx: 42, cy: 60, rx: 10, ry: 10, color: '#ff6b9d' },
-    { key: 'anal',     label: '항문',       cx: 56, cy: 53, rx: 7,  ry: 5,  color: '#c9a84c' },
-    { key: 'vagina',   label: '질',         cx: 55, cy: 62, rx: 8,  ry: 5,  color: '#e94560' },
-    { key: 'clitoris', label: '클리토리스', cx: 54, cy: 68, rx: 7,  ry: 4,  color: '#e94560' },
-    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 30, cy: 82, rx: 18, ry: 11, color: '#f77f00' },
-    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 72, cy: 82, rx: 14, ry: 11, color: '#f77f00' },
+    { key: 'mouth',    label: '입',             cx: 23, cy: 22, rx: 12, ry: 9,  color: '#ff6b9d' },
+    { key: 'neck',     label: '목',             cx: 32, cy: 30, rx: 8,  ry: 5,  color: '#c77dff' },
+    { key: 'ear',      label: '귀',             cx: 22, cy: 22, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'breast',   label: '가슴',           cx: 42, cy: 60, rx: 10, ry: 10, color: '#ff6b9d' },
+    { key: 'anal',     label: '항문',           cx: 56, cy: 53, rx: 7,  ry: 5,  color: '#c9a84c' },
+    { key: 'vagina',   label: '질',             cx: 55, cy: 62, rx: 8,  ry: 5,  color: '#e94560' },
+    { key: 'clitoris', label: '클리토리스',     cx: 54, cy: 68, rx: 7,  ry: 4,  color: '#e94560' },
+    { key: 'thigh',    label: '엉덩이/허벅지', cx: 30, cy: 82, rx: 18, ry: 11, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지', cx: 72, cy: 82, rx: 14, ry: 11, color: '#f77f00' },
   ],
-  // 여성상위: 정면, 앉아서 올라탄 자세
   cowgirl: [
-    { key: 'mouth',    label: '입',         cx: 47, cy: 13, rx: 12, ry: 8,  color: '#ff6b9d' },
-    { key: 'neck',     label: '목',         cx: 47, cy: 23, rx: 7,  ry: 4,  color: '#c77dff' },
-    { key: 'ear',      label: '귀L',        cx: 33, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
-    { key: 'ear',      label: '귀R',        cx: 61, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
-    { key: 'breast',   label: '가슴',       cx: 35, cy: 38, rx: 16, ry: 13, color: '#ff6b9d' },
-    { key: 'breast',   label: '가슴',       cx: 60, cy: 37, rx: 14, ry: 12, color: '#ff6b9d' },
-    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
-    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 75, cy: 75, rx: 11, ry: 16, color: '#f77f00' },
-    { key: 'clitoris', label: '클리토리스', cx: 49, cy: 79, rx: 8,  ry: 4,  color: '#e94560' },
-    { key: 'vagina',   label: '질',         cx: 49, cy: 84, rx: 7,  ry: 4,  color: '#e94560' },
+    { key: 'mouth',    label: '입',             cx: 47, cy: 13, rx: 12, ry: 8,  color: '#ff6b9d' },
+    { key: 'neck',     label: '목',             cx: 47, cy: 23, rx: 7,  ry: 4,  color: '#c77dff' },
+    { key: 'ear',      label: '귀L',            cx: 33, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'ear',      label: '귀R',            cx: 61, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'breast',   label: '가슴',           cx: 35, cy: 38, rx: 16, ry: 13, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴',           cx: 60, cy: 37, rx: 14, ry: 12, color: '#ff6b9d' },
+    { key: 'thigh',    label: '엉덩이/허벅지', cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지', cx: 75, cy: 75, rx: 11, ry: 16, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스',     cx: 49, cy: 79, rx: 8,  ry: 4,  color: '#e94560' },
+    { key: 'vagina',   label: '질',             cx: 49, cy: 84, rx: 7,  ry: 4,  color: '#e94560' },
   ],
-  // 버터플라이(side): 오버헤드, 두 다리 위로 들린 채, 얼굴 중앙
   side: [
-    { key: 'mouth',    label: '입',         cx: 50, cy: 28, rx: 11, ry: 7,  color: '#ff6b9d' },
-    { key: 'neck',     label: '목',         cx: 50, cy: 37, rx: 7,  ry: 3,  color: '#c77dff' },
-    { key: 'ear',      label: '귀',         cx: 38, cy: 27, rx: 4,  ry: 5,  color: '#a855f7' },
-    { key: 'breast',   label: '가슴',       cx: 36, cy: 48, rx: 14, ry: 11, color: '#ff6b9d' },
-    { key: 'breast',   label: '가슴',       cx: 62, cy: 47, rx: 14, ry: 11, color: '#ff6b9d' },
-    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
-    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 76, cy: 63, rx: 13, ry: 17, color: '#f77f00' },
-    { key: 'clitoris', label: '클리토리스', cx: 50, cy: 76, rx: 8,  ry: 4,  color: '#e94560' },
-    { key: 'vagina',   label: '질',         cx: 50, cy: 81, rx: 7,  ry: 4,  color: '#e94560' },
-    { key: 'anal',     label: '항문',       cx: 50, cy: 87, rx: 6,  ry: 4,  color: '#c9a84c' },
+    { key: 'mouth',    label: '입',             cx: 50, cy: 28, rx: 11, ry: 7,  color: '#ff6b9d' },
+    { key: 'neck',     label: '목',             cx: 50, cy: 37, rx: 7,  ry: 3,  color: '#c77dff' },
+    { key: 'ear',      label: '귀',             cx: 38, cy: 27, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'breast',   label: '가슴',           cx: 36, cy: 48, rx: 14, ry: 11, color: '#ff6b9d' },
+    { key: 'breast',   label: '가슴',           cx: 62, cy: 47, rx: 14, ry: 11, color: '#ff6b9d' },
+    { key: 'thigh',    label: '엉덩이/허벅지', cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지', cx: 76, cy: 63, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'clitoris', label: '클리토리스',     cx: 50, cy: 76, rx: 8,  ry: 4,  color: '#e94560' },
+    { key: 'vagina',   label: '질',             cx: 50, cy: 81, rx: 7,  ry: 4,  color: '#e94560' },
+    { key: 'anal',     label: '항문',           cx: 50, cy: 87, rx: 6,  ry: 4,  color: '#c9a84c' },
   ],
 }
 
 // ─── 도구 설정 ───────────────────────────────────────────────────────────────
 
-const TOOLS: { key: Tool; label: string; mult: number; emoji: string }[] = [
-  { key: 'hand',   label: '손',    mult: 1.0, emoji: '🖐️' },
-  { key: 'lips',   label: '입술',  mult: 1.2, emoji: '💋' },
-  { key: 'tongue', label: '혀',    mult: 1.5, emoji: '👅' },
-  { key: 'finger', label: '손가락', mult: 1.3, emoji: '☝️' },
-  { key: 'toy',    label: '도구',  mult: 2.0, emoji: '🔮' },
+interface ToolDef {
+  key: ToolKey
+  label: string
+  baseMult: number
+  sector: SectorKey
+  zoneOnly?: ErogenousKey[]
+}
+
+const TOOL_DEFS: ToolDef[] = [
+  // 신체
+  { key: 'penis',      label: '성기',      baseMult: 2.0, sector: 'body', zoneOnly: ['vagina', 'anal'] },
+  { key: 'tongue',     label: '혀',        baseMult: 1.8, sector: 'body' },
+  { key: 'hand',       label: '손',        baseMult: 1.0, sector: 'body' },
+  // 도구
+  { key: 'dildo',      label: '딜도',      baseMult: 2.2, sector: 'toy',  zoneOnly: ['vagina'] },
+  { key: 'vibrator',   label: '진동기',    baseMult: 2.0, sector: 'toy' },
+  { key: 'gel',        label: '마사지젤',  baseMult: 0.4, sector: 'toy' },
+  // 용품(SM)
+  { key: 'whip',       label: '채찍',      baseMult: 1.5, sector: 'sm' },
+  { key: 'anal_dildo', label: '애널딜도',  baseMult: 2.5, sector: 'sm',   zoneOnly: ['anal'] },
 ]
+
+const RESTRAINT_DEFS: { key: RestraintKey; label: string }[] = [
+  { key: 'handcuff',  label: '수갑' },
+  { key: 'legcuff',   label: '족갑' },
+  { key: 'blindfold', label: '안대' },
+  { key: 'collar',    label: '개목걸이' },
+]
+
+const SECTORS: { key: SectorKey; label: string }[] = [
+  { key: 'body', label: '신체' },
+  { key: 'toy',  label: '도구' },
+  { key: 'sm',   label: '용품(SM)' },
+]
+
+// 자세별 구속 오버레이 위치 (이미지 % 기준)
+const RESTRAINT_POS: Record<string, Record<RestraintKey, { x: number; y: number; rotate?: number }>> = {
+  missionary: {
+    handcuff:  { x: 50, y: 56 },
+    legcuff:   { x: 50, y: 90 },
+    blindfold: { x: 50, y: 18 },
+    collar:    { x: 50, y: 28 },
+  },
+  doggy: {
+    handcuff:  { x: 50, y: 42 },
+    legcuff:   { x: 50, y: 90 },
+    blindfold: { x: 23, y: 16, rotate: -20 },
+    collar:    { x: 32, y: 28, rotate: -15 },
+  },
+  cowgirl: {
+    handcuff:  { x: 50, y: 58 },
+    legcuff:   { x: 50, y: 90 },
+    blindfold: { x: 47, y: 12 },
+    collar:    { x: 47, y: 23 },
+  },
+  side: {
+    handcuff:  { x: 50, y: 58 },
+    legcuff:   { x: 50, y: 88 },
+    blindfold: { x: 50, y: 27 },
+    collar:    { x: 50, y: 37 },
+  },
+}
+
+// ─── SVG 도구 아이콘 ─────────────────────────────────────────────────────────
+
+function ToolSvg({ toolKey, pressed, size = 36 }: { toolKey: ToolKey; pressed: boolean; size?: number }) {
+  const anim = (name: string) => pressed ? `${name} 0.3s ease-in-out infinite alternate` : 'none'
+  const s = size
+
+  switch (toolKey) {
+    case 'penis':
+    case 'dildo':
+      return (
+        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-thrust'), display: 'block' }}>
+          <ellipse cx="18" cy="8" rx="6" ry="7" fill="#ffb5c8" stroke="#e94560" strokeWidth="1.5" />
+          <rect x="13" y="13" width="10" height="18" rx="4" fill="#ffb5c8" stroke="#e94560" strokeWidth="1.5" />
+        </svg>
+      )
+    case 'anal_dildo':
+      return (
+        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-thrust'), display: 'block' }}>
+          <ellipse cx="18" cy="9" rx="5" ry="6" fill="#c9a84c" stroke="#a07830" strokeWidth="1.5" />
+          <rect x="14" y="14" width="8" height="14" rx="3" fill="#c9a84c" stroke="#a07830" strokeWidth="1.5" />
+          <ellipse cx="18" cy="30" rx="7" ry="3.5" fill="#c9a84c" stroke="#a07830" strokeWidth="1.5" />
+        </svg>
+      )
+    case 'tongue':
+      return (
+        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-tongue'), transformOrigin: '18px 6px', display: 'block' }}>
+          <path d="M18 6 Q12 14 14 24 Q16 32 18 32 Q20 32 22 24 Q24 14 18 6Z" fill="#ff6b9d" stroke="#e94560" strokeWidth="1.2" />
+          <line x1="18" y1="18" x2="18" y2="28" stroke="#c94060" strokeWidth="1" strokeLinecap="round" />
+        </svg>
+      )
+    case 'hand':
+      return (
+        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-fingers'), transformOrigin: '18px 28px', display: 'block' }}>
+          <rect x="8"  y="10" width="5" height="15" rx="2.5" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="1" />
+          <rect x="15" y="7"  width="5" height="18" rx="2.5" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="1" />
+          <rect x="22" y="9"  width="5" height="16" rx="2.5" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="1" />
+          <rect x="11" y="23" width="16" height="8"  rx="3"   fill="#ffd6a0" stroke="#c9a84c" strokeWidth="1" />
+        </svg>
+      )
+    case 'vibrator':
+      return (
+        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-vibrate'), display: 'block' }}>
+          <rect x="12" y="4" width="12" height="26" rx="6" fill="#a78bfa" stroke="#7c3aed" strokeWidth="1.5" />
+          <line x1="7"  y1="14" x2="10" y2="16" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="26" y1="14" x2="29" y2="12" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="7"  y1="20" x2="10" y2="18" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="26" y1="20" x2="29" y2="22" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      )
+    case 'gel':
+      return (
+        <svg width={s} height={s} viewBox="0 0 36 36" style={{ display: 'block' }}>
+          <rect x="12" y="6" width="12" height="18" rx="5" fill="#7dd3fc" stroke="#38bdf8" strokeWidth="1.5" />
+          <path d="M16 4 Q18 2 20 4" stroke="#38bdf8" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+          <ellipse cx="18" cy="28" rx="4" ry="2.5" fill="#38bdf8" opacity="0.5"
+            style={{ animation: pressed ? 'sx-drip 0.6s ease-in infinite' : 'none', transformOrigin: '18px 24px' }} />
+        </svg>
+      )
+    case 'whip':
+      return (
+        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-whip'), transformOrigin: '6px 6px', display: 'block' }}>
+          <path d="M6 6 Q22 10 30 28" stroke="#e94560" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M6 6 Q22 10 30 28 L28 32 L32 28 Z" fill="#e94560" />
+          <circle cx="6" cy="6" r="4" fill="#c9a84c" />
+        </svg>
+      )
+    default:
+      return <span style={{ fontSize: s * 0.6 }}>🔧</span>
+  }
+}
+
+// 구속 SVG 오버레이
+function RestraintOverlaySvg({ restraintKey, pos }: { restraintKey: RestraintKey; pos: { x: number; y: number; rotate?: number } }) {
+  const rotate = pos.rotate ?? 0
+  switch (restraintKey) {
+    case 'handcuff':
+      return (
+        <div style={{
+          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
+          transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
+          pointerEvents: 'none', opacity: 0.85,
+        }}>
+          <svg width="60" height="24" viewBox="0 0 60 24">
+            <rect x="2"  y="6" width="20" height="12" rx="6" fill="none" stroke="#888" strokeWidth="2.5" />
+            <rect x="38" y="6" width="20" height="12" rx="6" fill="none" stroke="#888" strokeWidth="2.5" />
+            <line x1="22" y1="12" x2="38" y2="12" stroke="#888" strokeWidth="2" />
+          </svg>
+        </div>
+      )
+    case 'legcuff':
+      return (
+        <div style={{
+          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
+          transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
+          pointerEvents: 'none', opacity: 0.85,
+        }}>
+          <svg width="70" height="20" viewBox="0 0 70 20">
+            <rect x="2"  y="4" width="22" height="12" rx="6" fill="none" stroke="#c9a84c" strokeWidth="2.5" />
+            <rect x="46" y="4" width="22" height="12" rx="6" fill="none" stroke="#c9a84c" strokeWidth="2.5" />
+            <line x1="24" y1="10" x2="46" y2="10" stroke="#c9a84c" strokeWidth="2" />
+          </svg>
+        </div>
+      )
+    case 'blindfold':
+      return (
+        <div style={{
+          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
+          transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
+          pointerEvents: 'none', opacity: 0.88,
+        }}>
+          <svg width="64" height="22" viewBox="0 0 64 22">
+            <rect x="0" y="6" width="64" height="10" rx="5" fill="#1a1a2e" stroke="#e94560" strokeWidth="1.5" />
+            <line x1="0" y1="11" x2="64" y2="11" stroke="#e94560" strokeWidth="0.8" opacity="0.5" />
+          </svg>
+        </div>
+      )
+    case 'collar':
+      return (
+        <div style={{
+          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
+          transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
+          pointerEvents: 'none', opacity: 0.88,
+        }}>
+          <svg width="50" height="18" viewBox="0 0 50 18">
+            <path d="M4 9 Q25 2 46 9 Q25 16 4 9Z" fill="#e94560" opacity="0.8" />
+            <circle cx="25" cy="15" r="3" fill="#c9a84c" />
+          </svg>
+        </div>
+      )
+    default:
+      return null
+  }
+}
 
 // ─── 스프라이트 애니메이션 ───────────────────────────────────────────────────
 
@@ -127,7 +314,10 @@ export default function SexScenePage({
   const [femaleArousal, setFemaleArousal] = useState(0)
   const [maleArousal, setMaleArousal] = useState(0)
   const [phase, setPhase] = useState<ScenePhase>('foreplay')
-  const [tool, setTool] = useState<Tool>('hand')
+  const [activeTool, setActiveTool] = useState<ToolKey>('hand')
+  const [sector, setSector] = useState<SectorKey>('body')
+  const [pressedTool, setPressedTool] = useState<ToolKey | null>(null)
+  const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<{ text: string; color: string } | null>(null)
   const [femaleFlash, setFemaleFlash] = useState(false)
@@ -147,14 +337,31 @@ export default function SexScenePage({
   const climaxSpriteUrls: string[] = [0, 1, 2]
     .map(i => poseImages[`${poseKey}_climax_sprite_${i}`] ?? '')
     .filter(Boolean)
-  console.log('[SexScene] poseKey:', poseKey, '| poseImages keys:', Object.keys(poseImages), '| spriteUrls:', spriteUrls.length, '| climaxSpriteUrls:', climaxSpriteUrls.length)
+  console.log('[SexScene] poseKey:', poseKey, '| poseImages keys:', Object.keys(poseImages), '| spriteUrls:', spriteUrls.length)
 
   // 나이 배율
   const age = femaleChar.age ?? 25
   const ageMult = age < 30 ? 0.8 : age < 40 ? 1.0 : 1.5
 
-  // 도구 배율
-  const toolMult = TOOLS.find(t => t.key === tool)?.mult ?? 1.0
+  // 채찍 배율 계산 (smTendency: 음수=M성향=채찍 좋아함, 양수=S성향=저항)
+  const getWhipMult = useCallback(() => {
+    const sm = femaleChar.smTendency ?? 0
+    const base = 1.5 + (-sm * 0.15)  // M이면 높음, S면 낮음
+    const restrained = restraints.has('handcuff') && restraints.has('legcuff')
+    return Math.max(0.2, Math.min(3.0, base)) * (restrained ? 1.3 : 1.0)
+  }, [femaleChar.smTendency, restraints])
+
+  // 도구 배율 계산 (구역 제한 포함)
+  const getToolMult = useCallback((toolKey: ToolKey, zoneKey: string): number => {
+    const def = TOOL_DEFS.find(t => t.key === toolKey)
+    if (!def) return 1.0
+    const base = toolKey === 'whip' ? getWhipMult() : def.baseMult
+    if (def.zoneOnly && !def.zoneOnly.includes(zoneKey as ErogenousKey)) return base * 0.3
+    return base
+  }, [getWhipMult])
+
+  // 현재 섹터의 도구 목록
+  const sectorTools = TOOL_DEFS.filter(t => t.sector === sector)
 
   // 흥분도에 따른 페이즈 결정
   useEffect(() => {
@@ -174,15 +381,14 @@ export default function SexScenePage({
     }
   }, [maleArousal, ended, onEnd])
 
-  // 남캐 흥분도 자동 증가 (5분 = 300초에 100 도달: 3초마다 +1)
+  // 남캐 흥분도 자동 증가 (300초에 100 도달: 3초마다 +1)
   useEffect(() => {
     if (ended) return
     const id = setInterval(() => {
       setMaleArousal(prev => {
-        const next = prev + 1
         setMaleFlash(true)
         setTimeout(() => setMaleFlash(false), 300)
-        return next
+        return prev + 1
       })
     }, 3000)
     return () => clearInterval(id)
@@ -194,9 +400,10 @@ export default function SexScenePage({
   }
 
   // 핫스팟 클릭
-  const handleZoneClick = useCallback((zone: BodyZone) => {
+  const handleZoneClick = useCallback((zone: HotspotZone) => {
     if (ended || phase === 'climax') return
     const sensitivity = getEroSensitivity(zone.key)
+    const toolMult = getToolMult(activeTool, zone.key)
     const gain = Math.max(1, sensitivity) * toolMult * ageMult * 4
     setFemaleArousal(prev => Math.min(1000, prev + gain))
     setFemaleFlash(true)
@@ -209,10 +416,19 @@ export default function SexScenePage({
       color: sensitivity >= 4 ? '#e94560' : sensitivity >= 2 ? '#c9a84c' : '#ffffff66',
     })
     feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
-  }, [ended, phase, femaleChar.erogenous, toolMult, ageMult])
+  }, [ended, phase, femaleChar.erogenous, activeTool, getToolMult, ageMult])
+
+  // 구속 토글
+  const toggleRestraint = (key: RestraintKey) => {
+    setRestraints(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   // 흥분도 구간별 표시 모드
-  // 0~299: 흥분 사진 / 300~599: 흥분 애니 / 600~899: 절정 애니 / 900~999: 절정 사진
   const displayMode = femaleArousal >= 900 ? 'photo_climax'
     : femaleArousal >= 600 ? 'sprite_climax'
     : femaleArousal >= 300 ? 'sprite_aroused'
@@ -221,12 +437,10 @@ export default function SexScenePage({
   const currentSpriteUrls = displayMode === 'sprite_climax'
     ? (climaxSpriteUrls.length >= 1 ? climaxSpriteUrls : spriteUrls)
     : spriteUrls
-  // sprite 1장 이상이면 애니, 없으면 사진 fallback
   const showSprite = (displayMode === 'sprite_aroused' || displayMode === 'sprite_climax') && currentSpriteUrls.length >= 1
   const showClimax = displayMode === 'photo_climax'
   const imgSrc = femaleArousal >= 600 ? climaxImg : arousedImg
 
-  // 핫스팟: 구간에 따라 exprKey 결정
   const exprKey: 'aroused' | 'climax' = femaleArousal >= 600 ? 'climax' : 'aroused'
   const climaxSpriteStored  = poseImages[`${poseKey}_climax_sprite_hotspots`]  as unknown as HotspotZone[] | undefined
   const arousedSpriteStored = poseImages[`${poseKey}_aroused_sprite_hotspots`] as unknown as HotspotZone[] | undefined
@@ -241,14 +455,19 @@ export default function SexScenePage({
     return arousedStored?.length ? arousedStored : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary'])
   })()
 
-  // body에 zoom:2 있으므로 이 페이지에서만 상쇄 → viewport 단위가 정상 동작
+  // 구속 오버레이 위치 (자세 fallback: missionary)
+  const restraintPos = RESTRAINT_POS[poseKey] ?? RESTRAINT_POS['missionary']
+
+  // SM 섹터일 때 하단 바가 더 높음
+  const bottomBarHeight = sector === 'sm' ? 170 : 110
+
   return (
     <div style={{
       background: '#0d0d1a', overflow: 'hidden', userSelect: 'none',
       position: 'fixed', top: 0, left: 0,
       width: window.innerWidth, height: window.innerHeight,
-      zoom: 0.5,   // body zoom:2 상쇄
-      fontSize: 24, // zoom 상쇄 후 폰트 재설정
+      zoom: 0.5,
+      fontSize: 24,
     }}>
 
       {/* 상단 게이지 */}
@@ -265,123 +484,224 @@ export default function SexScenePage({
       </div>
 
       {/* 이미지 + 핫스팟 */}
-      <div style={{ position: 'absolute', top: 80, bottom: 52, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-      <div style={{ position: 'relative', height: '100%', width: 'auto' }}>
-        {showSprite ? (
-          <SpriteAnimation urls={currentSpriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
-        ) : (
-          <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
-        )}
+      <div style={{ position: 'absolute', top: 80, bottom: bottomBarHeight, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+        <div style={{ position: 'relative', height: '100%', width: 'auto' }}>
+          {showSprite ? (
+            <SpriteAnimation urls={currentSpriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
+          ) : (
+            <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
+          )}
 
-        {/* SVG 핫스팟 오버레이 */}
-        {!showClimax && (
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }}
-          >
-            {hotspots.map((zone, i) => {
-              const isHovered = hoveredZone === `${zone.key}-${i}`
-              const sensitivity = getEroSensitivity(zone.key)
-              return (
-                <g key={i} transform={`rotate(${zone.rotation ?? 0}, ${zone.cx}, ${zone.cy})`}>
-                <ellipse
-                  cx={zone.cx}
-                  cy={zone.cy}
-                  rx={zone.rx}
-                  ry={zone.ry}
-                  fill={isHovered ? `${zone.color}40` : 'transparent'}
-                  stroke={isHovered ? zone.color : `${zone.color}30`}
-                  strokeWidth={isHovered ? 0.8 : 0.4}
-                  style={{ transition: 'all 0.15s', filter: isHovered ? `drop-shadow(0 0 4px ${zone.color})` : 'none' }}
-                  onMouseEnter={() => !ended && setHoveredZone(`${zone.key}-${i}`)}
-                  onMouseLeave={() => setHoveredZone(null)}
-                  onClick={() => handleZoneClick(zone)}
-                  onTouchStart={(e) => { e.preventDefault(); setHoveredZone(`${zone.key}-${i}`); handleZoneClick(zone) }}
-                  onTouchEnd={() => setHoveredZone(null)}
-                />
-                </g>
-              )
-            })}
-          </svg>
-        )}
+          {/* 구속 SVG 오버레이 */}
+          {Array.from(restraints).map(rKey => (
+            <RestraintOverlaySvg key={rKey} restraintKey={rKey} pos={restraintPos[rKey] ?? { x: 50, y: 50 }} />
+          ))}
 
-        {/* hover 레이블 */}
-        {hoveredZone && (() => {
-          const idx = parseInt(hoveredZone.split('-')[1])
-          const zone = hotspots[idx]
-          if (!zone) return null
-          const sensitivity = femaleChar.erogenous?.[zone.key] ?? 2
-          const hearts = sensitivity === 0 ? '✕' : '♥'.repeat(sensitivity)
-          return (
+          {/* 핫스팟 오버레이 */}
+          {!showClimax && (
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+            >
+              {hotspots.map((zone, i) => {
+                const isHovered = hoveredZone === `${zone.key}-${i}`
+                return (
+                  <g key={i} transform={`rotate(${zone.rotation ?? 0}, ${zone.cx}, ${zone.cy})`}>
+                    <ellipse
+                      cx={zone.cx} cy={zone.cy} rx={zone.rx} ry={zone.ry}
+                      fill={isHovered ? `${zone.color}40` : 'transparent'}
+                      stroke={isHovered ? zone.color : `${zone.color}30`}
+                      strokeWidth={isHovered ? 0.8 : 0.4}
+                      style={{ transition: 'all 0.15s', filter: isHovered ? `drop-shadow(0 0 4px ${zone.color})` : 'none' }}
+                      onMouseEnter={() => !ended && setHoveredZone(`${zone.key}-${i}`)}
+                      onMouseLeave={() => setHoveredZone(null)}
+                      onClick={() => handleZoneClick(zone)}
+                      onTouchStart={(e) => { e.preventDefault(); setHoveredZone(`${zone.key}-${i}`); handleZoneClick(zone) }}
+                      onTouchEnd={() => setHoveredZone(null)}
+                    />
+                  </g>
+                )
+              })}
+            </svg>
+          )}
+
+          {/* hover 레이블 */}
+          {hoveredZone && (() => {
+            const idx = parseInt(hoveredZone.split('-')[1])
+            const zone = hotspots[idx]
+            if (!zone) return null
+            const sensitivity = femaleChar.erogenous?.[zone.key] ?? 2
+            const hearts = sensitivity === 0 ? '✕' : '♥'.repeat(sensitivity)
+            return (
+              <div style={{
+                position: 'absolute', top: `${zone.cy - zone.ry - 5}%`, left: `${zone.cx}%`,
+                transform: 'translateX(-50%)',
+                background: 'rgba(0,0,0,0.85)', border: `1px solid ${zone.color}`,
+                borderRadius: 6, padding: '3px 8px', pointerEvents: 'none', whiteSpace: 'nowrap',
+                fontSize: 12, color: zone.color, fontWeight: 'bold',
+              }}>
+                {zone.label} {hearts}
+              </div>
+            )
+          })()}
+
+          {/* 피드백 팝업 */}
+          {feedback && (
             <div style={{
-              position: 'absolute', top: `${zone.cy - zone.ry - 5}%`, left: `${zone.cx}%`,
-              transform: 'translateX(-50%)',
-              background: 'rgba(0,0,0,0.85)', border: `1px solid ${zone.color}`,
-              borderRadius: 6, padding: '3px 8px', pointerEvents: 'none', whiteSpace: 'nowrap',
-              fontSize: 12, color: zone.color, fontWeight: 'bold',
+              position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%)',
+              fontSize: 18, fontWeight: 'bold', color: feedback.color,
+              textShadow: `0 0 12px ${feedback.color}`,
+              pointerEvents: 'none', animation: 'fadeUp 1.5s ease forwards',
             }}>
-              {zone.label} {hearts}
+              {feedback.text}
             </div>
-          )
-        })()}
+          )}
 
-        {/* 피드백 팝업 */}
-        {feedback && (
-          <div style={{
-            position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%)',
-            fontSize: 18, fontWeight: 'bold', color: feedback.color,
-            textShadow: `0 0 12px ${feedback.color}`,
-            pointerEvents: 'none', animation: 'fadeUp 1.5s ease forwards',
-          }}>
-            {feedback.text}
-          </div>
-        )}
-
-        {/* 절정 오버레이 */}
-        {showClimax && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(233,69,96,0.15)', borderRadius: 8,
-          }}>
-            <div style={{ fontSize: 40, textAlign: 'center', textShadow: '0 0 30px #e94560' }}>✨</div>
-          </div>
-        )}
-      </div>
+          {/* 절정 오버레이 */}
+          {showClimax && (
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(233,69,96,0.15)', borderRadius: 8,
+            }}>
+              <div style={{ fontSize: 40, textAlign: 'center', textShadow: '0 0 30px #e94560' }}>✨</div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 하단 도구 선택 — absolute bottom */}
+      {/* 하단 도구 바 */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100,
-        background: 'rgba(13,13,26,0.95)', borderTop: '1px solid #ffffff11',
-        padding: '8px 12px', display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center',
+        background: 'rgba(13,13,26,0.97)', borderTop: '1px solid #ffffff11',
+        display: 'flex', flexDirection: 'column',
       }}>
-        {TOOLS.map(t => (
+
+        {/* 섹터 탭 */}
+        <div style={{ display: 'flex', borderBottom: '1px solid #ffffff11' }}>
+          {SECTORS.map(sec => (
+            <button
+              key={sec.key}
+              onClick={() => {
+                setSector(sec.key)
+                const firstTool = TOOL_DEFS.find(t => t.sector === sec.key)
+                if (firstTool) setActiveTool(firstTool.key)
+              }}
+              style={{
+                flex: 1, padding: '6px 4px', border: 'none', cursor: 'pointer',
+                background: sector === sec.key ? 'rgba(201,168,76,0.15)' : 'transparent',
+                color: sector === sec.key ? '#c9a84c' : '#ffffff55',
+                fontSize: 20, fontWeight: sector === sec.key ? 'bold' : 'normal',
+                borderBottom: sector === sec.key ? '2px solid #c9a84c' : '2px solid transparent',
+                transition: 'all 0.15s',
+              }}
+            >
+              {sec.label}
+            </button>
+          ))}
           <button
-            key={t.key}
-            onClick={() => setTool(t.key)}
+            onClick={() => onEnd('fail')}
             style={{
-              background: tool === t.key ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${tool === t.key ? '#c9a84c' : '#ffffff22'}`,
-              borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
-              color: tool === t.key ? '#c9a84c' : '#ffffff88', fontSize: 24,
+              padding: '6px 14px', border: 'none', background: 'transparent',
+              color: '#ffffff33', fontSize: 20, cursor: 'pointer', borderLeft: '1px solid #ffffff11',
             }}
           >
-            {t.emoji} {t.label} <span style={{ fontSize: 20, color: '#ffffff44' }}>×{t.mult}</span>
+            포기
           </button>
-        ))}
-        <button
-          onClick={() => onEnd('fail')}
-          style={{ background: 'none', border: '1px solid #ffffff22', borderRadius: 8, padding: '6px 14px', color: '#ffffff33', fontSize: 22, cursor: 'pointer' }}
-        >
-          포기
-        </button>
+        </div>
+
+        {/* 도구 버튼 */}
+        <div style={{ display: 'flex', gap: 6, padding: '8px 10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {sectorTools.map(t => {
+            const isActive = activeTool === t.key
+            const isPressed = pressedTool === t.key
+            return (
+              <button
+                key={t.key}
+                onClick={() => setActiveTool(t.key)}
+                onMouseDown={() => setPressedTool(t.key)}
+                onMouseUp={() => setPressedTool(null)}
+                onMouseLeave={() => pressedTool === t.key && setPressedTool(null)}
+                onTouchStart={() => setPressedTool(t.key)}
+                onTouchEnd={() => setPressedTool(null)}
+                style={{
+                  background: isActive ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${isActive ? '#c9a84c' : '#ffffff22'}`,
+                  borderRadius: 10, padding: '6px 10px', cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  color: isActive ? '#c9a84c' : '#ffffff88',
+                  boxShadow: isPressed ? `0 0 12px ${isActive ? '#c9a84c' : '#ffffff44'}` : 'none',
+                  transition: 'box-shadow 0.1s',
+                  minWidth: 64,
+                }}
+              >
+                <ToolSvg toolKey={t.key} pressed={isPressed} size={38} />
+                <span style={{ fontSize: 18, fontWeight: isActive ? 'bold' : 'normal' }}>{t.label}</span>
+                <span style={{ fontSize: 14, color: '#ffffff44' }}>
+                  ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* SM 섹터: 구속 토글 */}
+        {sector === 'sm' && (
+          <div style={{
+            display: 'flex', gap: 8, padding: '4px 10px 10px', justifyContent: 'center',
+            borderTop: '1px solid #ffffff0a',
+          }}>
+            {RESTRAINT_DEFS.map(r => {
+              const on = restraints.has(r.key)
+              return (
+                <button
+                  key={r.key}
+                  onClick={() => toggleRestraint(r.key)}
+                  style={{
+                    background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
+                    borderRadius: 8, padding: '4px 10px', cursor: 'pointer',
+                    color: on ? '#e94560' : '#ffffff44', fontSize: 18,
+                    transition: 'all 0.15s',
+                    boxShadow: on ? '0 0 8px #e9456066' : 'none',
+                  }}
+                >
+                  {r.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <style>{`
         @keyframes fadeUp {
-          0% { opacity: 1; transform: translate(-50%, -50%); }
+          0%   { opacity: 1; transform: translate(-50%, -50%); }
           100% { opacity: 0; transform: translate(-50%, -80%); }
+        }
+        @keyframes sx-thrust {
+          from { transform: translateY(0px); }
+          to   { transform: translateY(-6px); }
+        }
+        @keyframes sx-tongue {
+          from { transform: scaleX(1) scaleY(1); }
+          to   { transform: scaleX(0.85) scaleY(1.12); }
+        }
+        @keyframes sx-fingers {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(-18deg); }
+        }
+        @keyframes sx-vibrate {
+          from { transform: translateX(-3px); }
+          to   { transform: translateX(3px); }
+        }
+        @keyframes sx-drip {
+          from { transform: translateY(0px) scale(1); opacity: 0.5; }
+          to   { transform: translateY(10px) scale(0.7); opacity: 0; }
+        }
+        @keyframes sx-whip {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(30deg); }
         }
       `}</style>
     </div>
