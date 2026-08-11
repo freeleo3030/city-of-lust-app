@@ -217,12 +217,13 @@ export default function SexScenePage({
     : femaleArousal >= 300 ? 'sprite_aroused'
     : 'photo_aroused'
 
-  const showSprite = displayMode === 'sprite_aroused' || displayMode === 'sprite_climax'
-  const showClimax = displayMode === 'photo_climax'
   const currentSpriteUrls = displayMode === 'sprite_climax'
-    ? (climaxSpriteUrls.length >= 2 ? climaxSpriteUrls : spriteUrls)  // climax sprite 없으면 aroused로 fallback
+    ? (climaxSpriteUrls.length >= 2 ? climaxSpriteUrls : spriteUrls)
     : spriteUrls
-  const imgSrc = showClimax ? climaxImg : arousedImg
+  // sprite가 실제로 있을 때만 애니 표시, 없으면 사진 fallback
+  const showSprite = (displayMode === 'sprite_aroused' || displayMode === 'sprite_climax') && currentSpriteUrls.length >= 2
+  const showClimax = displayMode === 'photo_climax' || (displayMode === 'sprite_climax' && currentSpriteUrls.length < 2)
+  const imgSrc = (showClimax || (!showSprite && femaleArousal >= 600)) ? climaxImg : arousedImg
 
   // 핫스팟: 구간에 따라 exprKey 결정
   const exprKey: 'aroused' | 'climax' = femaleArousal >= 600 ? 'climax' : 'aroused'
