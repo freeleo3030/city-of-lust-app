@@ -96,7 +96,7 @@ const RESTRAINT_DEFS: { key: RestraintKey; label: string }[] = [
 const SECTORS: { key: SectorKey; label: string }[] = [
   { key: 'body', label: '신체' },
   { key: 'toy',  label: '도구' },
-  { key: 'sm',   label: '용품(SM)' },
+  { key: 'sm',   label: 'SM' },
 ]
 
 // 자세별 구속 오버레이 위치 (이미지 % 기준)
@@ -497,7 +497,7 @@ export default function SexScenePage({
       </div>
 
       {/* 콘텐츠 영역: 이미지 영역 (패널 왼쪽) */}
-      <div style={{ position: 'absolute', top: 80, bottom: 0, left: 0, right: 340, display: 'flex', flexDirection: 'row' }}>
+      <div style={{ position: 'absolute', top: 80, bottom: 0, left: 0, right: 340, display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
 
         {/* 이미지 + 핫스팟 */}
         <div style={{ position: 'relative', height: '100%', flexShrink: 0 }}>
