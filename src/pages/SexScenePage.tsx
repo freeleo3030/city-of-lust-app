@@ -319,6 +319,7 @@ export default function SexScenePage({
   const [pressedTool, setPressedTool] = useState<ToolKey | null>(null)
   const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
+  const [zonePressedPos, setZonePressedPos] = useState<{ cx: number; cy: number } | null>(null)
   const [feedback, setFeedback] = useState<{ text: string; color: string } | null>(null)
   const [femaleFlash, setFemaleFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
@@ -497,6 +498,22 @@ export default function SexScenePage({
             <RestraintOverlaySvg key={rKey} restraintKey={rKey} pos={restraintPos[rKey] ?? { x: 50, y: 50 }} />
           ))}
 
+          {/* 도구 액션 오버레이 — 핫스팟 누를 때 이미지 위에 표시 */}
+          {zonePressedPos && !showClimax && (
+            <div style={{
+              position: 'absolute',
+              left: `${zonePressedPos.cx}%`,
+              top: `${zonePressedPos.cy}%`,
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none',
+              zIndex: 50,
+              filter: 'drop-shadow(0 0 10px #ffffff88)',
+              opacity: 0.92,
+            }}>
+              <ToolSvg toolKey={activeTool} pressed={true} size={64} />
+            </div>
+          )}
+
           {/* 핫스팟 오버레이 */}
           {!showClimax && (
             <svg
@@ -515,10 +532,12 @@ export default function SexScenePage({
                       strokeWidth={isHovered ? 0.8 : 0.4}
                       style={{ transition: 'all 0.15s', filter: isHovered ? `drop-shadow(0 0 4px ${zone.color})` : 'none' }}
                       onMouseEnter={() => !ended && setHoveredZone(`${zone.key}-${i}`)}
-                      onMouseLeave={() => setHoveredZone(null)}
+                      onMouseLeave={() => { setHoveredZone(null); setZonePressedPos(null) }}
+                      onMouseDown={() => { if (!ended) setZonePressedPos({ cx: zone.cx, cy: zone.cy }) }}
+                      onMouseUp={() => setZonePressedPos(null)}
                       onClick={() => handleZoneClick(zone)}
-                      onTouchStart={(e) => { e.preventDefault(); setHoveredZone(`${zone.key}-${i}`); handleZoneClick(zone) }}
-                      onTouchEnd={() => setHoveredZone(null)}
+                      onTouchStart={(e) => { e.preventDefault(); setHoveredZone(`${zone.key}-${i}`); setZonePressedPos({ cx: zone.cx, cy: zone.cy }); handleZoneClick(zone) }}
+                      onTouchEnd={() => { setHoveredZone(null); setZonePressedPos(null) }}
                     />
                   </g>
                 )
