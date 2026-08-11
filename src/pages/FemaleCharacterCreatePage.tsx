@@ -928,7 +928,14 @@ export default function FemaleCharacterCreatePage({
       glasses,
       imageUrl,
       expressionImages: expressionSets[selectedExprSet] ?? [],
-      poseImages: selectedPoseImages,
+      poseImages: {
+        ...selectedPoseImages,
+        ...Object.fromEntries(
+          Object.entries(poseSprites).flatMap(([k, urls]) =>
+            urls.map((url, i) => [`${k}_sprite_${i}`, url])
+          )
+        ),
+      },
       createdAt: new Date().toISOString(),
     }
 
