@@ -474,8 +474,8 @@ export default function SexScenePage({
   // 구속 오버레이 위치 (자세 fallback: missionary)
   const restraintPos = RESTRAINT_POS[poseKey] ?? RESTRAINT_POS['missionary']
 
-  const bottomBarHeight = sector === 'sm' ? 110 : 56
-  const rightPanelWidth = 200
+  const bottomBarHeight = sector === 'sm' ? 120 : 72
+  const rightPanelWidth = 220
 
   return (
     <div style={{
@@ -499,34 +499,44 @@ export default function SexScenePage({
         </div>
       </div>
 
-      {/* 우측 도구 패널 */}
+      {/* 우측 섹터 선택 패널 */}
       <div style={{
         position: 'absolute', top: 80, bottom: bottomBarHeight, right: 0,
         width: rightPanelWidth, zIndex: 100,
-        background: 'rgba(13,13,26,0.95)', borderLeft: '1px solid #ffffff18',
+        background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
         display: 'flex', flexDirection: 'column',
       }}>
-        {sectorTools.map(t => {
-          const isActive = activeTool === t.key
+        {SECTORS.map(sec => {
+          const isActive = sector === sec.key
+          const toolCount = TOOL_DEFS.filter(t => t.sector === sec.key).length
           return (
             <button
-              key={t.key}
-              onClick={() => setActiveTool(t.key)}
+              key={sec.key}
+              onClick={() => {
+                setSector(sec.key)
+                const first = TOOL_DEFS.find(t => t.sector === sec.key)
+                if (first) setActiveTool(first.key)
+              }}
               style={{
                 flex: 1,
-                background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
+                background: isActive ? 'rgba(201,168,76,0.12)' : 'transparent',
                 border: 'none',
                 borderBottom: '1px solid #ffffff11',
+                borderLeft: isActive ? '4px solid #c9a84c' : '4px solid transparent',
                 cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-                boxShadow: isActive ? 'inset 3px 0 0 #c9a84c' : 'none',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
                 transition: 'all 0.15s',
               }}
             >
-              <ToolSvg toolKey={t.key} pressed={false} size={114} />
-              <span style={{ fontSize: 20, color: isActive ? '#c9a84c' : '#ffffffaa', fontWeight: isActive ? 'bold' : 'normal' }}>{t.label}</span>
-              <span style={{ fontSize: 16, color: '#ffffff44' }}>
-                ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
+              <span style={{
+                fontSize: 28, fontWeight: 'bold',
+                color: isActive ? '#c9a84c' : '#ffffffbb',
+                letterSpacing: 2,
+              }}>
+                {sec.label}
+              </span>
+              <span style={{ fontSize: 16, color: '#ffffff33' }}>
+                {toolCount}개 도구
               </span>
             </button>
           )
@@ -638,38 +648,44 @@ export default function SexScenePage({
 
       {/* 하단 도구 바 */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100,
-        background: 'rgba(13,13,26,0.97)', borderTop: '1px solid #ffffff11',
+        position: 'absolute', bottom: 0, left: 0, right: rightPanelWidth, zIndex: 100,
+        background: 'rgba(10,10,22,0.97)', borderTop: '1px solid #ffffff18',
         display: 'flex', flexDirection: 'column',
       }}>
 
-        {/* 섹터 탭 */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #ffffff11' }}>
-          {SECTORS.map(sec => (
-            <button
-              key={sec.key}
-              onClick={() => {
-                setSector(sec.key)
-                const firstTool = TOOL_DEFS.find(t => t.sector === sec.key)
-                if (firstTool) setActiveTool(firstTool.key)
-              }}
-              style={{
-                flex: 1, padding: '6px 4px', border: 'none', cursor: 'pointer',
-                background: sector === sec.key ? 'rgba(201,168,76,0.15)' : 'transparent',
-                color: sector === sec.key ? '#c9a84c' : '#ffffff55',
-                fontSize: 20, fontWeight: sector === sec.key ? 'bold' : 'normal',
-                borderBottom: sector === sec.key ? '2px solid #c9a84c' : '2px solid transparent',
-                transition: 'all 0.15s',
-              }}
-            >
-              {sec.label}
-            </button>
-          ))}
+        {/* 도구 버튼 가로 나열 */}
+        <div style={{ display: 'flex', alignItems: 'stretch', flex: 1 }}>
+          {sectorTools.map(t => {
+            const isActive = activeTool === t.key
+            return (
+              <button
+                key={t.key}
+                onClick={() => setActiveTool(t.key)}
+                style={{
+                  flex: 1, border: 'none', cursor: 'pointer',
+                  background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
+                  borderRight: '1px solid #ffffff11',
+                  borderTop: isActive ? '3px solid #c9a84c' : '3px solid transparent',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: 4, padding: '6px 4px',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <ToolSvg toolKey={t.key} pressed={false} size={46} />
+                <span style={{ fontSize: 18, color: isActive ? '#c9a84c' : '#ffffffaa', fontWeight: isActive ? 'bold' : 'normal' }}>
+                  {t.label}
+                </span>
+                <span style={{ fontSize: 14, color: '#ffffff33' }}>
+                  ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
+                </span>
+              </button>
+            )
+          })}
           <button
             onClick={() => onEnd('fail')}
             style={{
-              padding: '6px 14px', border: 'none', background: 'transparent',
-              color: '#ffffff33', fontSize: 20, cursor: 'pointer', borderLeft: '1px solid #ffffff11',
+              padding: '0 16px', border: 'none', borderLeft: '1px solid #ffffff11',
+              background: 'transparent', color: '#ffffff33', fontSize: 20, cursor: 'pointer',
             }}
           >
             포기
@@ -679,7 +695,7 @@ export default function SexScenePage({
         {/* SM 섹터: 구속 토글 */}
         {sector === 'sm' && (
           <div style={{
-            display: 'flex', gap: 8, padding: '4px 10px 10px', justifyContent: 'center',
+            display: 'flex', gap: 8, padding: '6px 10px', justifyContent: 'center',
             borderTop: '1px solid #ffffff0a',
           }}>
             {RESTRAINT_DEFS.map(r => {
@@ -691,7 +707,7 @@ export default function SexScenePage({
                   style={{
                     background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
                     border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
-                    borderRadius: 8, padding: '4px 10px', cursor: 'pointer',
+                    borderRadius: 8, padding: '4px 12px', cursor: 'pointer',
                     color: on ? '#e94560' : '#ffffff44', fontSize: 18,
                     transition: 'all 0.15s',
                     boxShadow: on ? '0 0 8px #e9456066' : 'none',
