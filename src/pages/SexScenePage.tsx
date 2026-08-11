@@ -319,7 +319,8 @@ export default function SexScenePage({
   const [pressedTool, setPressedTool] = useState<ToolKey | null>(null)
   const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
-  const [zonePressedPos, setZonePressedPos] = useState<{ cx: number; cy: number } | null>(null)
+  const [toolAnim, setToolAnim] = useState<{ cx: number; cy: number } | null>(null)
+  const toolAnimTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [feedback, setFeedback] = useState<{ text: string; color: string } | null>(null)
   const [femaleFlash, setFemaleFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
@@ -410,6 +411,11 @@ export default function SexScenePage({
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
 
+    // 도구 아이콘을 해당 신체 부위에 700ms 표시
+    if (toolAnimTimer.current) clearTimeout(toolAnimTimer.current)
+    setToolAnim({ cx: zone.cx, cy: zone.cy })
+    toolAnimTimer.current = setTimeout(() => setToolAnim(null), 700)
+
     if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
     const gainText = sensitivity === 0 ? '반응 없음' : `+${Math.round(gain)}`
     setFeedback({
@@ -498,17 +504,17 @@ export default function SexScenePage({
             <RestraintOverlaySvg key={rKey} restraintKey={rKey} pos={restraintPos[rKey] ?? { x: 50, y: 50 }} />
           ))}
 
-          {/* 도구 액션 오버레이 — 핫스팟 누를 때 이미지 위에 표시 */}
-          {zonePressedPos && !showClimax && (
+          {/* 도구 액션 오버레이 — 클릭 시 700ms 동안 해당 신체 부위에 표시 */}
+          {toolAnim && !showClimax && (
             <div style={{
               position: 'absolute',
-              left: `${zonePressedPos.cx}%`,
-              top: `${zonePressedPos.cy}%`,
+              left: `${toolAnim.cx}%`,
+              top: `${toolAnim.cy}%`,
               transform: 'translate(-50%, -50%)',
               pointerEvents: 'none',
               zIndex: 50,
-              filter: 'drop-shadow(0 0 10px #ffffff88)',
-              opacity: 0.92,
+              filter: 'drop-shadow(0 0 12px #ffffffaa)',
+              animation: 'toolFadeOut 0.7s ease forwards',
             }}>
               <ToolSvg toolKey={activeTool} pressed={true} size={64} />
             </div>
@@ -532,12 +538,10 @@ export default function SexScenePage({
                       strokeWidth={isHovered ? 0.8 : 0.4}
                       style={{ transition: 'all 0.15s', filter: isHovered ? `drop-shadow(0 0 4px ${zone.color})` : 'none' }}
                       onMouseEnter={() => !ended && setHoveredZone(`${zone.key}-${i}`)}
-                      onMouseLeave={() => { setHoveredZone(null); setZonePressedPos(null) }}
-                      onMouseDown={() => { if (!ended) setZonePressedPos({ cx: zone.cx, cy: zone.cy }) }}
-                      onMouseUp={() => setZonePressedPos(null)}
+                      onMouseLeave={() => setHoveredZone(null)}
                       onClick={() => handleZoneClick(zone)}
-                      onTouchStart={(e) => { e.preventDefault(); setHoveredZone(`${zone.key}-${i}`); setZonePressedPos({ cx: zone.cx, cy: zone.cy }); handleZoneClick(zone) }}
-                      onTouchEnd={() => { setHoveredZone(null); setZonePressedPos(null) }}
+                      onTouchStart={(e) => { e.preventDefault(); setHoveredZone(`${zone.key}-${i}`); handleZoneClick(zone) }}
+                      onTouchEnd={() => setHoveredZone(null)}
                     />
                   </g>
                 )
@@ -721,6 +725,11 @@ export default function SexScenePage({
         @keyframes sx-whip {
           from { transform: rotate(0deg); }
           to   { transform: rotate(30deg); }
+        }
+        @keyframes toolFadeOut {
+          0%   { opacity: 1;   transform: translate(-50%, -50%) scale(1.1); }
+          60%  { opacity: 0.9; transform: translate(-50%, -50%) scale(1.0); }
+          100% { opacity: 0;   transform: translate(-50%, -60%) scale(0.8); }
         }
       `}</style>
     </div>
