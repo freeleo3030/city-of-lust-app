@@ -602,7 +602,7 @@ export default function SexScenePage({
 
         {/* 사이드 패널: 섹터 + 도구 세로 목록 */}
         <div style={{
-          flexShrink: 0, width: 180, height: '100%',
+          flexShrink: 0, width: 340, height: '100%',
           background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
           display: 'flex', flexDirection: 'column', overflowY: 'auto',
         }}>
@@ -613,12 +613,12 @@ export default function SexScenePage({
               <div key={sec.key}>
                 {/* 섹터 헤더 */}
                 <div style={{
-                  padding: '10px 12px 6px',
-                  background: isSectorActive ? 'rgba(201,168,76,0.1)' : 'transparent',
-                  borderTop: '1px solid #ffffff11',
-                  borderLeft: isSectorActive ? '3px solid #c9a84c' : '3px solid transparent',
-                  color: isSectorActive ? '#c9a84c' : '#ffffff55',
-                  fontSize: 20, fontWeight: 'bold', letterSpacing: 1,
+                  padding: '14px 20px',
+                  background: isSectorActive ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.03)',
+                  borderTop: '1px solid #ffffff18',
+                  borderLeft: isSectorActive ? '5px solid #c9a84c' : '5px solid #ffffff11',
+                  color: isSectorActive ? '#c9a84c' : '#ffffff88',
+                  fontSize: 36, fontWeight: 'bold', letterSpacing: 2,
                 }}>
                   {sec.label}
                 </div>
@@ -633,18 +633,19 @@ export default function SexScenePage({
                       style={{
                         width: '100%', border: 'none', cursor: 'pointer',
                         background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
-                        borderLeft: isActive ? '3px solid #c9a84c' : '3px solid transparent',
-                        display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8,
-                        padding: '6px 10px 6px 14px',
+                        borderLeft: isActive ? '5px solid #c9a84c' : '5px solid transparent',
+                        borderBottom: '1px solid #ffffff08',
+                        display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16,
+                        padding: '10px 16px 10px 20px',
                         transition: 'all 0.12s',
                       }}
                     >
-                      <ToolSvg toolKey={t.key} pressed={false} size={44} />
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-                        <span style={{ fontSize: 18, color: isActive ? '#c9a84c' : '#ffffffaa', fontWeight: isActive ? 'bold' : 'normal' }}>
+                      <ToolSvg toolKey={t.key} pressed={false} size={100} />
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+                        <span style={{ fontSize: 36, color: isActive ? '#c9a84c' : '#ffffffcc', fontWeight: isActive ? 'bold' : 'normal' }}>
                           {t.label}
                         </span>
-                        <span style={{ fontSize: 13, color: '#ffffff33' }}>
+                        <span style={{ fontSize: 26, color: '#ffffff44' }}>
                           ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
                         </span>
                       </div>
@@ -654,7 +655,7 @@ export default function SexScenePage({
 
                 {/* SM 구속 토글 */}
                 {sec.key === 'sm' && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '6px 10px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px' }}>
                     {RESTRAINT_DEFS.map(r => {
                       const on = restraints.has(r.key)
                       return (
@@ -664,9 +665,9 @@ export default function SexScenePage({
                           style={{
                             background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
                             border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
-                            borderRadius: 6, padding: '3px 8px', cursor: 'pointer',
-                            color: on ? '#e94560' : '#ffffff44', fontSize: 16,
-                            boxShadow: on ? '0 0 6px #e9456066' : 'none',
+                            borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                            color: on ? '#e94560' : '#ffffff55', fontSize: 28,
+                            boxShadow: on ? '0 0 8px #e9456066' : 'none',
                           }}
                         >
                           {r.label}
@@ -684,8 +685,8 @@ export default function SexScenePage({
             onClick={() => onEnd('fail')}
             style={{
               marginTop: 'auto', width: '100%', border: 'none',
-              borderTop: '1px solid #ffffff11', padding: '12px',
-              background: 'transparent', color: '#ffffff33', fontSize: 20, cursor: 'pointer',
+              borderTop: '1px solid #ffffff18', padding: '18px',
+              background: 'transparent', color: '#ffffff44', fontSize: 32, cursor: 'pointer',
             }}
           >
             포기
