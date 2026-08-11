@@ -496,8 +496,8 @@ export default function SexScenePage({
         </div>
       </div>
 
-      {/* 콘텐츠 영역: 이미지 영역 (패널 왼쪽) */}
-      <div style={{ position: 'absolute', top: 80, bottom: 0, left: 0, right: 340, display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
+      {/* 콘텐츠 영역: 이미지 + 패널 가로 배치 */}
+      <div style={{ position: 'absolute', top: 80, bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'row' }}>
 
         {/* 이미지 + 핫스팟 */}
         <div style={{ position: 'relative', height: '100%', flexShrink: 0 }}>
@@ -600,16 +600,14 @@ export default function SexScenePage({
           )}
         </div>
 
-      </div>{/* 이미지 영역 닫기 */}
-
-      {/* 사이드 패널: absolute로 높이 확정 + 탭 방식으로 스크롤 제거 */}
+      {/* 사이드 패널: 이미지 바로 오른쪽에 flex child로 배치 */}
         <div style={{
-          position: 'absolute', top: 80, right: 0, bottom: 0, width: 340,
+          flexShrink: 0, width: 340, height: '100%',
           background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          {/* 섹터 탭 — 항상 상단 고정 */}
-          <div style={{ display: 'flex', flexDirection: 'row', flexShrink: 0, borderBottom: '1px solid #ffffff18' }}>
+          {/* 섹터 탭 — 세로 배열 */}
+          <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, borderBottom: '1px solid #ffffff18' }}>
             {SECTORS.map(sec => {
               const isActive = sector === sec.key
               return (
@@ -618,12 +616,14 @@ export default function SexScenePage({
                   tabIndex={-1}
                   onClick={() => setSector(sec.key)}
                   style={{
-                    flex: 1, border: 'none', cursor: 'pointer',
-                    padding: '16px 0',
+                    width: '100%', border: 'none', cursor: 'pointer',
+                    padding: '14px 24px',
                     background: isActive ? 'rgba(201,168,76,0.18)' : 'transparent',
-                    borderBottom: isActive ? '3px solid #c9a84c' : '3px solid transparent',
+                    borderLeft: isActive ? '5px solid #c9a84c' : '5px solid transparent',
+                    borderBottom: '1px solid #ffffff10',
                     color: isActive ? '#c9a84c' : '#ffffff55',
-                    fontSize: 30, fontWeight: isActive ? 'bold' : 'normal',
+                    fontSize: 34, fontWeight: isActive ? 'bold' : 'normal',
+                    textAlign: 'left',
                     transition: 'all 0.12s',
                   }}
                 >
@@ -705,6 +705,8 @@ export default function SexScenePage({
             포기
           </button>
         </div>
+
+      </div>{/* flex row 닫기 */}
 
       <style>{`
         @keyframes fadeUp {
