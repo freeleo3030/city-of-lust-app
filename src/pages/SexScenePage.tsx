@@ -19,8 +19,8 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'ear',      label: '귀R',        cx: 64, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴',       cx: 37, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',       cx: 63, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
-    { key: 'thigh',    label: '허벅지',     cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지',     cx: 78, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 78, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
     { key: 'clitoris', label: '클리토리스', cx: 50, cy: 81, rx: 8,  ry: 4,  color: '#e94560' },
     { key: 'vagina',   label: '질',         cx: 50, cy: 86, rx: 7,  ry: 4,  color: '#e94560' },
   ],
@@ -33,8 +33,8 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'anal',     label: '항문',       cx: 56, cy: 53, rx: 7,  ry: 5,  color: '#c9a84c' },
     { key: 'vagina',   label: '질',         cx: 55, cy: 62, rx: 8,  ry: 5,  color: '#e94560' },
     { key: 'clitoris', label: '클리토리스', cx: 54, cy: 68, rx: 7,  ry: 4,  color: '#e94560' },
-    { key: 'thigh',    label: '허벅지',     cx: 30, cy: 82, rx: 18, ry: 11, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지',     cx: 72, cy: 82, rx: 14, ry: 11, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 30, cy: 82, rx: 18, ry: 11, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 72, cy: 82, rx: 14, ry: 11, color: '#f77f00' },
   ],
   // 여성상위: 정면, 앉아서 올라탄 자세
   cowgirl: [
@@ -44,8 +44,8 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'ear',      label: '귀R',        cx: 61, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴',       cx: 35, cy: 38, rx: 16, ry: 13, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',       cx: 60, cy: 37, rx: 14, ry: 12, color: '#ff6b9d' },
-    { key: 'thigh',    label: '허벅지',     cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지',     cx: 75, cy: 75, rx: 11, ry: 16, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 75, cy: 75, rx: 11, ry: 16, color: '#f77f00' },
     { key: 'clitoris', label: '클리토리스', cx: 49, cy: 79, rx: 8,  ry: 4,  color: '#e94560' },
     { key: 'vagina',   label: '질',         cx: 49, cy: 84, rx: 7,  ry: 4,  color: '#e94560' },
   ],
@@ -56,8 +56,8 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'ear',      label: '귀',         cx: 38, cy: 27, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴',       cx: 36, cy: 48, rx: 14, ry: 11, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',       cx: 62, cy: 47, rx: 14, ry: 11, color: '#ff6b9d' },
-    { key: 'thigh',    label: '허벅지',     cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지',     cx: 76, cy: 63, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지',     cx: 76, cy: 63, rx: 13, ry: 17, color: '#f77f00' },
     { key: 'clitoris', label: '클리토리스', cx: 50, cy: 76, rx: 8,  ry: 4,  color: '#e94560' },
     { key: 'vagina',   label: '질',         cx: 50, cy: 81, rx: 7,  ry: 4,  color: '#e94560' },
     { key: 'anal',     label: '항문',       cx: 50, cy: 87, rx: 6,  ry: 4,  color: '#c9a84c' },
@@ -144,6 +144,9 @@ export default function SexScenePage({
   const spriteUrls: string[] = [0, 1, 2]
     .map(i => poseImages[`${poseKey}_aroused_sprite_${i}`] ?? poseImages[`${poseKey}_sprite_${i}`] ?? '')
     .filter(Boolean)
+  const climaxSpriteUrls: string[] = [0, 1, 2]
+    .map(i => poseImages[`${poseKey}_climax_sprite_${i}`] ?? '')
+    .filter(Boolean)
 
   // 나이 배율
   const age = femaleChar.age ?? 25
@@ -154,11 +157,11 @@ export default function SexScenePage({
 
   // 흥분도에 따른 페이즈 결정
   useEffect(() => {
-    if (femaleArousal >= 100 && !ended) {
+    if (femaleArousal >= 1000 && !ended) {
       setPhase('climax')
       setEnded(true)
       setTimeout(() => onEnd('success'), 3000)
-    } else if (femaleArousal >= 30 && phase === 'foreplay') {
+    } else if (femaleArousal >= 300 && phase === 'foreplay') {
       setPhase('aroused')
     }
   }, [femaleArousal, phase, ended, onEnd])
@@ -170,12 +173,12 @@ export default function SexScenePage({
     }
   }, [maleArousal, ended, onEnd])
 
-  // 남캐 흥분도 자동 증가 (30초마다 약 10 상승)
+  // 남캐 흥분도 자동 증가 (5분 = 300초에 100 도달: 3초마다 +1)
   useEffect(() => {
     if (ended) return
     const id = setInterval(() => {
       setMaleArousal(prev => {
-        const next = prev + 3
+        const next = prev + 1
         setMaleFlash(true)
         setTimeout(() => setMaleFlash(false), 300)
         return next
@@ -194,7 +197,7 @@ export default function SexScenePage({
     if (ended || phase === 'climax') return
     const sensitivity = getEroSensitivity(zone.key)
     const gain = Math.max(1, sensitivity) * toolMult * ageMult * 4
-    setFemaleArousal(prev => Math.min(100, prev + gain))
+    setFemaleArousal(prev => Math.min(1000, prev + gain))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
 
@@ -207,19 +210,34 @@ export default function SexScenePage({
     feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
   }, [ended, phase, femaleChar.erogenous, toolMult, ageMult])
 
-  // 페이즈별 핫스팟: climax → aroused → HOTSPOTS fallback
-  const exprKey = phase === 'climax' ? 'climax' : 'aroused'
+  // 흥분도 구간별 표시 모드
+  // 0~299: 흥분 사진 / 300~599: 흥분 애니 / 600~899: 절정 애니 / 900~999: 절정 사진
+  const displayMode = femaleArousal >= 900 ? 'photo_climax'
+    : femaleArousal >= 600 ? 'sprite_climax'
+    : femaleArousal >= 300 ? 'sprite_aroused'
+    : 'photo_aroused'
+
+  const showSprite = displayMode === 'sprite_aroused' || displayMode === 'sprite_climax'
+  const showClimax = displayMode === 'photo_climax'
+  const currentSpriteUrls = displayMode === 'sprite_climax'
+    ? (climaxSpriteUrls.length >= 2 ? climaxSpriteUrls : spriteUrls)  // climax sprite 없으면 aroused로 fallback
+    : spriteUrls
+  const imgSrc = showClimax ? climaxImg : arousedImg
+
+  // 핫스팟: 구간에 따라 exprKey 결정
+  const exprKey: 'aroused' | 'climax' = femaleArousal >= 600 ? 'climax' : 'aroused'
+  const climaxSpriteStored  = poseImages[`${poseKey}_climax_sprite_hotspots`]  as unknown as HotspotZone[] | undefined
+  const arousedSpriteStored = poseImages[`${poseKey}_aroused_sprite_hotspots`] as unknown as HotspotZone[] | undefined
   const climaxStored  = poseImages[`${poseKey}_climax_hotspots`]  as unknown as HotspotZone[] | undefined
   const arousedStored = poseImages[`${poseKey}_aroused_hotspots`] as unknown as HotspotZone[] | undefined
-  const hotspots: HotspotZone[] = (exprKey === 'climax' && climaxStored?.length)
-    ? climaxStored
-    : (arousedStored?.length ? arousedStored : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary']))
-
-  // 현재 표시할 이미지/스프라이트
-  const showSprite = phase === 'aroused' && spriteUrls.length >= 2
-  const showClimax = phase === 'climax'
-
-  const imgSrc = showClimax ? climaxImg : arousedImg
+  const hotspots: HotspotZone[] = (() => {
+    if (exprKey === 'climax') {
+      if (showSprite && climaxSpriteStored?.length) return climaxSpriteStored
+      return climaxStored?.length ? climaxStored : (arousedStored?.length ? arousedStored : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary']))
+    }
+    if (showSprite && arousedSpriteStored?.length) return arousedSpriteStored
+    return arousedStored?.length ? arousedStored : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary'])
+  })()
 
   // body에 zoom:2 있으므로 이 페이지에서만 상쇄 → viewport 단위가 정상 동작
   return (
@@ -237,10 +255,10 @@ export default function SexScenePage({
         background: 'rgba(13,13,26,0.95)', borderBottom: '1px solid #ffffff11',
         padding: '8px 16px 4px', display: 'flex', flexDirection: 'column', gap: 4,
       }}>
-        <ArousalGauge value={femaleArousal} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
+        <ArousalGauge value={femaleArousal} max={1000} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
         <ArousalGauge value={maleArousal}   label="💙 남캐"   color="#4a90e2" flash={maleFlash} />
         <div style={{ color: '#ffffff44', fontSize: 11, letterSpacing: 2, textAlign: 'center' }}>
-          {phase === 'foreplay' ? '전희' : phase === 'aroused' ? '흥분' : phase === 'climax' ? '절정 ✨' : '여운'}
+          {displayMode === 'photo_aroused' ? '전희' : displayMode === 'sprite_aroused' ? '흥분' : displayMode === 'sprite_climax' ? '절정 진입' : '절정 ✨'}
         </div>
       </div>
 
@@ -248,7 +266,7 @@ export default function SexScenePage({
       <div style={{ position: 'absolute', top: 80, bottom: 52, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
       <div style={{ position: 'relative', height: '100%', width: 'auto' }}>
         {showSprite ? (
-          <SpriteAnimation urls={spriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
+          <SpriteAnimation urls={currentSpriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
         ) : (
           <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
         )}
@@ -264,8 +282,8 @@ export default function SexScenePage({
               const isHovered = hoveredZone === `${zone.key}-${i}`
               const sensitivity = getEroSensitivity(zone.key)
               return (
+                <g key={i} transform={`rotate(${zone.rotation ?? 0}, ${zone.cx}, ${zone.cy})`}>
                 <ellipse
-                  key={i}
                   cx={zone.cx}
                   cy={zone.cy}
                   rx={zone.rx}
@@ -280,6 +298,7 @@ export default function SexScenePage({
                   onTouchStart={(e) => { e.preventDefault(); setHoveredZone(`${zone.key}-${i}`); handleZoneClick(zone) }}
                   onTouchEnd={() => setHoveredZone(null)}
                 />
+                </g>
               )
             })}
           </svg>

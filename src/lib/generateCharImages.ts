@@ -908,7 +908,7 @@ const ZONE_COLORS: Record<string, string> = {
 }
 const ZONE_LABELS: Record<string, string> = {
   mouth: '입', neck: '목', ear: '귀', breast: '가슴',
-  thigh: '허벅지', clitoris: '클리토리스', vagina: '질', anal: '항문',
+  thigh: '엉덩이/허벅지', clitoris: '클리토리스', vagina: '질', anal: '항문',
 }
 
 export const POSE_HOTSPOTS: Record<string, HotspotZone[]> = {
@@ -919,8 +919,8 @@ export const POSE_HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'ear',      label: '귀R',        cx: 64, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴L',      cx: 37, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴R',      cx: 63, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
-    { key: 'thigh',    label: '허벅지L',    cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지R',    cx: 78, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지L',    cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지R',    cx: 78, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
     { key: 'clitoris', label: '클리토리스', cx: 50, cy: 81, rx: 4,  ry: 2,  color: '#e94560' },
     { key: 'vagina',   label: '질',         cx: 50, cy: 86, rx: 3.5,ry: 2,  color: '#e94560' },
   ],
@@ -932,8 +932,8 @@ export const POSE_HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'anal',     label: '항문',       cx: 56, cy: 53, rx: 7,  ry: 5,  color: '#c9a84c' },
     { key: 'vagina',   label: '질',         cx: 55, cy: 62, rx: 4,  ry: 2.5,color: '#e94560' },
     { key: 'clitoris', label: '클리토리스', cx: 54, cy: 68, rx: 3.5,ry: 2,  color: '#e94560' },
-    { key: 'thigh',    label: '허벅지L',    cx: 30, cy: 82, rx: 18, ry: 11, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지R',    cx: 72, cy: 82, rx: 14, ry: 11, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지L',    cx: 30, cy: 82, rx: 18, ry: 11, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지R',    cx: 72, cy: 82, rx: 14, ry: 11, color: '#f77f00' },
   ],
   cowgirl: [
     { key: 'mouth',    label: '입',         cx: 47, cy: 13, rx: 6,  ry: 4,  color: '#ff6b9d' },
@@ -942,8 +942,8 @@ export const POSE_HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'ear',      label: '귀R',        cx: 61, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴L',      cx: 35, cy: 38, rx: 16, ry: 13, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴R',      cx: 60, cy: 37, rx: 14, ry: 12, color: '#ff6b9d' },
-    { key: 'thigh',    label: '허벅지L',    cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지R',    cx: 75, cy: 75, rx: 11, ry: 16, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지L',    cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지R',    cx: 75, cy: 75, rx: 11, ry: 16, color: '#f77f00' },
     { key: 'clitoris', label: '클리토리스', cx: 49, cy: 79, rx: 4,  ry: 2,  color: '#e94560' },
     { key: 'vagina',   label: '질',         cx: 49, cy: 84, rx: 3.5,ry: 2,  color: '#e94560' },
   ],
@@ -953,8 +953,8 @@ export const POSE_HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'ear',      label: '귀',         cx: 38, cy: 27, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'breast',   label: '가슴L',      cx: 36, cy: 48, rx: 14, ry: 11, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴R',      cx: 62, cy: 47, rx: 14, ry: 11, color: '#ff6b9d' },
-    { key: 'thigh',    label: '허벅지L',    cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
-    { key: 'thigh',    label: '허벅지R',    cx: 76, cy: 63, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지L',    cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
+    { key: 'thigh',    label: '엉덩이/허벅지R',    cx: 76, cy: 63, rx: 13, ry: 17, color: '#f77f00' },
     { key: 'clitoris', label: '클리토리스', cx: 50, cy: 76, rx: 4,  ry: 2,  color: '#e94560' },
     { key: 'vagina',   label: '질',         cx: 50, cy: 81, rx: 3.5,ry: 2,  color: '#e94560' },
     { key: 'anal',     label: '항문',       cx: 50, cy: 87, rx: 6,  ry: 4,  color: '#c9a84c' },

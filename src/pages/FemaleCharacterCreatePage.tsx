@@ -66,7 +66,7 @@ const MARRIED_TYPES = ['미혼','기혼','돌싱'] as const
 const EROGENOUS_ZONES = [
   { key: 'breast',   label: '가슴',    note: '글래머/베이글은 3+ 권장' },
   { key: 'neckEar',  label: '목·귀',   note: '도도형은 낮게 설정' },
-  { key: 'thigh',    label: '허벅지',  note: '애무 선행 부위' },
+  { key: 'thigh',    label: '엉덩이/허벅지',  note: '애무 선행 부위' },
   { key: 'clitoris', label: '클리토리스', note: '핵심 성감대 — 낮게 설정 비권장' },
   { key: 'vagina',   label: '질 내부', note: 'G스팟 반응은 4+ 권장' },
   { key: 'anal',     label: '항문',    note: '0=거부 반응' },
@@ -98,8 +98,8 @@ const ALL_ZONE_OPTIONS: HotspotZone[] = [
   { key: 'ear',      label: '귀R',        cx: 64, cy: 15, rx: 4,   ry: 5,   color: '#a855f7' },
   { key: 'breast',   label: '가슴L',      cx: 37, cy: 41, rx: 13,  ry: 11,  color: '#ff6b9d' },
   { key: 'breast',   label: '가슴R',      cx: 63, cy: 41, rx: 13,  ry: 11,  color: '#ff6b9d' },
-  { key: 'thigh',    label: '허벅지L',    cx: 22, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
-  { key: 'thigh',    label: '허벅지R',    cx: 78, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
+  { key: 'thigh',    label: '엉덩이/허벅지L',    cx: 22, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
+  { key: 'thigh',    label: '엉덩이/허벅지R',    cx: 78, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
   { key: 'clitoris', label: '클리토리스', cx: 50, cy: 80, rx: 4,   ry: 2,   color: '#e94560' },
   { key: 'vagina',   label: '질',         cx: 50, cy: 85, rx: 3.5, ry: 2,   color: '#e94560' },
   { key: 'anal',     label: '항문',       cx: 50, cy: 91, rx: 6,   ry: 4,   color: '#c9a84c' },
@@ -414,7 +414,7 @@ export default function FemaleCharacterCreatePage({
 
   const [memo, setMemo] = useState(d?.memo ?? '')
 
-  // 일반 성감대: 목귀/허벅지/항문/입/발 수동, 가슴 자동 (합계 15)
+  // 일반 성감대: 목귀/엉덩이/허벅지/항문/입/발 수동, 가슴 자동 (합계 15)
   const GEN_TOTAL = 15
   const [genEro, setGenEroState] = useState(d?.erogenous
     ? { neckEar: d.erogenous.neckEar, thigh: d.erogenous.thigh, anal: d.erogenous.anal, mouth: d.erogenous.mouth }
@@ -591,7 +591,7 @@ export default function FemaleCharacterCreatePage({
   })
   const [spriteGenerating, setSpriteGenerating] = useState<Record<string, boolean>>({})
   const [hotspotAnalyzing, setHotspotAnalyzing] = useState<Record<string, boolean>>({})
-  const [hotspotEditorInfo, setHotspotEditorInfo] = useState<{ poseKey: string; exprKey: 'aroused' | 'climax'; imageUrl: string; savedZones?: HotspotZone[] } | null>(null)
+  const [hotspotEditorInfo, setHotspotEditorInfo] = useState<{ poseKey: string; exprKey: 'aroused' | 'climax'; imageUrl: string; savedZones?: HotspotZone[]; isSpriteEdit?: boolean } | null>(null)
   const [enlargedSprite, setEnlargedSprite] = useState<{ urls: string[]; poseKey: string; exprKey: 'aroused' | 'climax' } | null>(null)
   const [variantOverlay, setVariantOverlay] = useState<{ poseKey: string; exprKey: string; urls: string[] } | null>(null)
   const [variantZoom, setVariantZoom] = useState<string | null>(null)
@@ -1001,9 +1001,14 @@ export default function FemaleCharacterCreatePage({
         {/* ── 모달들: S.container 직속 (position:fixed 보장) ── */}
         {enlargedSprite && (() => {
           const { urls, poseKey: sPoseKey, exprKey: sExprKey } = enlargedSprite
+          // 애니 전용 sprite_hotspots → 없으면 사진 hotspots(default)
+          const spriteKey = `${sPoseKey}_${sExprKey}_sprite_hotspots`
+          const photoKey = `${sPoseKey}_${sExprKey}_hotspots`
+          const photoFallback = `${sPoseKey}_aroused_hotspots`
           const sHotspots: HotspotZone[] = (
-            (selectedPoseImages[`${sPoseKey}_${sExprKey}_hotspots`] as any) ??
-            (selectedPoseImages[`${sPoseKey}_aroused_hotspots`] as any) ?? []
+            (selectedPoseImages[spriteKey] as any) ??
+            (selectedPoseImages[photoKey] as any) ??
+            (selectedPoseImages[photoFallback] as any) ?? []
           )
           return (
             <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
@@ -1026,16 +1031,19 @@ export default function FemaleCharacterCreatePage({
                     ))}
                   </svg>
                 )}
-                {/* 📍 위치조정 버튼 */}
+                {/* 📍 위치조정 — 애니 전용 sprite_hotspots 키로 저장 (사진과 독립) */}
                 <button
                   style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(201,168,76,0.85)', border: 'none', color: '#000', borderRadius: 6, padding: '4px 8px', fontSize: 12, fontWeight: 'bold', cursor: 'pointer', zIndex: 10 }}
                   onClick={e => {
                     e.stopPropagation()
-                    const savedZones = (selectedPoseImages[`${sPoseKey}_${sExprKey}_hotspots`] as any)
-                      ?? (selectedPoseImages[`${sPoseKey}_aroused_hotspots`] as any)
-                    setHotspotEditorInfo({ poseKey: sPoseKey, exprKey: sExprKey, imageUrl: urls[0], savedZones })
+                    const savedZones: HotspotZone[] = (
+                      (selectedPoseImages[spriteKey] as any) ??
+                      (selectedPoseImages[photoKey] as any) ??
+                      (selectedPoseImages[photoFallback] as any)
+                    )
+                    setHotspotEditorInfo({ poseKey: sPoseKey, exprKey: sExprKey, imageUrl: urls[0], savedZones, isSpriteEdit: true })
                   }}>
-                  📍 위치조정
+                  📍 위치조정 (애니)
                 </button>
                 {sHotspots.length === 0 && (
                   <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', color: '#e9456088', fontSize: 11 }}>
@@ -1514,7 +1522,10 @@ export default function FemaleCharacterCreatePage({
               poseKey={hotspotEditorInfo.poseKey}
               initialZones={hotspotEditorInfo.savedZones}
               onSave={async (zones) => {
-                const key = `${hotspotEditorInfo.poseKey}_${hotspotEditorInfo.exprKey}_hotspots`
+                // 애니 편집이면 sprite_hotspots, 사진 편집이면 hotspots — 서로 독립
+                const key = hotspotEditorInfo.isSpriteEdit
+                  ? `${hotspotEditorInfo.poseKey}_${hotspotEditorInfo.exprKey}_sprite_hotspots`
+                  : `${hotspotEditorInfo.poseKey}_${hotspotEditorInfo.exprKey}_hotspots`
                 setSelectedPoseImages(prev => ({ ...prev, [key]: zones as any }))
                 setHotspotEditorInfo(null)
 
@@ -1542,7 +1553,8 @@ export default function FemaleCharacterCreatePage({
                   alert(`⚠️ DB 저장 실패: ${e?.message ?? e}\n새로고침해도 이번 세션에선 유지됩니다.`)
                   return
                 }
-                alert(`✅ ${hotspotEditorInfo.poseKey} ${hotspotEditorInfo.exprKey === 'aroused' ? '흥분' : '절정'} 성감대 저장 완료`)
+                const label = hotspotEditorInfo.isSpriteEdit ? '애니' : '사진'
+                alert(`✅ ${hotspotEditorInfo.poseKey} ${hotspotEditorInfo.exprKey === 'aroused' ? '흥분' : '절정'} ${label} 성감대 저장 완료`)
               }}
               onClose={() => setHotspotEditorInfo(null)}
             />
@@ -1875,9 +1887,9 @@ export default function FemaleCharacterCreatePage({
             <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${(breast/5)*100}%`, background: sensColor(breast) }} /></div>
             <span style={{ color: sensColor(breast), fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{breast}</span>
           </div>
-          {/* 허벅지, 항문 — 가슴 아래 */}
+          {/* 엉덩이/허벅지, 항문 — 가슴 아래 */}
           {(['thigh','anal'] as const).map(key => {
-            const labelMap = { thigh:'허벅지', anal:'항문' }
+            const labelMap = { thigh:'엉덩이/허벅지', anal:'항문' }
             const val = genEro[key]; const color = sensColor(val)
             return (
               <div key={key} style={S.erogenousRow}>
