@@ -364,15 +364,15 @@ export default function SexScenePage({
               background: tool === t.key ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.05)',
               border: `1px solid ${tool === t.key ? '#c9a84c' : '#ffffff22'}`,
               borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
-              color: tool === t.key ? '#c9a84c' : '#ffffff88', fontSize: 12,
+              color: tool === t.key ? '#c9a84c' : '#ffffff88', fontSize: 24,
             }}
           >
-            {t.emoji} {t.label} <span style={{ fontSize: 10, color: '#ffffff44' }}>×{t.mult}</span>
+            {t.emoji} {t.label} <span style={{ fontSize: 20, color: '#ffffff44' }}>×{t.mult}</span>
           </button>
         ))}
         <button
           onClick={() => onEnd('fail')}
-          style={{ background: 'none', border: '1px solid #ffffff22', borderRadius: 8, padding: '6px 14px', color: '#ffffff33', fontSize: 11, cursor: 'pointer' }}
+          style={{ background: 'none', border: '1px solid #ffffff22', borderRadius: 8, padding: '6px 14px', color: '#ffffff33', fontSize: 22, cursor: 'pointer' }}
         >
           포기
         </button>
