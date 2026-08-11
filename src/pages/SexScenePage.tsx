@@ -524,7 +524,7 @@ export default function SexScenePage({
               filter: 'drop-shadow(0 0 12px #ffffffaa)',
               animation: 'toolFadeOut 0.7s ease forwards',
             }}>
-              <ToolSvg toolKey={activeTool} pressed={true} size={576} />
+              <ToolSvg toolKey={activeTool} pressed={true} size={288} />
             </div>
           )}
 
@@ -684,7 +684,7 @@ export default function SexScenePage({
           <button
             onClick={() => onEnd('fail')}
             style={{
-              marginTop: 'auto', width: '100%', border: 'none',
+              width: '100%', border: 'none',
               borderTop: '1px solid #ffffff18', padding: '18px',
               background: 'transparent', color: '#ffffff44', fontSize: 32, cursor: 'pointer',
             }}
