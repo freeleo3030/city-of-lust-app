@@ -602,10 +602,12 @@ export default function SexScenePage({
 
         {/* 사이드 패널: 섹터 + 도구 세로 목록 */}
         <div style={{
-          flexShrink: 0, width: 340, height: '100%',
+          flexShrink: 0, width: 340,
           background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
-          display: 'flex', flexDirection: 'column', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
+          {/* 스크롤 영역 (포기 버튼 제외) */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
           {SECTORS.map(sec => {
             const tools = TOOL_DEFS.filter(t => t.sector === sec.key)
             const isSectorActive = sector === sec.key
@@ -680,13 +682,16 @@ export default function SexScenePage({
             )
           })}
 
-          {/* 포기 */}
+          </div>{/* 스크롤 영역 닫기 */}
+
+          {/* 포기 — 항상 하단 고정 */}
           <button
             onClick={() => onEnd('fail')}
             style={{
               width: '100%', border: 'none',
               borderTop: '1px solid #ffffff18', padding: '18px',
               background: 'transparent', color: '#ffffff44', fontSize: 32, cursor: 'pointer',
+              flexShrink: 0,
             }}
           >
             포기
