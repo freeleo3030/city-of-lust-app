@@ -524,7 +524,7 @@ export default function SexScenePage({
               filter: 'drop-shadow(0 0 12px #ffffffaa)',
               animation: 'toolFadeOut 0.7s ease forwards',
             }}>
-              <ToolSvg toolKey={activeTool} pressed={true} size={192} />
+              <ToolSvg toolKey={activeTool} pressed={true} size={576} />
             </div>
           )}
 
