@@ -79,8 +79,8 @@ const TOOL_DEFS: ToolDef[] = [
   { key: 'hand',       label: '손',        baseMult: 1.0, sector: 'body' },
   // 도구
   { key: 'dildo',      label: '딜도',      baseMult: 2.2, sector: 'toy',  zoneOnly: ['vagina'] },
-  { key: 'vibrator',   label: '진동기',    baseMult: 2.0, sector: 'toy',  zoneOnly: ['breast', 'ear', 'thigh', 'clitoris', 'vagina', 'anal'] },
-  { key: 'gel',        label: '마사지젤',  baseMult: 0.4, sector: 'toy',  zoneOnly: ['breast', 'ear', 'thigh', 'clitoris', 'vagina', 'anal'] },
+  { key: 'vibrator',   label: '진동기',    baseMult: 2.0, sector: 'toy',  zoneOnly: ['breast', 'thigh', 'clitoris', 'vagina', 'anal'] },
+  { key: 'gel',        label: '마사지젤',  baseMult: 0.4, sector: 'toy',  zoneOnly: ['breast', 'thigh', 'clitoris', 'vagina', 'anal'] },
   // 용품(SM)
   { key: 'whip',       label: '채찍',      baseMult: 1.5, sector: 'sm' },
   { key: 'anal_dildo', label: '애널딜도',  baseMult: 2.5, sector: 'sm',   zoneOnly: ['anal'] },
