@@ -129,68 +129,77 @@ const RESTRAINT_POS: Record<string, Record<RestraintKey, { x: number; y: number;
 
 // ─── SVG 도구 아이콘 ─────────────────────────────────────────────────────────
 
-function ToolSvg({ toolKey, pressed, size = 36 }: { toolKey: ToolKey; pressed: boolean; size?: number }) {
+function ToolSvg({ toolKey, pressed, size = 80 }: { toolKey: ToolKey; pressed: boolean; size?: number }) {
   const anim = (name: string) => pressed ? `${name} 0.3s ease-in-out infinite alternate` : 'none'
   const s = size
 
   switch (toolKey) {
     case 'penis':
+      return (
+        <svg width={s} height={s} viewBox="0 0 80 80" style={{ animation: anim('sx-thrust'), display: 'block' }}>
+          <ellipse cx="40" cy="16" rx="14" ry="15" fill="#ffb5c8" stroke="#e94560" strokeWidth="3" />
+          <rect x="27" y="28" width="26" height="42" rx="10" fill="#ffb5c8" stroke="#e94560" strokeWidth="3" />
+        </svg>
+      )
     case 'dildo':
       return (
-        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-thrust'), display: 'block' }}>
-          <ellipse cx="18" cy="8" rx="6" ry="7" fill="#ffb5c8" stroke="#e94560" strokeWidth="1.5" />
-          <rect x="13" y="13" width="10" height="18" rx="4" fill="#ffb5c8" stroke="#e94560" strokeWidth="1.5" />
+        <svg width={s} height={s} viewBox="0 0 80 80" style={{ animation: anim('sx-thrust'), display: 'block' }}>
+          <ellipse cx="40" cy="16" rx="14" ry="15" fill="#f9a8c9" stroke="#ec4899" strokeWidth="3" />
+          <rect x="27" y="28" width="26" height="38" rx="10" fill="#f9a8c9" stroke="#ec4899" strokeWidth="3" />
+          <ellipse cx="40" cy="68" rx="10" ry="6" fill="#f9a8c9" stroke="#ec4899" strokeWidth="2" />
         </svg>
       )
     case 'anal_dildo':
       return (
-        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-thrust'), display: 'block' }}>
-          <ellipse cx="18" cy="9" rx="5" ry="6" fill="#c9a84c" stroke="#a07830" strokeWidth="1.5" />
-          <rect x="14" y="14" width="8" height="14" rx="3" fill="#c9a84c" stroke="#a07830" strokeWidth="1.5" />
-          <ellipse cx="18" cy="30" rx="7" ry="3.5" fill="#c9a84c" stroke="#a07830" strokeWidth="1.5" />
+        <svg width={s} height={s} viewBox="0 0 80 80" style={{ animation: anim('sx-thrust'), display: 'block' }}>
+          <ellipse cx="40" cy="14" rx="11" ry="13" fill="#c9a84c" stroke="#a07830" strokeWidth="3" />
+          <rect x="30" y="24" width="20" height="32" rx="8" fill="#c9a84c" stroke="#a07830" strokeWidth="3" />
+          <ellipse cx="40" cy="62" rx="16" ry="8" fill="#c9a84c" stroke="#a07830" strokeWidth="3" />
         </svg>
       )
     case 'tongue':
       return (
-        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-tongue'), transformOrigin: '18px 6px', display: 'block' }}>
-          <path d="M18 6 Q12 14 14 24 Q16 32 18 32 Q20 32 22 24 Q24 14 18 6Z" fill="#ff6b9d" stroke="#e94560" strokeWidth="1.2" />
-          <line x1="18" y1="18" x2="18" y2="28" stroke="#c94060" strokeWidth="1" strokeLinecap="round" />
+        <svg width={s} height={s} viewBox="0 0 80 80" style={{ animation: anim('sx-tongue'), transformOrigin: '40px 10px', display: 'block' }}>
+          <path d="M40 10 Q24 28 28 52 Q32 72 40 72 Q48 72 52 52 Q56 28 40 10Z" fill="#ff6b9d" stroke="#e94560" strokeWidth="3" />
+          <line x1="40" y1="38" x2="40" y2="62" stroke="#c94060" strokeWidth="2.5" strokeLinecap="round" />
         </svg>
       )
     case 'hand':
       return (
-        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-fingers'), transformOrigin: '18px 28px', display: 'block' }}>
-          <rect x="8"  y="10" width="5" height="15" rx="2.5" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="1" />
-          <rect x="15" y="7"  width="5" height="18" rx="2.5" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="1" />
-          <rect x="22" y="9"  width="5" height="16" rx="2.5" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="1" />
-          <rect x="11" y="23" width="16" height="8"  rx="3"   fill="#ffd6a0" stroke="#c9a84c" strokeWidth="1" />
+        <svg width={s} height={s} viewBox="0 0 80 80" style={{ animation: anim('sx-fingers'), transformOrigin: '40px 65px', display: 'block' }}>
+          <rect x="14" y="22" width="12" height="32" rx="6" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="2.5" />
+          <rect x="30" y="14" width="12" height="40" rx="6" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="2.5" />
+          <rect x="46" y="20" width="12" height="36" rx="6" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="2.5" />
+          <rect x="20" y="52" width="38" height="20" rx="8" fill="#ffd6a0" stroke="#c9a84c" strokeWidth="2.5" />
         </svg>
       )
     case 'vibrator':
       return (
-        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-vibrate'), display: 'block' }}>
-          <rect x="12" y="4" width="12" height="26" rx="6" fill="#a78bfa" stroke="#7c3aed" strokeWidth="1.5" />
-          <line x1="7"  y1="14" x2="10" y2="16" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="26" y1="14" x2="29" y2="12" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="7"  y1="20" x2="10" y2="18" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="26" y1="20" x2="29" y2="22" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
+        <svg width={s} height={s} viewBox="0 0 80 80" style={{ animation: anim('sx-vibrate'), display: 'block' }}>
+          <rect x="26" y="8" width="28" height="58" rx="14" fill="#a78bfa" stroke="#7c3aed" strokeWidth="3" />
+          <ellipse cx="40" cy="8" rx="14" ry="8" fill="#c4b5fd" stroke="#7c3aed" strokeWidth="2" />
+          <line x1="14" y1="28" x2="22" y2="32" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round" />
+          <line x1="58" y1="28" x2="66" y2="24" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round" />
+          <line x1="14" y1="44" x2="22" y2="40" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round" />
+          <line x1="58" y1="44" x2="66" y2="48" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round" />
         </svg>
       )
     case 'gel':
       return (
-        <svg width={s} height={s} viewBox="0 0 36 36" style={{ display: 'block' }}>
-          <rect x="12" y="6" width="12" height="18" rx="5" fill="#7dd3fc" stroke="#38bdf8" strokeWidth="1.5" />
-          <path d="M16 4 Q18 2 20 4" stroke="#38bdf8" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-          <ellipse cx="18" cy="28" rx="4" ry="2.5" fill="#38bdf8" opacity="0.5"
-            style={{ animation: pressed ? 'sx-drip 0.6s ease-in infinite' : 'none', transformOrigin: '18px 24px' }} />
+        <svg width={s} height={s} viewBox="0 0 80 80" style={{ display: 'block' }}>
+          <rect x="26" y="14" width="28" height="40" rx="12" fill="#7dd3fc" stroke="#38bdf8" strokeWidth="3" />
+          <rect x="32" y="8"  width="16" height="10" rx="4"  fill="#bae6fd" stroke="#38bdf8" strokeWidth="2" />
+          <path d="M36 6 Q40 2 44 6" stroke="#38bdf8" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M36 58 Q40 72 44 58" fill="#38bdf8" opacity="0.7"
+            style={{ animation: pressed ? 'sx-drip 0.6s ease-in infinite' : 'none' }} />
         </svg>
       )
     case 'whip':
       return (
-        <svg width={s} height={s} viewBox="0 0 36 36" style={{ animation: anim('sx-whip'), transformOrigin: '6px 6px', display: 'block' }}>
-          <path d="M6 6 Q22 10 30 28" stroke="#e94560" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M6 6 Q22 10 30 28 L28 32 L32 28 Z" fill="#e94560" />
-          <circle cx="6" cy="6" r="4" fill="#c9a84c" />
+        <svg width={s} height={s} viewBox="0 0 80 80" style={{ animation: anim('sx-whip'), transformOrigin: '10px 10px', display: 'block' }}>
+          <path d="M10 10 Q46 22 68 64" stroke="#e94560" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <path d="M62 56 L72 60 L68 70 Z" fill="#e94560" />
+          <circle cx="10" cy="10" r="9" fill="#c9a84c" stroke="#a07830" strokeWidth="2" />
         </svg>
       )
     default:
@@ -465,9 +474,8 @@ export default function SexScenePage({
   // 구속 오버레이 위치 (자세 fallback: missionary)
   const restraintPos = RESTRAINT_POS[poseKey] ?? RESTRAINT_POS['missionary']
 
-  // 하단 바: 섹터탭 + SM 구속 토글 (도구버튼 줄 제거)
   const bottomBarHeight = sector === 'sm' ? 110 : 56
-  const rightPanelWidth = 140
+  const rightPanelWidth = 200
 
   return (
     <div style={{
@@ -495,9 +503,8 @@ export default function SexScenePage({
       <div style={{
         position: 'absolute', top: 80, bottom: bottomBarHeight, right: 0,
         width: rightPanelWidth, zIndex: 100,
-        background: 'rgba(13,13,26,0.92)', borderLeft: '1px solid #ffffff11',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 10, padding: '12px 0', overflowY: 'auto',
+        background: 'rgba(13,13,26,0.95)', borderLeft: '1px solid #ffffff18',
+        display: 'flex', flexDirection: 'column',
       }}>
         {sectorTools.map(t => {
           const isActive = activeTool === t.key
@@ -506,18 +513,19 @@ export default function SexScenePage({
               key={t.key}
               onClick={() => setActiveTool(t.key)}
               style={{
-                background: isActive ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${isActive ? '#c9a84c' : '#ffffff15'}`,
-                borderRadius: 12, padding: '8px 6px', cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-                width: 118,
-                boxShadow: isActive ? '0 0 14px #c9a84c55' : 'none',
+                flex: 1,
+                background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
+                border: 'none',
+                borderBottom: '1px solid #ffffff11',
+                cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+                boxShadow: isActive ? 'inset 3px 0 0 #c9a84c' : 'none',
                 transition: 'all 0.15s',
               }}
             >
               <ToolSvg toolKey={t.key} pressed={false} size={114} />
-              <span style={{ fontSize: 18, color: isActive ? '#c9a84c' : '#ffffff88', fontWeight: isActive ? 'bold' : 'normal' }}>{t.label}</span>
-              <span style={{ fontSize: 14, color: '#ffffff33' }}>
+              <span style={{ fontSize: 20, color: isActive ? '#c9a84c' : '#ffffffaa', fontWeight: isActive ? 'bold' : 'normal' }}>{t.label}</span>
+              <span style={{ fontSize: 16, color: '#ffffff44' }}>
                 ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
               </span>
             </button>
@@ -551,7 +559,7 @@ export default function SexScenePage({
               filter: 'drop-shadow(0 0 12px #ffffffaa)',
               animation: 'toolFadeOut 0.7s ease forwards',
             }}>
-              <ToolSvg toolKey={activeTool} pressed={true} size={64} />
+              <ToolSvg toolKey={activeTool} pressed={true} size={192} />
             </div>
           )}
 
