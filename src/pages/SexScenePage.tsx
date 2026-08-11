@@ -496,8 +496,8 @@ export default function SexScenePage({
         </div>
       </div>
 
-      {/* 콘텐츠 영역: 이미지 + 사이드 패널 가로 배치 */}
-      <div style={{ position: 'absolute', top: 80, bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'row' }}>
+      {/* 콘텐츠 영역: 이미지 영역 (패널 왼쪽) */}
+      <div style={{ position: 'absolute', top: 80, bottom: 0, left: 0, right: 340, display: 'flex', flexDirection: 'row' }}>
 
         {/* 이미지 + 핫스팟 */}
         <div style={{ position: 'relative', height: '100%', flexShrink: 0 }}>
@@ -600,9 +600,11 @@ export default function SexScenePage({
           )}
         </div>
 
-        {/* 사이드 패널: 섹터 + 도구 세로 목록 */}
+      </div>{/* 이미지 영역 닫기 */}
+
+      {/* 사이드 패널: absolute로 높이 확정 */}
         <div style={{
-          flexShrink: 0, width: 340,
+          position: 'absolute', top: 80, right: 0, bottom: 0, width: 340,
           background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
@@ -697,8 +699,6 @@ export default function SexScenePage({
             포기
           </button>
         </div>
-
-      </div>{/* flex row 닫기 */}
 
       <style>{`
         @keyframes fadeUp {
