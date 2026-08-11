@@ -465,8 +465,9 @@ export default function SexScenePage({
   // 구속 오버레이 위치 (자세 fallback: missionary)
   const restraintPos = RESTRAINT_POS[poseKey] ?? RESTRAINT_POS['missionary']
 
-  // SM 섹터일 때 하단 바가 더 높음
-  const bottomBarHeight = sector === 'sm' ? 170 : 110
+  // 하단 바: 섹터탭 + SM 구속 토글 (도구버튼 줄 제거)
+  const bottomBarHeight = sector === 'sm' ? 110 : 56
+  const rightPanelWidth = 140
 
   return (
     <div style={{
@@ -490,8 +491,42 @@ export default function SexScenePage({
         </div>
       </div>
 
+      {/* 우측 도구 패널 */}
+      <div style={{
+        position: 'absolute', top: 80, bottom: bottomBarHeight, right: 0,
+        width: rightPanelWidth, zIndex: 100,
+        background: 'rgba(13,13,26,0.92)', borderLeft: '1px solid #ffffff11',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 10, padding: '12px 0', overflowY: 'auto',
+      }}>
+        {sectorTools.map(t => {
+          const isActive = activeTool === t.key
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTool(t.key)}
+              style={{
+                background: isActive ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${isActive ? '#c9a84c' : '#ffffff15'}`,
+                borderRadius: 12, padding: '8px 6px', cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                width: 118,
+                boxShadow: isActive ? '0 0 14px #c9a84c55' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              <ToolSvg toolKey={t.key} pressed={false} size={114} />
+              <span style={{ fontSize: 18, color: isActive ? '#c9a84c' : '#ffffff88', fontWeight: isActive ? 'bold' : 'normal' }}>{t.label}</span>
+              <span style={{ fontSize: 14, color: '#ffffff33' }}>
+                ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
       {/* 이미지 + 핫스팟 */}
-      <div style={{ position: 'absolute', top: 80, bottom: bottomBarHeight, left: 0, right: 0, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+      <div style={{ position: 'absolute', top: 80, bottom: bottomBarHeight, left: 0, right: rightPanelWidth, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
         <div style={{ position: 'relative', height: '100%', width: 'auto' }}>
           {showSprite ? (
             <SpriteAnimation urls={currentSpriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
@@ -631,41 +666,6 @@ export default function SexScenePage({
           >
             포기
           </button>
-        </div>
-
-        {/* 도구 버튼 */}
-        <div style={{ display: 'flex', gap: 6, padding: '8px 10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {sectorTools.map(t => {
-            const isActive = activeTool === t.key
-            const isPressed = pressedTool === t.key
-            return (
-              <button
-                key={t.key}
-                onClick={() => setActiveTool(t.key)}
-                onMouseDown={() => setPressedTool(t.key)}
-                onMouseUp={() => setPressedTool(null)}
-                onMouseLeave={() => pressedTool === t.key && setPressedTool(null)}
-                onTouchStart={() => setPressedTool(t.key)}
-                onTouchEnd={() => setPressedTool(null)}
-                style={{
-                  background: isActive ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${isActive ? '#c9a84c' : '#ffffff22'}`,
-                  borderRadius: 10, padding: '6px 10px', cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                  color: isActive ? '#c9a84c' : '#ffffff88',
-                  boxShadow: isPressed ? `0 0 12px ${isActive ? '#c9a84c' : '#ffffff44'}` : 'none',
-                  transition: 'box-shadow 0.1s',
-                  minWidth: 64,
-                }}
-              >
-                <ToolSvg toolKey={t.key} pressed={isPressed} size={38} />
-                <span style={{ fontSize: 18, fontWeight: isActive ? 'bold' : 'normal' }}>{t.label}</span>
-                <span style={{ fontSize: 14, color: '#ffffff44' }}>
-                  ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
-                </span>
-              </button>
-            )
-          })}
         </div>
 
         {/* SM 섹터: 구속 토글 */}
