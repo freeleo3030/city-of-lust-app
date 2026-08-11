@@ -147,6 +147,7 @@ export default function SexScenePage({
   const climaxSpriteUrls: string[] = [0, 1, 2]
     .map(i => poseImages[`${poseKey}_climax_sprite_${i}`] ?? '')
     .filter(Boolean)
+  console.log('[SexScene] poseKey:', poseKey, '| poseImages keys:', Object.keys(poseImages), '| spriteUrls:', spriteUrls.length, '| climaxSpriteUrls:', climaxSpriteUrls.length)
 
   // 나이 배율
   const age = femaleChar.age ?? 25
