@@ -602,92 +602,98 @@ export default function SexScenePage({
 
       </div>{/* 이미지 영역 닫기 */}
 
-      {/* 사이드 패널: absolute로 높이 확정 */}
+      {/* 사이드 패널: absolute로 높이 확정 + 탭 방식으로 스크롤 제거 */}
         <div style={{
           position: 'absolute', top: 80, right: 0, bottom: 0, width: 340,
           background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          {/* 스크롤 영역 (포기 버튼 제외) */}
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-          {SECTORS.map(sec => {
-            const tools = TOOL_DEFS.filter(t => t.sector === sec.key)
-            const isSectorActive = sector === sec.key
-            return (
-              <div key={sec.key}>
-                {/* 섹터 헤더 */}
-                <div style={{
-                  padding: '14px 20px',
-                  background: isSectorActive ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.03)',
-                  borderTop: '1px solid #ffffff18',
-                  borderLeft: isSectorActive ? '5px solid #c9a84c' : '5px solid #ffffff11',
-                  color: isSectorActive ? '#c9a84c' : '#ffffff88',
-                  fontSize: 36, fontWeight: 'bold', letterSpacing: 2,
-                }}>
+          {/* 섹터 탭 — 항상 상단 고정 */}
+          <div style={{ display: 'flex', flexDirection: 'row', flexShrink: 0, borderBottom: '1px solid #ffffff18' }}>
+            {SECTORS.map(sec => {
+              const isActive = sector === sec.key
+              return (
+                <button
+                  key={sec.key}
+                  tabIndex={-1}
+                  onClick={() => setSector(sec.key)}
+                  style={{
+                    flex: 1, border: 'none', cursor: 'pointer',
+                    padding: '16px 0',
+                    background: isActive ? 'rgba(201,168,76,0.18)' : 'transparent',
+                    borderBottom: isActive ? '3px solid #c9a84c' : '3px solid transparent',
+                    color: isActive ? '#c9a84c' : '#ffffff55',
+                    fontSize: 30, fontWeight: isActive ? 'bold' : 'normal',
+                    transition: 'all 0.12s',
+                  }}
+                >
                   {sec.label}
-                </div>
+                </button>
+              )
+            })}
+          </div>
 
-                {/* 도구 목록 */}
-                {tools.map(t => {
-                  const isActive = activeTool === t.key
+          {/* 활성 섹터의 도구 목록 — 스크롤 없이 표시 */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            {TOOL_DEFS.filter(t => t.sector === sector).map(t => {
+              const isActive = activeTool === t.key
+              return (
+                <button
+                  key={t.key}
+                  tabIndex={-1}
+                  onClick={() => setActiveTool(t.key)}
+                  style={{
+                    width: '100%', border: 'none', cursor: 'pointer',
+                    background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
+                    borderLeft: isActive ? '5px solid #c9a84c' : '5px solid transparent',
+                    borderBottom: '1px solid #ffffff08',
+                    display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16,
+                    padding: '10px 16px 10px 20px',
+                    transition: 'all 0.12s', flexShrink: 0,
+                  }}
+                >
+                  <ToolSvg toolKey={t.key} pressed={false} size={100} />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+                    <span style={{ fontSize: 36, color: isActive ? '#c9a84c' : '#ffffffcc', fontWeight: isActive ? 'bold' : 'normal' }}>
+                      {t.label}
+                    </span>
+                    <span style={{ fontSize: 26, color: '#ffffff44' }}>
+                      ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+
+            {/* SM 구속 토글 */}
+            {sector === 'sm' && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px', flexShrink: 0 }}>
+                {RESTRAINT_DEFS.map(r => {
+                  const on = restraints.has(r.key)
                   return (
                     <button
-                      key={t.key}
-                      onClick={() => { setSector(sec.key); setActiveTool(t.key) }}
+                      key={r.key}
+                      tabIndex={-1}
+                      onClick={() => toggleRestraint(r.key)}
                       style={{
-                        width: '100%', border: 'none', cursor: 'pointer',
-                        background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
-                        borderLeft: isActive ? '5px solid #c9a84c' : '5px solid transparent',
-                        borderBottom: '1px solid #ffffff08',
-                        display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16,
-                        padding: '10px 16px 10px 20px',
-                        transition: 'all 0.12s',
+                        background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
+                        borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                        color: on ? '#e94560' : '#ffffff55', fontSize: 28,
+                        boxShadow: on ? '0 0 8px #e9456066' : 'none',
                       }}
                     >
-                      <ToolSvg toolKey={t.key} pressed={false} size={100} />
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
-                        <span style={{ fontSize: 36, color: isActive ? '#c9a84c' : '#ffffffcc', fontWeight: isActive ? 'bold' : 'normal' }}>
-                          {t.label}
-                        </span>
-                        <span style={{ fontSize: 26, color: '#ffffff44' }}>
-                          ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
-                        </span>
-                      </div>
+                      {r.label}
                     </button>
                   )
                 })}
-
-                {/* SM 구속 토글 */}
-                {sec.key === 'sm' && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px' }}>
-                    {RESTRAINT_DEFS.map(r => {
-                      const on = restraints.has(r.key)
-                      return (
-                        <button
-                          key={r.key}
-                          onClick={() => toggleRestraint(r.key)}
-                          style={{
-                            background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
-                            border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
-                            borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-                            color: on ? '#e94560' : '#ffffff55', fontSize: 28,
-                            boxShadow: on ? '0 0 8px #e9456066' : 'none',
-                          }}
-                        >
-                          {r.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
               </div>
-            )
-          })}
-
-          </div>{/* 스크롤 영역 닫기 */}
+            )}
+          </div>
 
           {/* 포기 — 항상 하단 고정 */}
           <button
+            tabIndex={-1}
             onClick={() => onEnd('fail')}
             style={{
               width: '100%', border: 'none',
