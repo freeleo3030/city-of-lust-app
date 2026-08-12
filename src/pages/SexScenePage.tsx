@@ -258,10 +258,10 @@ function LeatherCuffRing({ x, y, size, color, label, rotate, onDrag, onResize, o
           </defs>
 
           {/* ── 뒷면 (위 반원) — 흐리게 ── */}
-          <path d={arc(0, rx, ry)}     fill="none" stroke="#0a0400"             strokeWidth="18" opacity="0.25" />
-          <path d={arc(0, rx, ry)}     fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" opacity="0.25" />
-          <path d={arc(0, rx, ry)}     fill="none" stroke={color}               strokeWidth="2"  opacity="0.2" />
-          <path d={arc(0, rx-6, ry-6)} fill="none" stroke="#ffffff18"           strokeWidth="1"  strokeDasharray="4 5" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke="#0a0400"             strokeWidth="18" opacity="0.5" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" opacity="0.5" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke={color}               strokeWidth="2"  opacity="0.4" />
+          <path d={arc(0, rx-6, ry-6)} fill="none" stroke="#ffffff30"           strokeWidth="1"  strokeDasharray="4 5" />
 
           {/* ── 앞면 (아래 반원) — 진하게 ── */}
           <path d={arc(1, rx, ry)}     fill="none" stroke="#0a0400"             strokeWidth="18" />
