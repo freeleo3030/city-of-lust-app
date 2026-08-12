@@ -2016,7 +2016,7 @@ export default function FemaleCharacterCreatePage({
           </div>
 
           {/* 선호 자세 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 선호 자세 (−5 비선호 / +5 선호) ──</div>
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 선호 자세 (1 비선호 / 5 선호) ──</div>
 
           {([
             ['정상위','missionary'],['후배위','doggy'],
