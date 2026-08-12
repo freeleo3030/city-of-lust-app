@@ -79,18 +79,27 @@ interface ToolDef {
 }
 
 // 도구 × 부위 유효성 매트릭스
-// 양수 = 흥분도 상승 배율, 음수 = 흥분도 하락 페널티, undefined = 미정의(0 처리)
+// 양수 = 흥분도 상승 배율, 음수 = 흥분도 하락 페널티
 const TOOL_ZONE_MATRIX: Record<ToolKey, Record<ErogenousKey, number>> = {
   tongue:     { breast:1.2,  neck:1.1,  ear:1.1,  thigh:1.1,  clitoris:1.3,  vagina:1.2,  anal:1.1,  mouth:1.2  },
-  hand:       { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:-0.2, vagina:1.3,  anal:1.1,  mouth:-0.2 },
+  hand:       { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:1.2,  vagina:1.3,  anal:1.1,  mouth:-0.2 },
   penis:      { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.5,  anal:1.1,  mouth:1.1  },
   dildo:      { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.1,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
   vibrator:   { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
   gel:        { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.05, vagina:1.05, anal:1.05, mouth:-0.2 },
-  // 채찍 기본값 — SM 보정 곱셈 적용됨
+  // 채찍: SM 도구 착용 개수(0~4)에 따라 WHIP_LEVEL_MATRIX 사용
   whip:       { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 },
   anal_dildo: { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:-0.2, vagina:-0.2, anal:1.3,  mouth:-0.2 },
 }
+
+// 채찍 × SM 도구 착용 개수 (0=미착용 ~ 4=전부) 배율 매트릭스
+const WHIP_LEVEL_MATRIX: Record<ErogenousKey, number>[] = [
+  { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 }, // 0개
+  { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 }, // 1개
+  { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2 }, // 2개
+  { breast:1.2,  neck:-0.2, ear:-0.2, thigh:1.2,  clitoris:1.3,  vagina:1.3,  anal:1.2,  mouth:-0.2 }, // 3개
+  { breast:1.3,  neck:-0.2, ear:-0.2, thigh:1.3,  clitoris:1.4,  vagina:1.5,  anal:1.3,  mouth:-0.2 }, // 4개
+]
 
 const TOOL_DEFS: ToolDef[] = [
   // 신체
@@ -746,14 +755,15 @@ export default function SexScenePage({
 
   // 도구 배율 계산 (매트릭스 기반, 음수 = 흥분도 하락)
   const getToolMult = useCallback((toolKey: ToolKey, zoneKey: string): number => {
-    const base = TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
-    if (toolKey === 'whip' && base > 0) {
+    if (toolKey === 'whip') {
+      const level = Math.min(4, restraints.size)
+      const base = WHIP_LEVEL_MATRIX[level][zoneKey as ErogenousKey] ?? 0
+      if (base <= 0) return base
       const sm = femaleChar.smTendency ?? 0
       const smMod = 1.0 + (-sm * 0.05)
-      const restrained = restraints.has('handcuff') && restraints.has('legcuff')
-      return Math.max(0.1, base * smMod) * (restrained ? 1.3 : 1.0)
+      return Math.max(0.1, base * smMod)
     }
-    return base
+    return TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
   }, [femaleChar.smTendency, restraints])
 
   // 현재 섹터의 도구 목록
