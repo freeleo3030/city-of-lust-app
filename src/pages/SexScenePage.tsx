@@ -473,15 +473,15 @@ function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
   const ringSize = Math.round(80 * size)
   const rx = ringSize, ry = Math.round(ringSize * 0.55)
   const cxSvg = rx + 8, cySvg = ry + 8
-  const w = rx * 2 + 16, h = ry * 2 + 120  // 아래 손잡이 공간
+  const leashLen = 360
+  const w = rx * 2 + 16, h = ry * 2 + leashLen + 20
 
   // 반원 path (앞/뒤)
   const arc = (sweep: 0|1, rxi:number, ryi:number) =>
     `M ${cxSvg-rxi} ${cySvg} A ${rxi} ${ryi} 0 0 ${sweep} ${cxSvg+rxi} ${cySvg}`
 
-  // 손잡이 — 고리 하단(cxSvg, cySvg+ry)에서 아래로 뻗음
+  // 손잡이 — 앞면(하단) 고리 끝에서 아래로
   const leashTop = cySvg + ry
-  const leashLen = 90
 
   const handleRotate = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -509,30 +509,37 @@ function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
               <stop offset="100%" stopColor="#3d1f0a"/>
             </linearGradient>
           </defs>
-          {/* 고리 뒷면 (흐림) */}
-          <path d={arc(0,rx,ry)}     fill="none" stroke="#0a0400"              strokeWidth="18" opacity="0.08"/>
-          <path d={arc(0,rx,ry)}     fill="none" stroke="url(#collar-grad)"   strokeWidth="14" opacity="0.08"/>
-          <path d={arc(0,rx,ry)}     fill="none" stroke="#e94560"              strokeWidth="2"  opacity="0.07"/>
-          {/* 고리 앞면 */}
-          <path d={arc(1,rx,ry)}     fill="none" stroke="#0a0400"              strokeWidth="18"/>
-          <path d={arc(1,rx,ry)}     fill="none" stroke="url(#collar-grad)"   strokeWidth="14"/>
-          <path d={arc(1,rx,ry)}     fill="none" stroke="#e94560"              strokeWidth="2.5" opacity="0.7"/>
-          <path d={arc(1,rx-6,ry-6)} fill="none" stroke="#ffffff33"            strokeWidth="1" strokeDasharray="4 5"/>
-          {/* 버클 */}
+          {/* ① 고리 뒷면 (흐림) — 맨 아래 */}
+          <path d={arc(0,rx,ry)}     fill="none" stroke="#0a0400"            strokeWidth="18" opacity="0.08"/>
+          <path d={arc(0,rx,ry)}     fill="none" stroke="url(#collar-grad)" strokeWidth="14" opacity="0.08"/>
+          <path d={arc(0,rx,ry)}     fill="none" stroke="#e94560"            strokeWidth="2"  opacity="0.07"/>
+          {/* ② 가죽 끈 — 앞면 고리 아래에 배치되도록 앞면보다 먼저 그림 */}
+          {/* 끈 그림자 */}
+          <rect x={cxSvg-7} y={leashTop-2} width={14} height={leashLen+4} rx="4"
+            fill="#000" opacity="0.35"/>
+          {/* 끈 본체 — 좌우 테두리로 가죽 입체감 */}
+          <rect x={cxSvg-6} y={leashTop} width={12} height={leashLen} rx="3"
+            fill="url(#leash-grad)" stroke="#0a0400" strokeWidth="2"/>
+          {/* 끈 중앙 하이라이트 */}
+          <rect x={cxSvg-1} y={leashTop+4} width={2} height={leashLen-8} rx="1"
+            fill="#6b3a1f" opacity="0.6"/>
+          {/* 스티치 — 양 끝에서 살짝 안쪽 */}
+          <line x1={cxSvg-4} y1={leashTop+8} x2={cxSvg-4} y2={leashTop+leashLen-20}
+            stroke="#ffffff28" strokeWidth="0.8" strokeDasharray="5 5"/>
+          <line x1={cxSvg+4} y1={leashTop+8} x2={cxSvg+4} y2={leashTop+leashLen-20}
+            stroke="#ffffff28" strokeWidth="0.8" strokeDasharray="5 5"/>
+          {/* 손잡이 루프 — 끝부분 */}
+          <rect x={cxSvg-9} y={leashTop+leashLen-18} width={18} height={18} rx="5"
+            fill="#2a0f00" stroke="#0a0400" strokeWidth="2"/>
+          <rect x={cxSvg-5} y={leashTop+leashLen-14} width={10} height={10} rx="3"
+            fill="none" stroke="#6b3a1f" strokeWidth="1.5"/>
+          {/* ③ 앞면 고리 — 끈 위에 그려서 고리가 끈 앞쪽에 위치 */}
+          <path d={arc(1,rx,ry)}     fill="none" stroke="#0a0400"            strokeWidth="18"/>
+          <path d={arc(1,rx,ry)}     fill="none" stroke="url(#collar-grad)" strokeWidth="14"/>
+          <path d={arc(1,rx,ry)}     fill="none" stroke="#e94560"            strokeWidth="2.5" opacity="0.7"/>
+          <path d={arc(1,rx-6,ry-6)} fill="none" stroke="#ffffff33"          strokeWidth="1" strokeDasharray="4 5"/>
+          {/* 버클 (뒤쪽) */}
           <circle cx={cxSvg} cy={cySvg-ry} r="5" fill="#e94560" stroke="#000" strokeWidth="1.5" opacity="0.35"/>
-          {/* 가죽 손잡이 — 아래로 뻗는 스트랩 */}
-          <rect x={cxSvg-10} y={leashTop} width={20} height={leashLen} rx="6"
-            fill="url(#leash-grad)" stroke="#0a0400" strokeWidth="3"/>
-          {/* 손잡이 스티치 라인 */}
-          <line x1={cxSvg-5} y1={leashTop+6} x2={cxSvg-5} y2={leashTop+leashLen-6}
-            stroke="#ffffff22" strokeWidth="1" strokeDasharray="5 4"/>
-          <line x1={cxSvg+5} y1={leashTop+6} x2={cxSvg+5} y2={leashTop+leashLen-6}
-            stroke="#ffffff22" strokeWidth="1" strokeDasharray="5 4"/>
-          {/* 손잡이 끝 금속 버클 */}
-          <rect x={cxSvg-12} y={leashTop+leashLen-12} width={24} height={12} rx="4"
-            fill="#c9a84c" stroke="#8b6914" strokeWidth="1.5"/>
-          <line x1={cxSvg} y1={leashTop+leashLen-12} x2={cxSvg} y2={leashTop+leashLen}
-            stroke="#8b6914" strokeWidth="1.5"/>
         </svg>
       </div>
       {/* 리사이즈 */}
