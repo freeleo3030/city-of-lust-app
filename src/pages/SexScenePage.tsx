@@ -650,7 +650,7 @@ export default function SexScenePage({
                           transition: 'all 0.12s',
                         }}
                       >
-                        <ToolSvg toolKey={t.key} pressed={false} size={100} />
+                        <ToolSvg toolKey={t.key} pressed={false} size={66} />
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
                           <span style={{ fontSize: 34, color: isActive ? '#c9a84c' : '#ffffffcc', fontWeight: isActive ? 'bold' : 'normal' }}>
                             {t.label}
