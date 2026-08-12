@@ -395,59 +395,163 @@ function ChainLinks({ ax, ay, mx, my, bx, by, w, h, color, leftSize, rightSize, 
   )
 }
 
-function RestraintOverlaySvg({ restraintKey, pos, onMouseDown }: {
-  restraintKey: RestraintKey
-  pos: { x: number; y: number; rotate?: number }
-  onMouseDown?: (e: React.MouseEvent) => void
+// 안대 오버레이 (크기·회전 핸들 포함)
+function BlindfoldOverlay({ pos, size, rotate, onDrag, onResize, onRotate }: {
+  pos: { x: number; y: number }
+  size: number; rotate: number
+  onDrag: (e: React.MouseEvent) => void
+  onResize: (e: React.MouseEvent) => void
+  onRotate: (cx: number, cy: number, e: React.MouseEvent) => void
 }) {
-  const rotate = pos.rotate ?? 0
-  const wrapStyle: React.CSSProperties = {
-    position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-    transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
-    cursor: 'grab', opacity: 0.9, userSelect: 'none', zIndex: 20,
+  const divRef = React.useRef<HTMLDivElement>(null)
+  const bw = Math.round(320 * size), bh = Math.round(90 * size)
+  const handleRotate = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const r = divRef.current?.getBoundingClientRect()
+    if (!r) return
+    onRotate(r.left + r.width/2, r.top + r.height/2, e)
   }
-  switch (restraintKey) {
-    case 'handcuff':
-      return (
-        <div style={wrapStyle} onMouseDown={onMouseDown}>
-          <svg width="300" height="120" viewBox="0 0 60 24">
-            <rect x="2"  y="6" width="20" height="12" rx="6" fill="none" stroke="#aaa" strokeWidth="2.5" />
-            <rect x="38" y="6" width="20" height="12" rx="6" fill="none" stroke="#aaa" strokeWidth="2.5" />
-            <line x1="22" y1="12" x2="38" y2="12" stroke="#aaa" strokeWidth="2" />
-          </svg>
-        </div>
-      )
-    case 'legcuff':
-      return (
-        <div style={wrapStyle} onMouseDown={onMouseDown}>
-          <svg width="350" height="100" viewBox="0 0 70 20">
-            <rect x="2"  y="4" width="22" height="12" rx="6" fill="none" stroke="#c9a84c" strokeWidth="2.5" />
-            <rect x="46" y="4" width="22" height="12" rx="6" fill="none" stroke="#c9a84c" strokeWidth="2.5" />
-            <line x1="24" y1="10" x2="46" y2="10" stroke="#c9a84c" strokeWidth="2" />
-          </svg>
-        </div>
-      )
-    case 'blindfold':
-      return (
-        <div style={wrapStyle} onMouseDown={onMouseDown}>
-          <svg width="320" height="110" viewBox="0 0 64 22">
-            <rect x="0" y="6" width="64" height="10" rx="5" fill="#1a1a2e" stroke="#e94560" strokeWidth="1.5" />
-            <line x1="0" y1="11" x2="64" y2="11" stroke="#e94560" strokeWidth="0.8" opacity="0.5" />
-          </svg>
-        </div>
-      )
-    case 'collar':
-      return (
-        <div style={wrapStyle} onMouseDown={onMouseDown}>
-          <svg width="250" height="90" viewBox="0 0 50 18">
-            <path d="M4 9 Q25 2 46 9 Q25 16 4 9Z" fill="#e94560" opacity="0.85" />
-            <circle cx="25" cy="15" r="3" fill="#c9a84c" />
-          </svg>
-        </div>
-      )
-    default:
-      return null
+  return (
+    <div ref={divRef} style={{
+      position:'absolute', left:`${pos.x}%`, top:`${pos.y}%`,
+      transform:`translate(-50%,-50%) rotate(${rotate}deg)`,
+      zIndex:25, userSelect:'none',
+    }}>
+      {/* 안대 본체 */}
+      <div onMouseDown={onDrag} style={{ cursor:'grab' }}>
+        <svg width={bw} height={bh} viewBox="0 0 320 90">
+          <defs>
+            <radialGradient id="bf-grad" cx="50%" cy="50%" r="55%">
+              <stop offset="0%" stopColor="#2a0a1a" />
+              <stop offset="100%" stopColor="#0d0010" />
+            </radialGradient>
+          </defs>
+          {/* 측면 끈 */}
+          <rect x="0"   y="36" width="48"  height="18" rx="9" fill="#111" stroke="#e9456088" strokeWidth="2" />
+          <rect x="272" y="36" width="48"  height="18" rx="9" fill="#111" stroke="#e9456088" strokeWidth="2" />
+          {/* 안대 중앙 패드 — 물결 모양 */}
+          <path d="M48 18 Q90 5 130 20 Q160 32 190 20 Q230 5 272 18 L272 72 Q230 85 190 70 Q160 58 130 70 Q90 85 48 72 Z"
+            fill="url(#bf-grad)" stroke="#e94560" strokeWidth="3" />
+          {/* 광택 라인 */}
+          <path d="M60 30 Q130 18 200 28 Q240 33 262 30"
+            fill="none" stroke="#ff80a0" strokeWidth="1.5" opacity="0.4" />
+          {/* 스티치 */}
+          <path d="M55 44 Q160 36 265 44" fill="none" stroke="#e9456044" strokeWidth="1" strokeDasharray="6 5" />
+          <path d="M55 56 Q160 64 265 56" fill="none" stroke="#e9456044" strokeWidth="1" strokeDasharray="6 5" />
+          {/* 중앙 장식 버클 */}
+          <rect x="148" y="36" width="24" height="18" rx="4" fill="#c9a84c" stroke="#8b6914" strokeWidth="1.5" />
+          <line x1="160" y1="36" x2="160" y2="54" stroke="#8b6914" strokeWidth="1.5" />
+        </svg>
+      </div>
+      {/* 리사이즈 핸들 */}
+      <div onMouseDown={(e) => { e.stopPropagation(); onResize(e) }} style={{
+        position:'absolute', right:-6, bottom:-6, width:22, height:22,
+        cursor:'nwse-resize', background:'#e94560', borderRadius:4,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:12, color:'#fff', fontWeight:'bold', boxShadow:'0 1px 4px #000a',
+      }}>↔</div>
+      {/* 회전 핸들 */}
+      <div onMouseDown={handleRotate} style={{
+        position:'absolute', left:'50%', top:-22, transform:'translateX(-50%)',
+        width:20, height:20, cursor:'alias',
+        background:'#1a1a2e', border:'1.5px solid #e94560', borderRadius:'50%',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:12, color:'#e94560', boxShadow:'0 1px 4px #000a',
+      }}>↻</div>
+    </div>
+  )
+}
+
+// 개목걸이 — 가죽 고리 1개 + 가죽 손잡이
+function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
+  x:number; y:number; rotate:number; size:number
+  onDrag:(e:React.MouseEvent)=>void
+  onResize:(e:React.MouseEvent)=>void
+  onRotate:(cx:number,cy:number,e:React.MouseEvent)=>void
+}) {
+  const divRef = React.useRef<HTMLDivElement>(null)
+  const ringSize = Math.round(80 * size)
+  const rx = ringSize, ry = Math.round(ringSize * 0.55)
+  const cxSvg = rx + 8, cySvg = ry + 8
+  const w = rx * 2 + 16, h = ry * 2 + 120  // 아래 손잡이 공간
+
+  // 반원 path (앞/뒤)
+  const arc = (sweep: 0|1, rxi:number, ryi:number) =>
+    `M ${cxSvg-rxi} ${cySvg} A ${rxi} ${ryi} 0 0 ${sweep} ${cxSvg+rxi} ${cySvg}`
+
+  // 손잡이 — 고리 하단(cxSvg, cySvg+ry)에서 아래로 뻗음
+  const leashTop = cySvg + ry
+  const leashLen = 90
+
+  const handleRotate = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const r = divRef.current?.getBoundingClientRect()
+    if (!r) return
+    onRotate(r.left + r.width/2, r.top + r.height/2, e)
   }
+  return (
+    <div ref={divRef} style={{
+      position:'absolute', left:`${x}%`, top:`${y}%`,
+      transform:`translate(-50%,-50%) rotate(${rotate}deg)`,
+      zIndex:50, userSelect:'none',
+    }}>
+      <div onMouseDown={onDrag} style={{ cursor:'grab', display:'inline-block' }}>
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display:'block' }}>
+          <defs>
+            <radialGradient id="collar-grad" cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="#6b3a1f"/>
+              <stop offset="40%" stopColor="#3d1f0a"/>
+              <stop offset="100%" stopColor="#1a0a00"/>
+            </radialGradient>
+            <linearGradient id="leash-grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#3d1f0a"/>
+              <stop offset="40%" stopColor="#6b3a1f"/>
+              <stop offset="100%" stopColor="#3d1f0a"/>
+            </linearGradient>
+          </defs>
+          {/* 고리 뒷면 (흐림) */}
+          <path d={arc(0,rx,ry)}     fill="none" stroke="#0a0400"              strokeWidth="18" opacity="0.08"/>
+          <path d={arc(0,rx,ry)}     fill="none" stroke="url(#collar-grad)"   strokeWidth="14" opacity="0.08"/>
+          <path d={arc(0,rx,ry)}     fill="none" stroke="#e94560"              strokeWidth="2"  opacity="0.07"/>
+          {/* 고리 앞면 */}
+          <path d={arc(1,rx,ry)}     fill="none" stroke="#0a0400"              strokeWidth="18"/>
+          <path d={arc(1,rx,ry)}     fill="none" stroke="url(#collar-grad)"   strokeWidth="14"/>
+          <path d={arc(1,rx,ry)}     fill="none" stroke="#e94560"              strokeWidth="2.5" opacity="0.7"/>
+          <path d={arc(1,rx-6,ry-6)} fill="none" stroke="#ffffff33"            strokeWidth="1" strokeDasharray="4 5"/>
+          {/* 버클 */}
+          <circle cx={cxSvg} cy={cySvg-ry} r="5" fill="#e94560" stroke="#000" strokeWidth="1.5" opacity="0.35"/>
+          {/* 가죽 손잡이 — 아래로 뻗는 스트랩 */}
+          <rect x={cxSvg-10} y={leashTop} width={20} height={leashLen} rx="6"
+            fill="url(#leash-grad)" stroke="#0a0400" strokeWidth="3"/>
+          {/* 손잡이 스티치 라인 */}
+          <line x1={cxSvg-5} y1={leashTop+6} x2={cxSvg-5} y2={leashTop+leashLen-6}
+            stroke="#ffffff22" strokeWidth="1" strokeDasharray="5 4"/>
+          <line x1={cxSvg+5} y1={leashTop+6} x2={cxSvg+5} y2={leashTop+leashLen-6}
+            stroke="#ffffff22" strokeWidth="1" strokeDasharray="5 4"/>
+          {/* 손잡이 끝 금속 버클 */}
+          <rect x={cxSvg-12} y={leashTop+leashLen-12} width={24} height={12} rx="4"
+            fill="#c9a84c" stroke="#8b6914" strokeWidth="1.5"/>
+          <line x1={cxSvg} y1={leashTop+leashLen-12} x2={cxSvg} y2={leashTop+leashLen}
+            stroke="#8b6914" strokeWidth="1.5"/>
+        </svg>
+      </div>
+      {/* 리사이즈 */}
+      <div onMouseDown={(e)=>{e.stopPropagation();onResize(e)}} style={{
+        position:'absolute', right:-4, bottom:-4, width:20, height:20,
+        cursor:'nwse-resize', background:'#e94560', borderRadius:4,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:11, color:'#fff', fontWeight:'bold', boxShadow:'0 1px 4px #000a',
+      }}>↔</div>
+      {/* 회전 */}
+      <div onMouseDown={handleRotate} style={{
+        position:'absolute', left:'50%', top:-22, transform:'translateX(-50%)',
+        width:20, height:20, cursor:'alias',
+        background:'#1a1a2e', border:'1.5px solid #e94560', borderRadius:'50%',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:12, color:'#e94560', boxShadow:'0 1px 4px #000a',
+      }}>↻</div>
+    </div>
+  )
 }
 
 // ─── 스프라이트 애니메이션 ───────────────────────────────────────────────────
@@ -509,6 +613,13 @@ export default function SexScenePage({
   const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
   const [restraintDragPos, setRestraintDragPos] = useState<Record<string, { x: number; y: number }>>({})
   const draggingRestraint = useRef<{ key: RestraintKey; offsetX: number; offsetY: number } | null>(null)
+  // 안대 크기/각도
+  const [blindfoldSize,   setBlindfoldSize]   = useState(1)   // 배율 0.5~2.5
+  const [blindfoldRotate, setBlindfoldRotate] = useState(0)
+  // 개목걸이 위치/각도/크기 (단일)
+  const [collarState, setCollarState] = useState({ x: 50, y: 15, rotate: 0, size: 1 })
+  // SM 도구 드래그 중 여부 → 남성 흥분도 정지용
+  const isDraggingSM = useRef(false)
   // 수갑/족갑: 배열 + 마지막 위치 기억
   const [handcuffs, setHandcuffs] = useState<CuffPair[]>([])
   const [legcuffs,  setLegcuffs]  = useState<CuffPair[]>([])
@@ -621,10 +732,11 @@ export default function SexScenePage({
     }
   }, [maleArousal, ended, onEnd])
 
-  // 남캐 흥분도 자동 증가 (300초에 100 도달: 3초마다 +1)
+  // 남캐 흥분도 자동 증가 (SM 도구 배치 중엔 정지)
   useEffect(() => {
     if (ended) return
     const id = setInterval(() => {
+      if (isDraggingSM.current) return
       setMaleArousal(prev => {
         setMaleFlash(true)
         setTimeout(() => setMaleFlash(false), 300)
@@ -716,6 +828,7 @@ export default function SexScenePage({
       offsetX: e.clientX - rect.left - curPxX,
       offsetY: e.clientY - rect.top  - curPxY,
     }
+    isDraggingSM.current = true
     const onMove = (me: MouseEvent) => {
       const r = imageContainerRef.current?.getBoundingClientRect()
       if (!r || !draggingRestraint.current) return
@@ -724,6 +837,7 @@ export default function SexScenePage({
       setRestraintDragPos(prev => ({ ...prev, [key]: { x, y } }))
     }
     const onUp = () => {
+      isDraggingSM.current = false
       draggingRestraint.current = null
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
@@ -741,6 +855,7 @@ export default function SexScenePage({
     if (!rect) return
     const ox = e.clientX - rect.left - (cur.x / 100) * rect.width
     const oy = e.clientY - rect.top  - (cur.y / 100) * rect.height
+    isDraggingSM.current = true
     const onMove = (me: MouseEvent) => {
       const r = imageContainerRef.current?.getBoundingClientRect()
       if (!r) return
@@ -749,7 +864,7 @@ export default function SexScenePage({
         y: Math.min(100, Math.max(0, ((me.clientY - r.top  - oy) / r.height) * 100)),
       }})
     }
-    const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    const onUp = () => { isDraggingSM.current = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }, [])
@@ -784,6 +899,76 @@ export default function SexScenePage({
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }, [])
+
+  // 안대 드래그
+  const startBlindfoldDrag = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    const rect = imageContainerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const cur = restraintDragPos['blindfold'] ?? restraintPos['blindfold'] ?? { x: 50, y: 20 }
+    const ox = e.clientX - rect.left - (cur.x/100)*rect.width
+    const oy = e.clientY - rect.top  - (cur.y/100)*rect.height
+    isDraggingSM.current = true
+    const onMove = (me: MouseEvent) => {
+      const r = imageContainerRef.current?.getBoundingClientRect(); if (!r) return
+      setRestraintDragPos(prev => ({ ...prev, blindfold: {
+        x: Math.min(100,Math.max(0,((me.clientX-r.left-ox)/r.width)*100)),
+        y: Math.min(100,Math.max(0,((me.clientY-r.top-oy)/r.height)*100)),
+      }}))
+    }
+    const onUp = () => { isDraggingSM.current=false; window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp) }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }, [restraintDragPos, restraintPos])
+
+  const startBlindfoldResize = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); isDraggingSM.current = true
+    const sx = e.clientX, cur = blindfoldSize
+    const onMove = (me: MouseEvent) => setBlindfoldSize(Math.max(0.3, Math.min(3, cur + (me.clientX-sx)*0.008)))
+    const onUp = () => { isDraggingSM.current=false; window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp) }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }, [blindfoldSize])
+
+  const startBlindfoldRotate = useCallback((cx: number, cy: number, e: React.MouseEvent) => {
+    isDraggingSM.current = true
+    const sa = Math.atan2(e.clientY-cy, e.clientX-cx)*180/Math.PI, cur = blindfoldRotate
+    const onMove = (me: MouseEvent) => setBlindfoldRotate(cur + Math.atan2(me.clientY-cy, me.clientX-cx)*180/Math.PI - sa)
+    const onUp = () => { isDraggingSM.current=false; window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp) }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }, [blindfoldRotate])
+
+  // 개목걸이 핸들러
+  const startCollarDrag = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    const rect = imageContainerRef.current?.getBoundingClientRect(); if (!rect) return
+    const ox = e.clientX - rect.left - (collarState.x/100)*rect.width
+    const oy = e.clientY - rect.top  - (collarState.y/100)*rect.height
+    isDraggingSM.current = true
+    const onMove = (me: MouseEvent) => {
+      const r = imageContainerRef.current?.getBoundingClientRect(); if (!r) return
+      setCollarState(p => ({ ...p,
+        x: Math.min(100,Math.max(0,((me.clientX-r.left-ox)/r.width)*100)),
+        y: Math.min(100,Math.max(0,((me.clientY-r.top-oy)/r.height)*100)),
+      }))
+    }
+    const onUp = () => { isDraggingSM.current=false; window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp) }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }, [collarState])
+
+  const startCollarResize = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); isDraggingSM.current = true
+    const sx = e.clientX, cur = collarState.size
+    const onMove = (me: MouseEvent) => setCollarState(p => ({ ...p, size: Math.max(0.3, Math.min(3, cur + (me.clientX-sx)*0.008)) }))
+    const onUp = () => { isDraggingSM.current=false; window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp) }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }, [collarState.size])
+
+  const startCollarRotate = useCallback((cx: number, cy: number, e: React.MouseEvent) => {
+    isDraggingSM.current = true
+    const sa = Math.atan2(e.clientY-cy, e.clientX-cx)*180/Math.PI, cur = collarState.rotate
+    const onMove = (me: MouseEvent) => setCollarState(p => ({ ...p, rotate: cur + Math.atan2(me.clientY-cy, me.clientX-cx)*180/Math.PI - sa }))
+    const onUp = () => { isDraggingSM.current=false; window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp) }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }, [collarState.rotate])
 
   return (
     <div style={{
@@ -853,18 +1038,17 @@ export default function SexScenePage({
             </React.Fragment>
           ))}
 
-          {/* 나머지 구속구 오버레이 (안대, 개목걸이) — 드래그로 위치 변경 */}
-          {Array.from(restraints).filter(k => k !== 'handcuff' && k !== 'legcuff').map(rKey => {
-            const pos = restraintDragPos[rKey] ?? restraintPos[rKey] ?? { x: 50, y: 50 }
-            return (
-              <RestraintOverlaySvg
-                key={rKey}
-                restraintKey={rKey}
-                pos={pos}
-                onMouseDown={(e) => handleRestraintMouseDown(rKey, e)}
-              />
-            )
-          })}
+          {/* 안대 */}
+          {restraints.has('blindfold') && (() => {
+            const pos = restraintDragPos['blindfold'] ?? restraintPos['blindfold'] ?? { x: 50, y: 22 }
+            return <BlindfoldOverlay pos={pos} size={blindfoldSize} rotate={blindfoldRotate}
+              onDrag={startBlindfoldDrag} onResize={startBlindfoldResize} onRotate={startBlindfoldRotate} />
+          })()}
+          {/* 개목걸이 */}
+          {restraints.has('collar') && (
+            <CollarOverlay x={collarState.x} y={collarState.y} rotate={collarState.rotate} size={collarState.size}
+              onDrag={startCollarDrag} onResize={startCollarResize} onRotate={startCollarRotate} />
+          )}
 
           {/* 도구 액션 오버레이 — 클릭 시 700ms 동안 해당 신체 부위에 표시 */}
           {toolAnim && !showClimax && (
