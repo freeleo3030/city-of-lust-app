@@ -1877,7 +1877,7 @@ export default function FemaleCharacterCreatePage({
             return (
               <div key={key} style={S.erogenousRow}>
                 <span style={S.eroLabel}>{labelMap[key]}</span>
-                <input type="range" min={-3} max={5} step={1} value={val}
+                <input type="range" min={-5} max={5} step={1} value={val}
                   onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
                 <span style={{ color, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
               </div>
@@ -1886,7 +1886,7 @@ export default function FemaleCharacterCreatePage({
           {/* 가슴 — 독립 슬라이더 */}
           <div style={S.erogenousRow}>
             <span style={{ ...S.eroLabel, color: sensColor(breast) }}>가슴</span>
-            <input type="range" min={-3} max={5} step={1} value={breast}
+            <input type="range" min={-5} max={5} step={1} value={breast}
               onChange={e => setGenEro('breast', Number(e.target.value))} style={S.slider} />
             <span style={{ color: sensColor(breast), fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{breast}</span>
           </div>
@@ -1897,7 +1897,7 @@ export default function FemaleCharacterCreatePage({
             return (
               <div key={key} style={S.erogenousRow}>
                 <span style={S.eroLabel}>{labelMap[key]}</span>
-                <input type="range" min={-3} max={5} step={1} value={val}
+                <input type="range" min={-5} max={5} step={1} value={val}
                   onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
                 <span style={{ color, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
               </div>
