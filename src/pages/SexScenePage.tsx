@@ -721,17 +721,19 @@ export default function SexScenePage({
     const setter = type === 'hand' ? setHandcuffs : setLegcuffs
     setter(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c))
   }
-  const [feedback, setFeedback] = useState<{ text: string; color: string } | null>(null)
+  // feedback state 제거 — chatLog로 통합
   const [femaleFlash, setFemaleFlash] = useState(false)
   const [orgasmCount, setOrgasmCount] = useState(0)
   const [orgasmFlash, setOrgasmFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
   const [ended, setEnded] = useState(false)
-  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastZoneKey = useRef<string>('')
   const consecutiveCount = useRef<number>(0)
-  const lastGroupKey = useRef<string>('')   // 쌍 부위 그룹 키 (breast/thigh/ear)
-  const groupCount = useRef<number>(0)      // 쌍 부위 좌우 합산 카운트
+  const lastGroupKey = useRef<string>('')
+  const groupCount = useRef<number>(0)
+  const [chatLog, setChatLog] = useState<{ text: string; color: string; id: number }[]>([])
+  const chatLogRef = useRef<HTMLDivElement>(null)
+  const chatIdRef = useRef(0)
 
   // 포즈 이미지 URL 추출
   const poseImages = femaleChar.poseImages ?? {}
@@ -837,11 +839,15 @@ export default function SexScenePage({
   }
   const rnd = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
+  // 대화창 로그 추가 헬퍼
+  const addChat = (text: string, color: string) => {
+    setChatLog(prev => [...prev.slice(-49), { text, color, id: ++chatIdRef.current }])
+  }
+
   // 핫스팟 클릭
   const handleZoneClick = useCallback((zone: HotspotZone) => {
     if (ended || phase === 'climax') return
 
-    // 흥분 단계별 공략 제한
     const isPhotoAroused = femaleArousal < 300
     const isSpriteAroused = femaleArousal >= 300 && femaleArousal < 600
     const isPhotoClimax = femaleArousal >= 900
@@ -850,9 +856,7 @@ export default function SexScenePage({
       setFemaleArousal(prev => Math.max(0, prev - 20))
       setFemaleFlash(true)
       setTimeout(() => setFemaleFlash(false), 300)
-      if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
-      setFeedback({ text: `⚠ ${msg}`, color: '#e94560' })
-      feedbackTimer.current = setTimeout(() => setFeedback(null), 2500)
+      addChat(`⚠ ${msg}`, '#e94560')
     }
 
     if (isPhotoAroused && (zone.key === 'vagina' || zone.key === 'anal')) {
@@ -865,13 +869,12 @@ export default function SexScenePage({
       return showPenalty(rnd(MSGS.restrict_climax))
     }
 
-    // 연속 공략 체크 (절정 사진 단계 제외)
+    // 연속 공략 체크
     const pairedZones = ['breast', 'thigh', 'ear']
     const isPaired = pairedZones.includes(zone.key)
     const sideKey = isPaired ? `${zone.key}_${zone.cx < 50 ? 'L' : 'R'}` : zone.key
 
     if (!isPhotoClimax) {
-      // 한쪽 4회 연속 체크
       if (sideKey === lastZoneKey.current) {
         consecutiveCount.current += 1
       } else {
@@ -882,7 +885,6 @@ export default function SexScenePage({
         return showPenalty(rnd(MSGS.consec_same))
       }
 
-      // 쌍 부위 좌우 합산 7회 체크
       if (isPaired) {
         if (zone.key === lastGroupKey.current) {
           groupCount.current += 1
@@ -916,8 +918,6 @@ export default function SexScenePage({
     setToolAnim({ cx: zone.cx, cy: zone.cy })
     toolAnimTimer.current = setTimeout(() => setToolAnim(null), 700)
 
-    if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
-
     let msgText: string
     let msgColor: string
     if (toolMult < 0) {
@@ -940,9 +940,15 @@ export default function SexScenePage({
       msgColor = '#ffffff88'
     }
 
-    setFeedback({ text: msgText, color: msgColor })
-    feedbackTimer.current = setTimeout(() => setFeedback(null), 2500)
+    addChat(msgText, msgColor)
   }, [ended, phase, femaleArousal, femaleChar.erogenous, activeTool, getToolMult, ageMult])
+
+  // chatLog 자동 스크롤
+  useEffect(() => {
+    if (chatLogRef.current) {
+      chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight
+    }
+  }, [chatLog])
 
   // 구속 토글
   const toggleRestraint = (key: RestraintKey) => {
@@ -1284,17 +1290,6 @@ export default function SexScenePage({
             )
           })()}
 
-          {/* 피드백 팝업 */}
-          {feedback && (
-            <div style={{
-              position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%)',
-              fontSize: 36, fontWeight: 'bold', color: feedback.color,
-              textShadow: `0 0 18px ${feedback.color}, 0 2px 4px #000`,
-              pointerEvents: 'none', animation: 'fadeUp 1.5s ease forwards',
-            }}>
-              {feedback.text}
-            </div>
-          )}
 
           {/* 절정 오버레이 */}
           {showClimax && (
@@ -1465,6 +1460,51 @@ export default function SexScenePage({
           >
             포기
           </button>
+        </div>
+
+        {/* 대화창 */}
+        <div style={{
+          flex: 1, height: '100%', display: 'flex', flexDirection: 'column',
+          background: 'rgba(8,8,18,0.98)', borderLeft: '1px solid #ffffff18',
+        }}>
+          {/* 헤더 */}
+          <div style={{
+            padding: '12px 20px', borderBottom: '1px solid #ffffff18', flexShrink: 0,
+            fontSize: 26, fontWeight: 'bold', color: '#c9a84c', letterSpacing: 2,
+          }}>
+            💬 {femaleChar.name ?? '여캐'}
+          </div>
+
+          {/* 메시지 로그 */}
+          <div
+            ref={chatLogRef}
+            style={{
+              flex: 1, overflowY: 'auto', padding: '14px 18px',
+              display: 'flex', flexDirection: 'column', gap: 12,
+            }}
+          >
+            {chatLog.length === 0 && (
+              <div style={{ color: '#ffffff22', fontSize: 22, textAlign: 'center', marginTop: 40 }}>
+                신체 부위를 자극해보세요
+              </div>
+            )}
+            {chatLog.map(msg => (
+              <div key={msg.id} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+              }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.06)', borderRadius: 12,
+                  borderLeft: `3px solid ${msg.color}`,
+                  padding: '10px 16px',
+                  fontSize: 28, fontWeight: msg.color === '#e94560' ? 'bold' : 'normal',
+                  color: msg.color,
+                  lineHeight: 1.4, maxWidth: '100%',
+                }}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
       </div>{/* flex row 닫기 */}
