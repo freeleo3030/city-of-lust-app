@@ -473,14 +473,14 @@ function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
   const ringSize = Math.round(80 * size)
   const rx = ringSize, ry = Math.round(ringSize * 0.55)
   const chainLen = 360
-  // SVG: 쇠사슬이 위쪽, 고리가 아래쪽
-  // viewBox 상단에 chainLen 공간, 그 아래 고리
+  const gripLen = 80                  // 손잡이 길이
   const pad = 8
-  const totalH = chainLen + ry * 2 + pad * 2
+  const totalH = gripLen + chainLen + ry * 2 + pad * 2
   const cxSvg = rx + pad
-  const cySvg = chainLen + ry + pad  // 고리 중심 y (아래쪽)
-  const chainEndY = 0 + pad          // 쇠사슬 끝 (위쪽)
-  const chainStartY = cySvg - ry     // 고리 상단 연결점
+  const cySvg = gripLen + chainLen + ry + pad  // 고리 중심 y
+  const chainEndY = gripLen + pad              // 쇠사슬 끝 (손잡이 바로 아래)
+  const chainStartY = cySvg - ry               // 고리 상단 연결점
+  const gripTop = pad                          // 손잡이 시작 y
 
   const arc = (sweep:0|1, rxi:number, ryi:number) =>
     `M ${cxSvg-rxi} ${cySvg} A ${rxi} ${ryi} 0 0 ${sweep} ${cxSvg+rxi} ${cySvg}`
@@ -535,15 +535,22 @@ function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
           {/* 쇠사슬 (위쪽) */}
           {chainLinks}
 
-          {/* 끝 그립 핸들 */}
-          <rect x={cxSvg-18} y={chainEndY-16} width={36} height={16} rx="8"
+          {/* 끝 그립 핸들 (길쭉한 가죽 손잡이) */}
+          <rect x={cxSvg-18} y={gripTop} width={36} height={gripLen} rx="10"
             fill="#3d1f0a" stroke="#0a0400" strokeWidth="2.5"/>
-          <rect x={cxSvg-14} y={chainEndY-13} width={28} height={10} rx="5"
+          <rect x={cxSvg-14} y={gripTop+3} width={28} height={gripLen-6} rx="7"
             fill="#6b3a1f" stroke="none"/>
-          <line x1={cxSvg-8} y1={chainEndY-12} x2={cxSvg-8} y2={chainEndY-4}
-            stroke="#ffffff28" strokeWidth="0.8" strokeDasharray="3 3"/>
-          <line x1={cxSvg+8} y1={chainEndY-12} x2={cxSvg+8} y2={chainEndY-4}
-            stroke="#ffffff28" strokeWidth="0.8" strokeDasharray="3 3"/>
+          {/* 스티치 선 */}
+          {Array.from({length: Math.floor(gripLen/12)}).map((_,i) => (
+            <line key={i}
+              x1={cxSvg-8} y1={gripTop+6+i*12} x2={cxSvg-8} y2={gripTop+10+i*12}
+              stroke="#ffffff28" strokeWidth="0.8"/>
+          ))}
+          {Array.from({length: Math.floor(gripLen/12)}).map((_,i) => (
+            <line key={i}
+              x1={cxSvg+8} y1={gripTop+6+i*12} x2={cxSvg+8} y2={gripTop+10+i*12}
+              stroke="#ffffff28" strokeWidth="0.8"/>
+          ))}
 
           {/* 고리 뒷면 (흐림) */}
           <path d={arc(0,rx,ry)} fill="none" stroke="#0a0400"            strokeWidth="18" opacity="0.08"/>
