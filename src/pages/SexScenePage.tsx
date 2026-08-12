@@ -728,6 +728,8 @@ export default function SexScenePage({
   const [maleFlash, setMaleFlash] = useState(false)
   const [ended, setEnded] = useState(false)
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastZoneKey = useRef<string>('')
+  const consecutiveCount = useRef<number>(0)
 
   // 포즈 이미지 URL 추출
   const poseImages = femaleChar.poseImages ?? {}
@@ -838,6 +840,23 @@ export default function SexScenePage({
       setTimeout(() => setFemaleFlash(false), 300)
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
       setFeedback({ text: `⚠ ${restrictionMsg}`, color: '#e94560' })
+      feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
+      return
+    }
+
+    // 같은 부위 3회 이상 연속 공략 → penalty
+    if (zone.key === lastZoneKey.current) {
+      consecutiveCount.current += 1
+    } else {
+      lastZoneKey.current = zone.key
+      consecutiveCount.current = 1
+    }
+    if (consecutiveCount.current >= 3) {
+      setFemaleArousal(prev => Math.max(0, prev - 15))
+      setFemaleFlash(true)
+      setTimeout(() => setFemaleFlash(false), 300)
+      if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
+      setFeedback({ text: `⚠ 같은 곳만 하면 싫어해`, color: '#e94560' })
       feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
       return
     }
@@ -1212,8 +1231,8 @@ export default function SexScenePage({
           {feedback && (
             <div style={{
               position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%)',
-              fontSize: 18, fontWeight: 'bold', color: feedback.color,
-              textShadow: `0 0 12px ${feedback.color}`,
+              fontSize: 36, fontWeight: 'bold', color: feedback.color,
+              textShadow: `0 0 18px ${feedback.color}, 0 2px 4px #000`,
               pointerEvents: 'none', animation: 'fadeUp 1.5s ease forwards',
             }}>
               {feedback.text}
