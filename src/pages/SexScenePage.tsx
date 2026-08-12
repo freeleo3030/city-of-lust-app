@@ -844,8 +844,8 @@ export default function SexScenePage({
       return
     }
 
-    // 같은 부위 3회 이상 연속 공략 → penalty
-    if (zone.key === lastZoneKey.current) {
+    // 같은 부위 3회 이상 연속 공략 → penalty (절정 사진 단계 제외)
+    if (!isPhotoClimax && zone.key === lastZoneKey.current) {
       consecutiveCount.current += 1
     } else {
       lastZoneKey.current = zone.key
