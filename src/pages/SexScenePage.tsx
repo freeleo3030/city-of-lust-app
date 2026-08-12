@@ -7,6 +7,13 @@ import type { HotspotZone } from '../lib/generateCharImages'
 type ToolKey = 'penis' | 'tongue' | 'hand' | 'dildo' | 'vibrator' | 'gel' | 'whip' | 'anal_dildo'
 type SectorKey = 'body' | 'toy' | 'sm'
 type RestraintKey = 'handcuff' | 'legcuff' | 'blindfold' | 'collar'
+type CuffPair = {
+  id: string
+  left:  { x: number; y: number }
+  right: { x: number; y: number }
+  mid:   { x: number; y: number }
+  leftSize: number; rightSize: number
+}
 type ScenePhase = 'foreplay' | 'aroused' | 'climax' | 'afterglow'
 type ErogenousKey = 'breast' | 'neck' | 'ear' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
 
@@ -210,37 +217,96 @@ function ToolSvg({ toolKey, pressed, size = 80 }: { toolKey: ToolKey; pressed: b
 }
 
 // 구속 SVG 오버레이
-// 수갑/족갑 고리 — 드래그 이동 + 우하단 핸들로 크기 조절
-function CuffRing({ x, y, size, color, label, onDrag, onResize }: {
+// 가죽 수갑/족갑 고리 — 드래그 이동 + 리사이즈
+function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
   x: number; y: number; size: number; color: string; label: string
   onDrag: (e: React.MouseEvent) => void
   onResize: (e: React.MouseEvent) => void
 }) {
-  const rx = size, ry = Math.round(size * 0.6)
+  const rx = size, ry = Math.round(size * 0.55)
+  const cx = rx + 8, cy = ry + 8
+  const w = rx * 2 + 16, h = ry * 2 + 16
   return (
     <div style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 30, userSelect: 'none' }}>
-      {/* 고리 본체 — 드래그 */}
       <div onMouseDown={onDrag} style={{ cursor: 'grab', display: 'inline-block' }}>
-        <svg width={rx * 2} height={ry * 2} viewBox={`0 0 ${rx * 2} ${ry * 2}`} style={{ display: 'block' }}>
-          <ellipse cx={rx} cy={ry} rx={rx - 4} ry={ry - 4} fill="none" stroke={color} strokeWidth="5" />
-          <ellipse cx={rx} cy={ry} rx={rx - 4} ry={ry - 4} fill="none" stroke="#333" strokeWidth="2" strokeDasharray="5 4" opacity="0.6" />
-          <circle cx={rx} cy={ry} r="6" fill={color} opacity="0.8" />
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+          <defs>
+            <radialGradient id={`lg-${label}`} cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="#6b3a1f" />
+              <stop offset="40%" stopColor="#3d1f0a" />
+              <stop offset="100%" stopColor="#1a0a00" />
+            </radialGradient>
+          </defs>
+          {/* 가죽 외곽 두꺼운 테두리 */}
+          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke="#0a0400" strokeWidth="18" />
+          {/* 가죽 메인 색상 */}
+          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" />
+          {/* 가죽 광택 라인 */}
+          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke={color} strokeWidth="2.5" opacity="0.6" />
+          {/* 스티치 느낌 */}
+          <ellipse cx={cx} cy={cy} rx={rx - 6} ry={ry - 6} fill="none" stroke="#ffffff22" strokeWidth="1" strokeDasharray="4 5" />
+          {/* 버클 점 */}
+          <circle cx={cx} cy={cy - ry} r="5" fill={color} stroke="#000" strokeWidth="1.5" />
         </svg>
       </div>
-      {/* 리사이즈 핸들 (우하단 삼각형) */}
-      <div
-        onMouseDown={onResize}
-        style={{
-          position: 'absolute', right: -6, bottom: -6,
-          width: 18, height: 18, cursor: 'nwse-resize',
-          background: color, borderRadius: 3, opacity: 0.9,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 10, color: '#000', fontWeight: 'bold',
-        }}
-      >↔</div>
-      {/* 레이블 */}
-      <div style={{ position: 'absolute', bottom: -22, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: '#ffffff88', whiteSpace: 'nowrap' }}>{label}</div>
+      {/* 리사이즈 핸들 */}
+      <div onMouseDown={onResize} style={{
+        position: 'absolute', right: -4, bottom: -4,
+        width: 20, height: 20, cursor: 'nwse-resize',
+        background: color, borderRadius: 4, opacity: 0.9,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 11, color: '#000', fontWeight: 'bold', boxShadow: '0 1px 4px #000a',
+      }}>↔</div>
+      <div style={{ position: 'absolute', bottom: -20, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: '#ffffff77', whiteSpace: 'nowrap' }}>{label}</div>
     </div>
+  )
+}
+
+// 체인 링크 SVG (두 선분 A→M→B, 체인 링크 시각화)
+function ChainLinks({ ax, ay, mx, my, bx, by, w, h, color, onMidDrag }: {
+  ax:number; ay:number; mx:number; my:number; bx:number; by:number
+  w:number; h:number; color:string
+  onMidDrag: (e: React.MouseEvent) => void
+}) {
+  // % → px
+  const p = (v: number, total: number) => v / 100 * total
+  const pts: [number,number][] = [
+    [p(ax,w), p(ay,h)], [p(mx,w), p(my,h)], [p(bx,w), p(by,h)]
+  ]
+  const links: React.ReactNode[] = []
+  let key = 0
+  for (let seg = 0; seg < 2; seg++) {
+    const [x1,y1] = pts[seg], [x2,y2] = pts[seg+1]
+    const dx = x2-x1, dy = y2-y1
+    const len = Math.sqrt(dx*dx + dy*dy)
+    const n = Math.max(2, Math.floor(len / 14))
+    const ang = Math.atan2(dy, dx) * 180 / Math.PI
+    for (let i = 0; i <= n; i++) {
+      const t = i / n
+      const cx = x1 + dx*t, cy = y1 + dy*t
+      const isH = i % 2 === 0
+      links.push(
+        <ellipse key={key++} cx={cx} cy={cy}
+          rx={isH ? 8 : 4} ry={isH ? 4 : 8}
+          fill={color} fillOpacity="0.25"
+          stroke={color} strokeWidth="2"
+          transform={`rotate(${ang},${cx},${cy})`}
+        />
+      )
+    }
+  }
+  const [pmx, pmy] = [p(mx,w), p(my,h)]
+  return (
+    <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', overflow:'visible' }}
+      viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      {links}
+      {/* 중간 꺾기 포인트 */}
+      <circle cx={pmx} cy={pmy} r="10" fill={color} fillOpacity="0.7" stroke="#000" strokeWidth="2"
+        style={{ pointerEvents:'all', cursor:'crosshair' }}
+        onMouseDown={onMidDrag as any} />
+      <text x={pmx} y={pmy+4} textAnchor="middle" fontSize="10" fill="#000" fontWeight="bold"
+        style={{ pointerEvents:'none' }}>✦</text>
+    </svg>
   )
 }
 
@@ -358,21 +424,40 @@ export default function SexScenePage({
   const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
   const [restraintDragPos, setRestraintDragPos] = useState<Record<string, { x: number; y: number }>>({})
   const draggingRestraint = useRef<{ key: RestraintKey; offsetX: number; offsetY: number } | null>(null)
-  // 수갑/족갑: 왼쪽/오른쪽 각각 독립 위치 + 크기
-  const [handcuffLeft,  setHandcuffLeft]  = useState({ x: 30, y: 30 })
-  const [handcuffRight, setHandcuffRight] = useState({ x: 70, y: 30 })
-  const [handcuffLeftSize,  setHandcuffLeftSize]  = useState(80)
-  const [handcuffRightSize, setHandcuffRightSize] = useState(80)
-  const [legcuffLeft,   setLegcuffLeft]   = useState({ x: 30, y: 80 })
-  const [legcuffRight,  setLegcuffRight]  = useState({ x: 70, y: 80 })
-  const [legcuffLeftSize,  setLegcuffLeftSize]  = useState(80)
-  const [legcuffRightSize, setLegcuffRightSize] = useState(80)
+  // 수갑/족갑: 배열 (최대 2쌍)
+  const [handcuffs, setHandcuffs] = useState<CuffPair[]>([])
+  const [legcuffs,  setLegcuffs]  = useState<CuffPair[]>([])
+  const [imgDims, setImgDims] = useState({ w: 400, h: 600 })
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
   const [toolAnim, setToolAnim] = useState<{ cx: number; cy: number } | null>(null)
   const toolAnimTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const panelScrollRef = useRef<HTMLDivElement>(null)
   React.useEffect(() => { if (panelScrollRef.current) panelScrollRef.current.scrollTop = 0 }, [])
+
+  // 이미지 컨테이너 실제 픽셀 크기 추적 (체인 링크 계산용)
+  React.useEffect(() => {
+    const el = imageContainerRef.current
+    if (!el) return
+    const obs = new ResizeObserver(([e]) => setImgDims({ w: e.contentRect.width, h: e.contentRect.height }))
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  // 수갑/족갑 추가 (최대 2쌍, 초과 시 전체 제거)
+  const newCuffPair = (y: number): CuffPair => ({
+    id: Date.now().toString(),
+    left:  { x: 28, y }, right: { x: 72, y }, mid: { x: 50, y },
+    leftSize: 80, rightSize: 80,
+  })
+  const toggleHandcuffs = () => setHandcuffs(p => p.length >= 2 ? [] : [...p, newCuffPair(30)])
+  const toggleLegcuffs  = () => setLegcuffs( p => p.length >= 2 ? [] : [...p, newCuffPair(75)])
+
+  // 수갑/족갑 쌍 업데이트 헬퍼
+  const updateCuff = (type: 'hand' | 'leg', id: string, patch: Partial<CuffPair>) => {
+    const setter = type === 'hand' ? setHandcuffs : setLegcuffs
+    setter(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c))
+  }
   const [feedback, setFeedback] = useState<{ text: string; color: string } | null>(null)
   const [femaleFlash, setFemaleFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
@@ -546,11 +631,10 @@ export default function SexScenePage({
     window.addEventListener('mouseup', onUp)
   }, [restraintDragPos, restraintPos])
 
-  // 수갑/족갑 드래그 + 리사이즈 공통 핸들러
-  const makeCuffDragHandler = useCallback((
-    cur: { x: number; y: number },
-    setter: (v: { x: number; y: number }) => void
-  ) => (e: React.MouseEvent) => {
+  // 수갑/족갑 포인트 드래그 (left/right/mid)
+  const startCuffDrag = useCallback((
+    type: 'hand' | 'leg', id: string, field: 'left' | 'right' | 'mid', cur: { x: number; y: number }, e: React.MouseEvent
+  ) => {
     e.stopPropagation()
     const rect = imageContainerRef.current?.getBoundingClientRect()
     if (!rect) return
@@ -559,37 +643,27 @@ export default function SexScenePage({
     const onMove = (me: MouseEvent) => {
       const r = imageContainerRef.current?.getBoundingClientRect()
       if (!r) return
-      setter({
+      updateCuff(type, id, { [field]: {
         x: Math.min(100, Math.max(0, ((me.clientX - r.left - ox) / r.width)  * 100)),
         y: Math.min(100, Math.max(0, ((me.clientY - r.top  - oy) / r.height) * 100)),
-      })
+      }})
     }
     const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }, [])
 
-  const makeCuffResizeHandler = useCallback((
-    curSize: number,
-    setter: (v: number) => void
-  ) => (e: React.MouseEvent) => {
+  // 수갑/족갑 고리 크기 조절
+  const startCuffResize = useCallback((
+    type: 'hand' | 'leg', id: string, field: 'leftSize' | 'rightSize', curSize: number, e: React.MouseEvent
+  ) => {
     e.stopPropagation()
     const startX = e.clientX
-    const startSize = curSize
-    const onMove = (me: MouseEvent) => {
-      const delta = me.clientX - startX
-      setter(Math.max(20, Math.min(200, startSize + delta)))
-    }
+    const onMove = (me: MouseEvent) => updateCuff(type, id, { [field]: Math.max(24, Math.min(180, curSize + me.clientX - startX)) })
     const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }, [])
-
-  // 편의 alias
-  const handleHandcuffDrag = useCallback((side: 'left' | 'right', e: React.MouseEvent) => {
-    if (side === 'left') makeCuffDragHandler(handcuffLeft,  setHandcuffLeft)(e)
-    else                 makeCuffDragHandler(handcuffRight, setHandcuffRight)(e)
-  }, [handcuffLeft, handcuffRight, makeCuffDragHandler])
 
   return (
     <div style={{
@@ -624,23 +698,34 @@ export default function SexScenePage({
             <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
           )}
 
-          {/* 수갑 체인 */}
-          {restraints.has('handcuff') && (
-            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-              <line x1={`${handcuffLeft.x}%`} y1={`${handcuffLeft.y}%`} x2={`${handcuffRight.x}%`} y2={`${handcuffRight.y}%`} stroke="#aaa" strokeWidth="3" strokeDasharray="8 5" />
-            </svg>
-          )}
-          {restraints.has('handcuff') && <CuffRing x={handcuffLeft.x}  y={handcuffLeft.y}  size={handcuffLeftSize}  color="#cccccc" label="왼손"  onDrag={makeCuffDragHandler(handcuffLeft,  setHandcuffLeft)}  onResize={makeCuffResizeHandler(handcuffLeftSize,  setHandcuffLeftSize)} />}
-          {restraints.has('handcuff') && <CuffRing x={handcuffRight.x} y={handcuffRight.y} size={handcuffRightSize} color="#cccccc" label="오른손" onDrag={makeCuffDragHandler(handcuffRight, setHandcuffRight)} onResize={makeCuffResizeHandler(handcuffRightSize, setHandcuffRightSize)} />}
-
-          {/* 족갑 체인 */}
-          {restraints.has('legcuff') && (
-            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-              <line x1={`${legcuffLeft.x}%`} y1={`${legcuffLeft.y}%`} x2={`${legcuffRight.x}%`} y2={`${legcuffRight.y}%`} stroke="#c9a84c" strokeWidth="3" strokeDasharray="8 5" />
-            </svg>
-          )}
-          {restraints.has('legcuff') && <CuffRing x={legcuffLeft.x}  y={legcuffLeft.y}  size={legcuffLeftSize}  color="#c9a84c" label="왼발"  onDrag={makeCuffDragHandler(legcuffLeft,  setLegcuffLeft)}  onResize={makeCuffResizeHandler(legcuffLeftSize,  setLegcuffLeftSize)} />}
-          {restraints.has('legcuff') && <CuffRing x={legcuffRight.x} y={legcuffRight.y} size={legcuffRightSize} color="#c9a84c" label="오른발" onDrag={makeCuffDragHandler(legcuffRight, setLegcuffRight)} onResize={makeCuffResizeHandler(legcuffRightSize, setLegcuffRightSize)} />}
+          {/* 수갑 쌍들 */}
+          {handcuffs.map(c => (
+            <React.Fragment key={c.id}>
+              <ChainLinks ax={c.left.x} ay={c.left.y} mx={c.mid.x} my={c.mid.y} bx={c.right.x} by={c.right.y}
+                w={imgDims.w} h={imgDims.h} color="#bbbbbb"
+                onMidDrag={(e) => startCuffDrag('hand', c.id, 'mid', c.mid, e)} />
+              <LeatherCuffRing x={c.left.x}  y={c.left.y}  size={c.leftSize}  color="#aaaaaa" label="왼손"
+                onDrag={(e) => startCuffDrag('hand', c.id, 'left', c.left, e)}
+                onResize={(e) => startCuffResize('hand', c.id, 'leftSize', c.leftSize, e)} />
+              <LeatherCuffRing x={c.right.x} y={c.right.y} size={c.rightSize} color="#aaaaaa" label="오른손"
+                onDrag={(e) => startCuffDrag('hand', c.id, 'right', c.right, e)}
+                onResize={(e) => startCuffResize('hand', c.id, 'rightSize', c.rightSize, e)} />
+            </React.Fragment>
+          ))}
+          {/* 족갑 쌍들 */}
+          {legcuffs.map(c => (
+            <React.Fragment key={c.id}>
+              <ChainLinks ax={c.left.x} ay={c.left.y} mx={c.mid.x} my={c.mid.y} bx={c.right.x} by={c.right.y}
+                w={imgDims.w} h={imgDims.h} color="#c9a84c"
+                onMidDrag={(e) => startCuffDrag('leg', c.id, 'mid', c.mid, e)} />
+              <LeatherCuffRing x={c.left.x}  y={c.left.y}  size={c.leftSize}  color="#c9a84c" label="왼발"
+                onDrag={(e) => startCuffDrag('leg', c.id, 'left', c.left, e)}
+                onResize={(e) => startCuffResize('leg', c.id, 'leftSize', c.leftSize, e)} />
+              <LeatherCuffRing x={c.right.x} y={c.right.y} size={c.rightSize} color="#c9a84c" label="오른발"
+                onDrag={(e) => startCuffDrag('leg', c.id, 'right', c.right, e)}
+                onResize={(e) => startCuffResize('leg', c.id, 'rightSize', c.rightSize, e)} />
+            </React.Fragment>
+          ))}
 
           {/* 나머지 구속구 오버레이 (안대, 개목걸이) — 드래그로 위치 변경 */}
           {Array.from(restraints).filter(k => k !== 'handcuff' && k !== 'legcuff').map(rKey => {
@@ -807,21 +892,46 @@ export default function SexScenePage({
                   {/* SM 구속 토글 */}
                   {sec.key === 'sm' && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px' }}>
-                      {RESTRAINT_DEFS.map(r => {
-                        const on = restraints.has(r.key)
+                      {/* 수갑 (최대 2쌍) */}
+                      {(() => {
+                        const cnt = handcuffs.length
+                        const on = cnt > 0
                         return (
-                          <button
-                            key={r.key}
-                            tabIndex={-1}
-                            onClick={() => toggleRestraint(r.key)}
-                            style={{
-                              background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
+                          <button tabIndex={-1} onClick={toggleHandcuffs}
+                            style={{ background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
                               border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
                               borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
                               color: on ? '#e94560' : '#ffffff55', fontSize: 26,
-                              boxShadow: on ? '0 0 8px #e9456066' : 'none',
-                            }}
-                          >
+                              boxShadow: on ? '0 0 8px #e9456066' : 'none' }}>
+                            수갑{cnt > 0 ? ` ×${cnt}` : ''}
+                          </button>
+                        )
+                      })()}
+                      {/* 족갑 (최대 2쌍) */}
+                      {(() => {
+                        const cnt = legcuffs.length
+                        const on = cnt > 0
+                        return (
+                          <button tabIndex={-1} onClick={toggleLegcuffs}
+                            style={{ background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
+                              borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                              color: on ? '#e94560' : '#ffffff55', fontSize: 26,
+                              boxShadow: on ? '0 0 8px #e9456066' : 'none' }}>
+                            족갑{cnt > 0 ? ` ×${cnt}` : ''}
+                          </button>
+                        )
+                      })()}
+                      {/* 안대 / 개목걸이 (기존 단일 토글) */}
+                      {RESTRAINT_DEFS.filter(r => r.key !== 'handcuff' && r.key !== 'legcuff').map(r => {
+                        const on = restraints.has(r.key)
+                        return (
+                          <button key={r.key} tabIndex={-1} onClick={() => toggleRestraint(r.key)}
+                            style={{ background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
+                              borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                              color: on ? '#e94560' : '#ffffff55', fontSize: 26,
+                              boxShadow: on ? '0 0 8px #e9456066' : 'none' }}>
                             {r.label}
                           </button>
                         )
