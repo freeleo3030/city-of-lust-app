@@ -423,10 +423,10 @@ export default function FemaleCharacterCreatePage({
   }
   const breast = genEro.breast
 
-  // 핵심 성감대: 클리토리스·질내부 각각 독립 (min 2, max 20, 합계 40)
-  const CORE_TOTAL = 20
-  const CORE_MIN = 4; const CORE_MAX = CORE_TOTAL - CORE_MIN // 16
-  const [clitoris, setClitoris] = useState(d?.erogenous?.clitoris ?? 10)
+  // 핵심 성감대: 클리토리스·질내부 (min 4, 합계 15)
+  const CORE_TOTAL = 15
+  const CORE_MIN = 4; const CORE_MAX = CORE_TOTAL - CORE_MIN // 11
+  const [clitoris, setClitoris] = useState(Math.min(CORE_TOTAL - CORE_MIN, d?.erogenous?.clitoris ?? 8))
   const vagina = CORE_TOTAL - clitoris
 
   const erogenous = { ...genEro, breast, clitoris, vagina }
@@ -1907,7 +1907,7 @@ export default function FemaleCharacterCreatePage({
           {/* 핵심 성감대 */}
           <div style={{ ...S.eroDivider, marginTop: 10 }}>── 핵심 성감대 ──</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0' }}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>각 min 2 · 범위 0~10 · 질내부 자동</span>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>각 min 4 · 범위 4~11 · 질내부 자동</span>
             <span style={{ fontSize: 12, fontWeight: 'bold', color: (clitoris + vagina) === CORE_TOTAL ? '#c9a84c' : '#e94560' }}>
               {clitoris + vagina} / {CORE_TOTAL}pt
             </span>
