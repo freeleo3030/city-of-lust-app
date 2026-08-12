@@ -257,11 +257,11 @@ function LeatherCuffRing({ x, y, size, color, label, rotate, onDrag, onResize, o
             </radialGradient>
           </defs>
 
-          {/* ── 뒷면 (위 반원) — 흐리게 ── */}
-          <path d={arc(0, rx, ry)}     fill="none" stroke="#0a0400"             strokeWidth="18" opacity="0.5" />
-          <path d={arc(0, rx, ry)}     fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" opacity="0.5" />
-          <path d={arc(0, rx, ry)}     fill="none" stroke={color}               strokeWidth="2"  opacity="0.4" />
-          <path d={arc(0, rx-6, ry-6)} fill="none" stroke="#ffffff30"           strokeWidth="1"  strokeDasharray="4 5" />
+          {/* ── 뒷면 (위 반원) — 거의 안 보이게 ── */}
+          <path d={arc(0, rx, ry)}     fill="none" stroke="#0a0400"             strokeWidth="18" opacity="0.08" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" opacity="0.08" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke={color}               strokeWidth="2"  opacity="0.07" />
+          <path d={arc(0, rx-6, ry-6)} fill="none" stroke="#ffffff08"           strokeWidth="1"  strokeDasharray="4 5" />
 
           {/* ── 앞면 (아래 반원) — 진하게 ── */}
           <path d={arc(1, rx, ry)}     fill="none" stroke="#0a0400"             strokeWidth="18" />
