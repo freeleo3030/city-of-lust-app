@@ -457,9 +457,11 @@ export default function SexScenePage({
   const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
   const [restraintDragPos, setRestraintDragPos] = useState<Record<string, { x: number; y: number }>>({})
   const draggingRestraint = useRef<{ key: RestraintKey; offsetX: number; offsetY: number } | null>(null)
-  // 수갑/족갑: 배열 (최대 2쌍)
+  // 수갑/족갑: 배열 + 마지막 위치 기억
   const [handcuffs, setHandcuffs] = useState<CuffPair[]>([])
   const [legcuffs,  setLegcuffs]  = useState<CuffPair[]>([])
+  const lastHandcuffs = useRef<CuffPair[]>([])
+  const lastLegcuffs  = useRef<CuffPair[]>([])
   const [imgDims, setImgDims] = useState({ w: 400, h: 600 })
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
@@ -483,8 +485,15 @@ export default function SexScenePage({
     left:  { x: 28, y }, right: { x: 72, y }, mid: { x: 50, y },
     leftSize: 80, rightSize: 80,
   })
-  const toggleHandcuffs = () => setHandcuffs(p => p.length >= 1 ? [] : [newCuffPair(30)])
-  const toggleLegcuffs  = () => setLegcuffs( p => p.length >= 2 ? [] : [...p, newCuffPair(75)])
+  const toggleHandcuffs = () => setHandcuffs(p => {
+    if (p.length >= 1) { lastHandcuffs.current = p; return [] }
+    return lastHandcuffs.current.length > 0 ? lastHandcuffs.current : [newCuffPair(30)]
+  })
+  const toggleLegcuffs = () => setLegcuffs(p => {
+    if (p.length >= 2) { lastLegcuffs.current = p; return [] }
+    if (p.length === 0 && lastLegcuffs.current.length > 0) return lastLegcuffs.current
+    return [...p, newCuffPair(75)]
+  })
 
   // 수갑/족갑 쌍 업데이트 헬퍼
   const updateCuff = (type: 'hand' | 'leg', id: string, patch: Partial<CuffPair>) => {
