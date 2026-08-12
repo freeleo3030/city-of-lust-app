@@ -813,8 +813,10 @@ export default function SexScenePage({
     const toolMult = getToolMult(activeTool, zone.key)
     const posePref = (femaleChar.prefPose?.[poseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
     const gain = toolMult < 0
-      ? toolMult * 20                                                     // ✗ 부위: 고정 페널티
-      : Math.max(1, sensitivity) * toolMult * ageMult * posePref * 4     // ✓ 부위: 자세 선호도 반영
+      ? toolMult * 20                                                        // ✗ 도구: 고정 페널티
+      : sensitivity < 0
+        ? sensitivity * 5                                                    // 싫어하는 부위: 감도 페널티
+        : Math.max(1, sensitivity) * toolMult * ageMult * posePref * 4      // 정상: 자세·감도 반영
     setFemaleArousal(prev => Math.min(1000, Math.max(0, prev + gain)))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
@@ -825,10 +827,10 @@ export default function SexScenePage({
     toolAnimTimer.current = setTimeout(() => setToolAnim(null), 700)
 
     if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
-    const gainText = sensitivity === 0 ? '반응 없음' : `+${Math.round(gain)}`
+    const gainText = gain === 0 ? '반응 없음' : gain > 0 ? `+${Math.round(gain)}` : `${Math.round(gain)}`
     setFeedback({
       text: `${zone.label} ${gainText}`,
-      color: sensitivity >= 4 ? '#e94560' : sensitivity >= 2 ? '#c9a84c' : '#ffffff66',
+      color: gain < 0 ? '#e94560' : sensitivity >= 4 ? '#e94560' : sensitivity >= 2 ? '#c9a84c' : '#ffffff66',
     })
     feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
   }, [ended, phase, femaleChar.erogenous, activeTool, getToolMult, ageMult])
