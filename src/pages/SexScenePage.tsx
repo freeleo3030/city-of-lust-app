@@ -561,28 +561,53 @@ export default function SexScenePage({
             <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
           )}
 
-          {/* 수갑: 두 손목 각각 독립 드래그 + 체인으로 연결 */}
+          {/* 수갑: 체인 SVG (포인터 이벤트 없음) */}
           {restraints.has('handcuff') && (
-            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible' }}>
-              {/* 체인 */}
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
               <line
                 x1={`${handcuffLeft.x}%`}  y1={`${handcuffLeft.y}%`}
                 x2={`${handcuffRight.x}%`} y2={`${handcuffRight.y}%`}
-                stroke="#888" strokeWidth="3" strokeDasharray="6 4"
+                stroke="#aaa" strokeWidth="3" strokeDasharray="8 5"
               />
-              {/* 왼쪽 수갑 */}
-              <g transform={`translate(${handcuffLeft.x}%, ${handcuffLeft.y}%)`} style={{ pointerEvents: 'all', cursor: 'grab' }}
-                onMouseDown={(e) => handleHandcuffDrag('left', e)}>
-                <ellipse cx="0" cy="0" rx="18" ry="12" fill="none" stroke="#aaa" strokeWidth="4" />
-                <circle cx="0" cy="0" r="5" fill="#555" />
-              </g>
-              {/* 오른쪽 수갑 */}
-              <g transform={`translate(${handcuffRight.x}%, ${handcuffRight.y}%)`} style={{ pointerEvents: 'all', cursor: 'grab' }}
-                onMouseDown={(e) => handleHandcuffDrag('right', e)}>
-                <ellipse cx="0" cy="0" rx="18" ry="12" fill="none" stroke="#aaa" strokeWidth="4" />
-                <circle cx="0" cy="0" r="5" fill="#555" />
-              </g>
             </svg>
+          )}
+          {/* 왼쪽 수갑 고리 — 드래그 */}
+          {restraints.has('handcuff') && (
+            <div
+              onMouseDown={(e) => handleHandcuffDrag('left', e)}
+              style={{
+                position: 'absolute',
+                left: `${handcuffLeft.x}%`, top: `${handcuffLeft.y}%`,
+                transform: 'translate(-50%,-50%)',
+                cursor: 'grab', zIndex: 30,
+              }}
+            >
+              <svg width="80" height="52" viewBox="0 0 80 52">
+                <ellipse cx="40" cy="26" rx="36" ry="22" fill="none" stroke="#ccc" strokeWidth="5" />
+                <ellipse cx="40" cy="26" rx="36" ry="22" fill="none" stroke="#666" strokeWidth="2" strokeDasharray="4 4" />
+                <circle cx="40" cy="26" r="7" fill="#888" stroke="#ccc" strokeWidth="2" />
+              </svg>
+              <div style={{ position: 'absolute', bottom: -18, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: '#ffffff88', whiteSpace: 'nowrap' }}>← 왼손</div>
+            </div>
+          )}
+          {/* 오른쪽 수갑 고리 — 드래그 */}
+          {restraints.has('handcuff') && (
+            <div
+              onMouseDown={(e) => handleHandcuffDrag('right', e)}
+              style={{
+                position: 'absolute',
+                left: `${handcuffRight.x}%`, top: `${handcuffRight.y}%`,
+                transform: 'translate(-50%,-50%)',
+                cursor: 'grab', zIndex: 30,
+              }}
+            >
+              <svg width="80" height="52" viewBox="0 0 80 52">
+                <ellipse cx="40" cy="26" rx="36" ry="22" fill="none" stroke="#ccc" strokeWidth="5" />
+                <ellipse cx="40" cy="26" rx="36" ry="22" fill="none" stroke="#666" strokeWidth="2" strokeDasharray="4 4" />
+                <circle cx="40" cy="26" r="7" fill="#888" stroke="#ccc" strokeWidth="2" />
+              </svg>
+              <div style={{ position: 'absolute', bottom: -18, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: '#ffffff88', whiteSpace: 'nowrap' }}>오른손 →</div>
+            </div>
           )}
 
           {/* 나머지 구속구 오버레이 — 드래그로 위치 변경 */}
