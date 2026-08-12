@@ -730,6 +730,8 @@ export default function SexScenePage({
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastZoneKey = useRef<string>('')
   const consecutiveCount = useRef<number>(0)
+  const lastGroupKey = useRef<string>('')   // 쌍 부위 그룹 키 (breast/thigh/ear)
+  const groupCount = useRef<number>(0)      // 쌍 부위 좌우 합산 카운트
 
   // 포즈 이미지 URL 추출
   const poseImages = femaleChar.poseImages ?? {}
@@ -818,6 +820,23 @@ export default function SexScenePage({
     return femaleChar.erogenous?.[eroKey as keyof typeof femaleChar.erogenous] ?? 2
   }
 
+  // ─── 피드백 메시지 풀 ────────────────────────────────────────────────────────
+  const MSGS = {
+    gain_low:          ['살짝 반응하는 것 같아...', '음...♥', '느끼는 것 같아', '조금 좋은가봐', '흠...기분 좀 나아지네'],
+    gain_mid:          ['으응...♥', '좋아...계속해줘', '거기야...♥', '점점 좋아지고 있어', '아...거기 괜찮아'],
+    gain_high:         ['아앙!♥', '너무 좋아!!', '으윽...♥♥', '거기 엄청 좋아!!', '아...미칠 것 같아♥'],
+    gain_climax:       ['아아앙!!♥♥', '더...더 해줘!!', '너무 좋아 죽겠어♥♥', '계속...제발 계속!!'],
+    no_reaction:       ['반응이 없어...', '별로 느끼지 못하는 것 같아', '...(무반응)', '흠, 관심 없는 곳이야'],
+    bad_tool:          ['거기에 그건 아니야...', '이상해...', '그게 왜 거기에 가는 거야?', '이건 좀 아닌 것 같아'],
+    bad_sensitivity:   ['싫어! 거기는 건드리지 마!', '기분 나빠...', '그곳은 싫다고!', '하지 마...', '거기만은 안 돼'],
+    restrict_vagina:   ['아직 거기는 안 돼...', '더 분위기를 만들어줘', '아직 준비가 안 됐어', '천천히 해줘'],
+    restrict_penis:    ['아직 삽입은 안 돼...', '좀 더 애무해줘', '성급하다...', '먼저 충분히 달궈줘'],
+    restrict_climax:   ['지금은 성기로만...♥', '그냥 넣어줘...♥', '다른 건 필요 없어', '이것만으로 충분해...♥'],
+    consec_same:       ['같은 데만 하면 질려...', '다른 곳도 해줘', '거기만 하면 싫어', '좀 바꿔봐', '변화를 줘'],
+    consec_group:      ['좌우로만 왔다갔다 하지마...', '너무 단순해...', '다른 곳도 건드려줘', '그것만 반복하면 지겨워'],
+  }
+  const rnd = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
+
   // 핫스팟 클릭
   const handleZoneClick = useCallback((zone: HotspotZone) => {
     if (ended || phase === 'climax') return
@@ -826,70 +845,103 @@ export default function SexScenePage({
     const isPhotoAroused = femaleArousal < 300
     const isSpriteAroused = femaleArousal >= 300 && femaleArousal < 600
     const isPhotoClimax = femaleArousal >= 900
-    let restrictionMsg = ''
-    if (isPhotoAroused && (zone.key === 'vagina' || zone.key === 'anal')) {
-      restrictionMsg = '아직 준비가 안 됐어요'
-    } else if (isSpriteAroused && activeTool === 'penis') {
-      restrictionMsg = '아직 삽입은 안 돼요'
-    } else if (isPhotoClimax && activeTool !== 'penis') {
-      restrictionMsg = '지금은 성기만 가능해'
-    }
-    if (restrictionMsg) {
+
+    const showPenalty = (msg: string) => {
       setFemaleArousal(prev => Math.max(0, prev - 20))
       setFemaleFlash(true)
       setTimeout(() => setFemaleFlash(false), 300)
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
-      setFeedback({ text: `⚠ ${restrictionMsg}`, color: '#e94560' })
-      feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
-      return
+      setFeedback({ text: `⚠ ${msg}`, color: '#e94560' })
+      feedbackTimer.current = setTimeout(() => setFeedback(null), 2500)
     }
 
-    // 같은 부위 4회 이상 연속 공략 → penalty (절정 사진 단계 제외)
-    // 가슴/허벅지/귀는 좌우 별도 카운트
-    const pairedZones = ['breast', 'thigh', 'ear']
-    const trackKey = pairedZones.includes(zone.key)
-      ? `${zone.key}_${zone.cx < 50 ? 'L' : 'R'}`
-      : zone.key
-    if (!isPhotoClimax && trackKey === lastZoneKey.current) {
-      consecutiveCount.current += 1
-    } else {
-      lastZoneKey.current = trackKey
-      consecutiveCount.current = 1
+    if (isPhotoAroused && (zone.key === 'vagina' || zone.key === 'anal')) {
+      return showPenalty(rnd(MSGS.restrict_vagina))
     }
-    if (consecutiveCount.current >= 4) {
-      setFemaleArousal(prev => Math.max(0, prev - 15))
-      setFemaleFlash(true)
-      setTimeout(() => setFemaleFlash(false), 300)
-      if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
-      setFeedback({ text: `⚠ 같은 곳만 하면 싫어해`, color: '#e94560' })
-      feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
-      return
+    if (isSpriteAroused && activeTool === 'penis') {
+      return showPenalty(rnd(MSGS.restrict_penis))
+    }
+    if (isPhotoClimax && activeTool !== 'penis') {
+      return showPenalty(rnd(MSGS.restrict_climax))
+    }
+
+    // 연속 공략 체크 (절정 사진 단계 제외)
+    const pairedZones = ['breast', 'thigh', 'ear']
+    const isPaired = pairedZones.includes(zone.key)
+    const sideKey = isPaired ? `${zone.key}_${zone.cx < 50 ? 'L' : 'R'}` : zone.key
+
+    if (!isPhotoClimax) {
+      // 한쪽 4회 연속 체크
+      if (sideKey === lastZoneKey.current) {
+        consecutiveCount.current += 1
+      } else {
+        lastZoneKey.current = sideKey
+        consecutiveCount.current = 1
+      }
+      if (consecutiveCount.current >= 4) {
+        return showPenalty(rnd(MSGS.consec_same))
+      }
+
+      // 쌍 부위 좌우 합산 7회 체크
+      if (isPaired) {
+        if (zone.key === lastGroupKey.current) {
+          groupCount.current += 1
+        } else {
+          lastGroupKey.current = zone.key
+          groupCount.current = 1
+        }
+        if (groupCount.current >= 7) {
+          return showPenalty(rnd(MSGS.consec_group))
+        }
+      } else {
+        lastGroupKey.current = ''
+        groupCount.current = 0
+      }
     }
 
     const sensitivity = getEroSensitivity(zone.key)
     const toolMult = getToolMult(activeTool, zone.key)
     const posePref = (femaleChar.prefPose?.[poseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
     const gain = toolMult < 0
-      ? toolMult * 20                                                        // ✗ 도구: 고정 페널티
+      ? toolMult * 20
       : sensitivity < 0
-        ? sensitivity * 5                                                    // 싫어하는 부위: 감도 페널티
-        : Math.max(1, sensitivity) * toolMult * ageMult * posePref * 4      // 정상: 자세·감도 반영
+        ? sensitivity * 5
+        : Math.max(1, sensitivity) * toolMult * ageMult * posePref * 4
+
     setFemaleArousal(prev => Math.min(1000, Math.max(0, prev + gain)))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
 
-    // 도구 아이콘을 해당 신체 부위에 700ms 표시
     if (toolAnimTimer.current) clearTimeout(toolAnimTimer.current)
     setToolAnim({ cx: zone.cx, cy: zone.cy })
     toolAnimTimer.current = setTimeout(() => setToolAnim(null), 700)
 
     if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
-    const gainText = gain === 0 ? '반응 없음' : gain > 0 ? `+${Math.round(gain)}` : `${Math.round(gain)}`
-    setFeedback({
-      text: `${zone.label} ${gainText}`,
-      color: gain < 0 ? '#e94560' : sensitivity >= 4 ? '#e94560' : sensitivity >= 2 ? '#c9a84c' : '#ffffff66',
-    })
-    feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
+
+    let msgText: string
+    let msgColor: string
+    if (toolMult < 0) {
+      msgText = rnd(MSGS.bad_tool)
+      msgColor = '#e94560'
+    } else if (sensitivity < 0) {
+      msgText = rnd(MSGS.bad_sensitivity)
+      msgColor = '#e94560'
+    } else if (gain === 0) {
+      msgText = rnd(MSGS.no_reaction)
+      msgColor = '#ffffff44'
+    } else if (gain >= 20) {
+      msgText = femaleArousal >= 800 ? rnd(MSGS.gain_climax) : rnd(MSGS.gain_high)
+      msgColor = '#ff6b9d'
+    } else if (gain >= 10) {
+      msgText = rnd(MSGS.gain_mid)
+      msgColor = '#c9a84c'
+    } else {
+      msgText = rnd(MSGS.gain_low)
+      msgColor = '#ffffff88'
+    }
+
+    setFeedback({ text: msgText, color: msgColor })
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 2500)
   }, [ended, phase, femaleArousal, femaleChar.erogenous, activeTool, getToolMult, ageMult])
 
   // 구속 토글
