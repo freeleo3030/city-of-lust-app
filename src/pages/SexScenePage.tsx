@@ -723,6 +723,8 @@ export default function SexScenePage({
   }
   const [feedback, setFeedback] = useState<{ text: string; color: string } | null>(null)
   const [femaleFlash, setFemaleFlash] = useState(false)
+  const [orgasmCount, setOrgasmCount] = useState(0)
+  const [orgasmFlash, setOrgasmFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
   const [ended, setEnded] = useState(false)
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -769,16 +771,24 @@ export default function SexScenePage({
   // 현재 섹터의 도구 목록
   const sectorTools = TOOL_DEFS.filter(t => t.sector === sector)
 
-  // 흥분도에 따른 페이즈 결정
+  // 흥분도에 따른 페이즈 결정 + 멀티 오르가즘 (930/960/1000)
   useEffect(() => {
-    if (femaleArousal >= 1000 && !ended) {
-      setPhase('climax')
-      setEnded(true)
-      setTimeout(() => onEnd('success'), 3000)
+    if (ended) return
+    const thresholds = [930, 960, 1000]
+    const nextThreshold = thresholds[orgasmCount]
+    if (nextThreshold !== undefined && femaleArousal >= nextThreshold) {
+      setOrgasmFlash(true)
+      setTimeout(() => setOrgasmFlash(false), 1800)
+      if (orgasmCount >= 2) {
+        setPhase('climax')
+        setEnded(true)
+        setTimeout(() => onEnd('success'), 3000)
+      }
+      setOrgasmCount(prev => prev + 1)
     } else if (femaleArousal >= 300 && phase === 'foreplay') {
       setPhase('aroused')
     }
-  }, [femaleArousal, phase, ended, onEnd])
+  }, [femaleArousal, orgasmCount, phase, ended, onEnd])
 
   useEffect(() => {
     if (maleArousal >= 100 && !ended) {
@@ -809,6 +819,29 @@ export default function SexScenePage({
   // 핫스팟 클릭
   const handleZoneClick = useCallback((zone: HotspotZone) => {
     if (ended || phase === 'climax') return
+
+    // 흥분 단계별 공략 제한
+    const isPhotoAroused = femaleArousal < 300
+    const isSpriteAroused = femaleArousal >= 300 && femaleArousal < 600
+    const isPhotoClimax = femaleArousal >= 900
+    let restrictionMsg = ''
+    if (isPhotoAroused && (zone.key === 'vagina' || zone.key === 'anal')) {
+      restrictionMsg = '아직 준비가 안 됐어요'
+    } else if (isSpriteAroused && activeTool === 'penis') {
+      restrictionMsg = '아직 삽입은 안 돼요'
+    } else if (isPhotoClimax && activeTool !== 'penis') {
+      restrictionMsg = '지금은 성기만 가능해'
+    }
+    if (restrictionMsg) {
+      setFemaleArousal(prev => Math.max(0, prev - 20))
+      setFemaleFlash(true)
+      setTimeout(() => setFemaleFlash(false), 300)
+      if (feedbackTimer.current) clearTimeout(feedbackTimer.current)
+      setFeedback({ text: `⚠ ${restrictionMsg}`, color: '#e94560' })
+      feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
+      return
+    }
+
     const sensitivity = getEroSensitivity(zone.key)
     const toolMult = getToolMult(activeTool, zone.key)
     const posePref = (femaleChar.prefPose?.[poseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
@@ -833,7 +866,7 @@ export default function SexScenePage({
       color: gain < 0 ? '#e94560' : sensitivity >= 4 ? '#e94560' : sensitivity >= 2 ? '#c9a84c' : '#ffffff66',
     })
     feedbackTimer.current = setTimeout(() => setFeedback(null), 1500)
-  }, [ended, phase, femaleChar.erogenous, activeTool, getToolMult, ageMult])
+  }, [ended, phase, femaleArousal, femaleChar.erogenous, activeTool, getToolMult, ageMult])
 
   // 구속 토글
   const toggleRestraint = (key: RestraintKey) => {
@@ -1194,6 +1227,21 @@ export default function SexScenePage({
               background: 'rgba(233,69,96,0.15)', borderRadius: 8,
             }}>
               <div style={{ fontSize: 40, textAlign: 'center', textShadow: '0 0 30px #e94560' }}>✨</div>
+            </div>
+          )}
+
+          {/* 멀티 오르가즘 플래시 */}
+          {orgasmFlash && (
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: 8, pointerEvents: 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(255,180,200,0.35)',
+              animation: 'none',
+            }}>
+              <div style={{ fontSize: 36, textShadow: '0 0 20px #fff' }}>💦</div>
+              <div style={{ color: '#fff', fontWeight: 'bold', fontSize: 18, textShadow: '0 0 10px #e94560', marginTop: 6 }}>
+                {orgasmCount === 1 ? '1차 오르가즘!' : orgasmCount === 2 ? '2차 오르가즘!' : '3차 오르가즘!'}
+              </div>
             </div>
           )}
         </div>
