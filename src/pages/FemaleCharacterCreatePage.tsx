@@ -414,17 +414,14 @@ export default function FemaleCharacterCreatePage({
 
   const [memo, setMemo] = useState(d?.memo ?? '')
 
-  // 일반 성감대: 목귀/엉덩이/허벅지/항문/입/발 수동, 가슴 자동 (합계 15)
-  const GEN_TOTAL = 15
+  // 일반 성감대: 전부 독립 슬라이더 (-3~5)
   const [genEro, setGenEroState] = useState(d?.erogenous
-    ? { neckEar: d.erogenous.neckEar, thigh: d.erogenous.thigh, anal: d.erogenous.anal, mouth: d.erogenous.mouth }
-    : { neckEar: 3, thigh: 3, anal: 1, mouth: 3 })
-  const breast = Math.min(5, Math.max(0, GEN_TOTAL - Object.values(genEro).reduce((a,b)=>a+b,0)))
+    ? { breast: d.erogenous.breast, neckEar: d.erogenous.neckEar, thigh: d.erogenous.thigh, anal: d.erogenous.anal, mouth: d.erogenous.mouth }
+    : { breast: 3, neckEar: 3, thigh: 3, anal: 1, mouth: 3 })
   const setGenEro = (key: keyof typeof genEro, val: number) => {
-    val = Math.min(5, Math.max(-3, val))
-    const others = Object.entries(genEro).filter(([k])=>k!==key).reduce((a,[,v])=>a+v,0)
-    setGenEroState({ ...genEro, [key]: Math.min(5, Math.min(val, Math.max(0, GEN_TOTAL - others))) })
+    setGenEroState(prev => ({ ...prev, [key]: Math.min(5, Math.max(-3, val)) }))
   }
+  const breast = genEro.breast
 
   // 핵심 성감대: 클리토리스·질내부 각각 독립 (min 2, max 20, 합계 40)
   const CORE_TOTAL = 20
@@ -1870,11 +1867,8 @@ export default function FemaleCharacterCreatePage({
           <div style={S.cardTitle}>🔞 성감대 설정 <span style={S.hiddenBadge}>플레이어 비공개</span></div>
 
           {/* 일반 성감대 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0' }}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>일반 성감대 · 0=거부 · 최대5 · 가슴 자동</span>
-            <span style={{ fontSize: 12, fontWeight: 'bold', color: (Object.values(genEro).reduce((a,b)=>a+b,0) + breast) === GEN_TOTAL ? '#c9a84c' : '#e94560' }}>
-              {Object.values(genEro).reduce((a,b)=>a+b,0) + breast} / {GEN_TOTAL}pt
-            </span>
+          <div style={{ margin: '4px 0' }}>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>일반 성감대 · -3=거부 · +5=최고</span>
           </div>
           {/* 입·입술, 목·귀 — 가슴 위 */}
           {(['mouth','neckEar'] as const).map(key => {
@@ -1889,10 +1883,11 @@ export default function FemaleCharacterCreatePage({
               </div>
             )
           })}
-          {/* 가슴 — 자동 */}
+          {/* 가슴 — 독립 슬라이더 */}
           <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: sensColor(breast) }}>가슴 (자동)</span>
-            <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((breast+3)/8)*100}%`, background: sensColor(breast) }} /></div>
+            <span style={{ ...S.eroLabel, color: sensColor(breast) }}>가슴</span>
+            <input type="range" min={-3} max={5} step={1} value={breast}
+              onChange={e => setGenEro('breast', Number(e.target.value))} style={S.slider} />
             <span style={{ color: sensColor(breast), fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{breast}</span>
           </div>
           {/* 엉덩이/허벅지, 항문 — 가슴 아래 */}
