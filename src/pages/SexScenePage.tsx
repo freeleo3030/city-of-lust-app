@@ -1467,12 +1467,15 @@ export default function SexScenePage({
           flex: 1, height: '100%', display: 'flex', flexDirection: 'column',
           background: 'rgba(8,8,18,0.98)', borderLeft: '1px solid #ffffff18',
         }}>
+          {/* 헤더 위 여백 (게이지바 높이 맞춤) */}
+          <div style={{ height: 42, flexShrink: 0, borderBottom: '1px solid #ffffff18' }} />
+
           {/* 헤더 */}
           <div style={{
             padding: '12px 20px', borderBottom: '1px solid #ffffff18', flexShrink: 0,
             fontSize: 26, fontWeight: 'bold', color: '#c9a84c', letterSpacing: 2,
           }}>
-            💬 {femaleChar.name ?? '여캐'}
+            💬 {femaleChar.nickname ?? ''}
           </div>
 
           {/* 메시지 로그 */}
