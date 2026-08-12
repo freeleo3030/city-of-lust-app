@@ -262,58 +262,84 @@ function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
   )
 }
 
-// 체인 링크 SVG — 베지어 곡선 + 드래그 가능한 중간 포인트
-function ChainLinks({ ax, ay, mx, my, bx, by, w, h, color, onMidDrag }: {
+// 체인 링크 SVG — 베지어 곡선, 고리 안쪽 끝 연결, 중간 핸들 absolute div
+function ChainLinks({ ax, ay, mx, my, bx, by, w, h, color, leftSize, rightSize, onMidDrag }: {
   ax:number; ay:number; mx:number; my:number; bx:number; by:number
-  w:number; h:number; color:string
+  w:number; h:number; color:string; leftSize:number; rightSize:number
   onMidDrag: (e: React.MouseEvent) => void
 }) {
-  const px = (v: number) => v / 100 * w
-  const py = (v: number) => v / 100 * h
-  const [x1,y1] = [px(ax), py(ay)]
-  const [cx2,cy2] = [px(mx), py(my)]
-  const [x3,y3] = [px(bx), py(by)]
+  const toX = (v: number) => v / 100 * w
+  const toY = (v: number) => v / 100 * h
 
-  // 베지어 곡선 path: A → 중간 제어점 → B
-  const curvePath = `M ${x1} ${y1} Q ${cx2} ${cy2} ${x3} ${y3}`
+  // 고리 중심 (px)
+  const lx = toX(ax), ly = toY(ay)
+  const rx = toX(bx), ry = toY(by)
+  const ctrl = [toX(mx), toY(my)]
 
-  // 곡선 위에 체인 링크 배치 (샘플링)
-  const totalLen = Math.sqrt((x3-x1)**2 + (y3-y1)**2) * 1.2 // 곡선 근사 길이
-  const n = Math.max(3, Math.floor(totalLen / 14))
+  // 두 중심 사이 단위 벡터
+  const dx = rx - lx, dy = ry - ly
+  const dist = Math.sqrt(dx*dx + dy*dy) || 1
+  const ux = dx/dist, uy = dy/dist
+
+  // 각 고리의 안쪽 끝점 (중심에서 상대방 방향으로 고리 반지름만큼 이동)
+  const lrx = leftSize,  lry = Math.round(leftSize  * 0.55)
+  const rrx = rightSize, rry = Math.round(rightSize * 0.55)
+  // 타원 경계 근사: r = rx*ry / sqrt((ry*ux)^2 + (rx*uy)^2)
+  const lEdge = (lrx*lry) / Math.sqrt((lry*ux)**2 + (lrx*uy)**2)
+  const rEdge = (rrx*rry) / Math.sqrt((rry*ux)**2 + (rrx*uy)**2)
+
+  const [x1, y1] = [lx + ux*lEdge,  ly + uy*lEdge ]  // 왼 고리 오른쪽 끝
+  const [x2, y2] = [rx - ux*rEdge,  ry - uy*rEdge ]  // 오른 고리 왼쪽 끝
+  const [cx2, cy2] = ctrl
+
+  // 2차 베지어 곡선
+  const curvePath = `M ${x1} ${y1} Q ${cx2} ${cy2} ${x2} ${y2}`
+
+  // 곡선 위 체인 링크
+  const arcLen = Math.sqrt((x2-x1)**2 + (y2-y1)**2) * 1.2
+  const n = Math.max(2, Math.floor(arcLen / 14))
   const links: React.ReactNode[] = []
   for (let i = 0; i <= n; i++) {
     const t = i / n
-    // 2차 베지어 위의 점
-    const bx2 = (1-t)*(1-t)*x1 + 2*(1-t)*t*cx2 + t*t*x3
-    const by2 = (1-t)*(1-t)*y1 + 2*(1-t)*t*cy2 + t*t*y3
-    // 접선 방향 (도)
-    const tx = 2*(1-t)*(cx2-x1) + 2*t*(x3-cx2)
-    const ty = 2*(1-t)*(cy2-y1) + 2*t*(y3-cy2)
-    const ang = Math.atan2(ty, tx) * 180 / Math.PI
+    const bpx = (1-t)*(1-t)*x1 + 2*(1-t)*t*cx2 + t*t*x2
+    const bpy = (1-t)*(1-t)*y1 + 2*(1-t)*t*cy2 + t*t*y2
+    const tx2 = 2*(1-t)*(cx2-x1) + 2*t*(x2-cx2)
+    const ty2 = 2*(1-t)*(cy2-y1) + 2*t*(y2-cy2)
+    const ang = Math.atan2(ty2, tx2) * 180 / Math.PI
     const isH = i % 2 === 0
     links.push(
-      <ellipse key={i} cx={bx2} cy={by2}
+      <ellipse key={i} cx={bpx} cy={bpy}
         rx={isH ? 8 : 4} ry={isH ? 4 : 8}
-        fill={color} fillOpacity="0.3"
-        stroke={color} strokeWidth="2.5"
-        transform={`rotate(${ang},${bx2},${by2})`}
-      />
+        fill={color} fillOpacity="0.3" stroke={color} strokeWidth="2.5"
+        transform={`rotate(${ang},${bpx},${bpy})`} />
     )
   }
 
+  // 중간 핸들 absolute 위치 (%)
+  const midLeft = `${mx}%`, midTop = `${my}%`
+
   return (
-    <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', zIndex:40, overflow:'visible' }}
-      viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
-      {/* 곡선 가이드라인 (희미) */}
-      <path d={curvePath} fill="none" stroke={color} strokeWidth="1" strokeOpacity="0.15" />
-      {links}
-      {/* 중간 드래그 핸들 — 별도 div로 만들어 pointerEvents 확실히 */}
-      <circle cx={cx2} cy={cy2} r="13" fill={color} fillOpacity="0.8" stroke="#000" strokeWidth="2.5"
-        style={{ cursor:'crosshair' }}
-        onMouseDown={(e) => { e.stopPropagation(); onMidDrag(e) }} />
-      <text x={cx2} y={cy2+5} textAnchor="middle" fontSize="12" fill="#000" fontWeight="bold"
-        style={{ pointerEvents:'none', userSelect:'none' }}>✦</text>
-    </svg>
+    <>
+      {/* 체인 SVG — pointerEvents 없음 */}
+      <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', zIndex:40, overflow:'visible', pointerEvents:'none' }}
+        viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+        <path d={curvePath} fill="none" stroke={color} strokeWidth="1" strokeOpacity="0.15" />
+        {links}
+      </svg>
+      {/* 중간 핸들 — absolute div, zIndex 60으로 모든 것 위 */}
+      <div
+        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onMidDrag(e) }}
+        style={{
+          position:'absolute', left: midLeft, top: midTop,
+          transform:'translate(-50%,-50%)',
+          zIndex: 60, cursor:'crosshair', userSelect:'none',
+          width: 28, height: 28, borderRadius: '50%',
+          background: color, border: '2.5px solid #000',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize: 13, fontWeight:'bold', color:'#000',
+          boxShadow:'0 2px 6px #000a',
+        }}>✦</div>
+    </>
   )
 }
 
@@ -457,7 +483,7 @@ export default function SexScenePage({
     left:  { x: 28, y }, right: { x: 72, y }, mid: { x: 50, y },
     leftSize: 80, rightSize: 80,
   })
-  const toggleHandcuffs = () => setHandcuffs(p => p.length >= 2 ? [] : [...p, newCuffPair(30)])
+  const toggleHandcuffs = () => setHandcuffs(p => p.length >= 1 ? [] : [newCuffPair(30)])
   const toggleLegcuffs  = () => setLegcuffs( p => p.length >= 2 ? [] : [...p, newCuffPair(75)])
 
   // 수갑/족갑 쌍 업데이트 헬퍼
@@ -710,6 +736,7 @@ export default function SexScenePage({
             <React.Fragment key={c.id}>
               <ChainLinks ax={c.left.x} ay={c.left.y} mx={c.mid.x} my={c.mid.y} bx={c.right.x} by={c.right.y}
                 w={imgDims.w} h={imgDims.h} color="#bbbbbb"
+                leftSize={c.leftSize} rightSize={c.rightSize}
                 onMidDrag={(e) => startCuffDrag('hand', c.id, 'mid', c.mid, e)} />
               <LeatherCuffRing x={c.left.x}  y={c.left.y}  size={c.leftSize}  color="#aaaaaa" label="왼손"
                 onDrag={(e) => startCuffDrag('hand', c.id, 'left', c.left, e)}
@@ -724,6 +751,7 @@ export default function SexScenePage({
             <React.Fragment key={c.id}>
               <ChainLinks ax={c.left.x} ay={c.left.y} mx={c.mid.x} my={c.mid.y} bx={c.right.x} by={c.right.y}
                 w={imgDims.w} h={imgDims.h} color="#c9a84c"
+                leftSize={c.leftSize} rightSize={c.rightSize}
                 onMidDrag={(e) => startCuffDrag('leg', c.id, 'mid', c.mid, e)} />
               <LeatherCuffRing x={c.left.x}  y={c.left.y}  size={c.leftSize}  color="#c9a84c" label="왼발"
                 onDrag={(e) => startCuffDrag('leg', c.id, 'left', c.left, e)}
