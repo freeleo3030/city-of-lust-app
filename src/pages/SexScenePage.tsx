@@ -78,17 +78,18 @@ interface ToolDef {
   sector: SectorKey
 }
 
-// 도구 × 부위 유효성 매트릭스 (0 = 효과 없음)
-const TOOL_ZONE_MATRIX: Record<ToolKey, Partial<Record<ErogenousKey, number>>> = {
-  tongue:     { breast:1.2, neck:1.1, ear:1.1, thigh:1.1, clitoris:1.3, vagina:1.2, anal:1.1, mouth:1.2 },
-  hand:       { breast:1.1,                     thigh:1.1,                vagina:1.3, anal:1.1              },
-  penis:      { breast:1.1,                               clitoris:1.2,   vagina:1.5, anal:1.1, mouth:1.1   },
-  dildo:      {                                            clitoris:1.1,   vagina:1.2, anal:1.1              },
-  vibrator:   { breast:1.1,                               clitoris:1.2,   vagina:1.2, anal:1.1              },
-  gel:        { breast:1.05,            thigh:1.05,        clitoris:1.05,  vagina:1.05,anal:1.05             },
+// 도구 × 부위 유효성 매트릭스
+// 양수 = 흥분도 상승 배율, 음수 = 흥분도 하락 페널티, undefined = 미정의(0 처리)
+const TOOL_ZONE_MATRIX: Record<ToolKey, Record<ErogenousKey, number>> = {
+  tongue:     { breast:1.2,  neck:1.1,  ear:1.1,  thigh:1.1,  clitoris:1.3,  vagina:1.2,  anal:1.1,  mouth:1.2  },
+  hand:       { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:-0.2, vagina:1.3,  anal:1.1,  mouth:-0.2 },
+  penis:      { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.5,  anal:1.1,  mouth:1.1  },
+  dildo:      { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.1,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
+  vibrator:   { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
+  gel:        { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.05, vagina:1.05, anal:1.05, mouth:-0.2 },
   // 채찍 기본값 — SM 보정 곱셈 적용됨
-  whip:       { breast:1.05,            thigh:1.05,        clitoris:1.1,   vagina:1.1, anal:1.05             },
-  anal_dildo: {                                                                          anal:1.3              },
+  whip:       { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 },
+  anal_dildo: { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:-0.2, vagina:-0.2, anal:1.3,  mouth:-0.2 },
 }
 
 const TOOL_DEFS: ToolDef[] = [
@@ -743,13 +744,10 @@ export default function SexScenePage({
     return Math.max(0.2, Math.min(3.0, base)) * (restrained ? 1.3 : 1.0)
   }, [femaleChar.smTendency, restraints])
 
-  // 도구 배율 계산 (매트릭스 기반)
+  // 도구 배율 계산 (매트릭스 기반, 음수 = 흥분도 하락)
   const getToolMult = useCallback((toolKey: ToolKey, zoneKey: string): number => {
-    const zoneMatrix = TOOL_ZONE_MATRIX[toolKey]
-    if (!zoneMatrix) return 1.0
-    const base = zoneMatrix[zoneKey as ErogenousKey] ?? 0
-    if (base === 0) return 0
-    if (toolKey === 'whip') {
+    const base = TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
+    if (toolKey === 'whip' && base > 0) {
       const sm = femaleChar.smTendency ?? 0
       const smMod = 1.0 + (-sm * 0.05)
       const restrained = restraints.has('handcuff') && restraints.has('legcuff')
@@ -803,8 +801,10 @@ export default function SexScenePage({
     if (ended || phase === 'climax') return
     const sensitivity = getEroSensitivity(zone.key)
     const toolMult = getToolMult(activeTool, zone.key)
-    const gain = Math.max(1, sensitivity) * toolMult * ageMult * 4
-    setFemaleArousal(prev => Math.min(1000, prev + gain))
+    const gain = toolMult < 0
+      ? toolMult * 20                                        // ✗ 부위: 고정 페널티
+      : Math.max(1, sensitivity) * toolMult * ageMult * 4   // ✓ 부위: 기존 공식
+    setFemaleArousal(prev => Math.min(1000, Math.max(0, prev + gain)))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
 
