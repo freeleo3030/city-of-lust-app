@@ -862,6 +862,9 @@ export default function SexScenePage({
     if (isPhotoAroused && (zone.key === 'vagina' || zone.key === 'anal')) {
       return showPenalty(rnd(MSGS.restrict_vagina))
     }
+    if (isPhotoAroused && activeTool === 'penis') {
+      return showPenalty(rnd(MSGS.restrict_penis))
+    }
     if (isSpriteAroused && activeTool === 'penis') {
       return showPenalty(rnd(MSGS.restrict_penis))
     }
