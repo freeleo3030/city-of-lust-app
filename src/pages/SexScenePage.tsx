@@ -1161,7 +1161,7 @@ export default function SexScenePage({
             const zone = hotspots[idx]
             if (!zone) return null
             const sensitivity = femaleChar.erogenous?.[zone.key] ?? 2
-            const hearts = sensitivity === 0 ? '✕' : '♥'.repeat(sensitivity)
+            const hearts = sensitivity <= 0 ? '✕'.repeat(Math.max(1, Math.abs(sensitivity))) : '♥'.repeat(sensitivity)
             return (
               <div style={{
                 position: 'absolute', top: `${zone.cy - zone.ry - 5}%`, left: `${zone.cx}%`,
