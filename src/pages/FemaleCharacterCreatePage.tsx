@@ -486,8 +486,8 @@ export default function FemaleCharacterCreatePage({
     else if (key==='duration') setPrefDuration(Math.max(ERECT_PREF_MIN,clamped))
     else setPrefHardness(Math.max(ERECT_PREF_MIN,clamped))
   }
-  // 선호 자세 (-5~+5)
-  const [prefPose, setPrefPose] = useState(d?.prefPose ?? { missionary:0, doggy:0, cowgirl:0, side:0 })
+  // 선호 자세 (0~5)
+  const [prefPose, setPrefPose] = useState(d?.prefPose ?? { missionary:3, doggy:3, cowgirl:3, side:3 })
   const [smTendency, setSmTendency] = useState(d?.smTendency ?? 0)
   const prefSmTendency = -smTendency  // 여캐 M → 남캐 S 자동 연동
   const [dateCostShare, setDateCostShare] = useState(d?.dateCostShare ?? 0)
@@ -495,7 +495,7 @@ export default function FemaleCharacterCreatePage({
   const [hairColor, setHairColor] = useState<string>(d?.hairColor ?? '')
   const [hairLength, setHairLength] = useState<string>(d?.hairLength ?? '')
   const [glasses, setGlasses] = useState<boolean>(d?.glasses ?? false)
-  const setPose = (key: keyof typeof prefPose, val: number) => setPrefPose({ ...prefPose, [key]: Math.min(5, Math.max(-5, val)) })
+  const setPose = (key: keyof typeof prefPose, val: number) => setPrefPose({ ...prefPose, [key]: Math.min(5, Math.max(1, val)) })
 
   const buildAppearanceDesc = () => {
     const parts: string[] = []
@@ -2023,14 +2023,14 @@ export default function FemaleCharacterCreatePage({
             ['여성상위','cowgirl'],['좌위','side'],
           ] as [string, keyof typeof prefPose][]).map(([label, key]) => {
             const val = prefPose[key]
-            const poseColor = val > 0 ? '#c9a84c' : val < 0 ? '#e94560' : '#ffffff44'
+            const poseColor = val >= 4 ? '#c9a84c' : val >= 2 ? '#66BB6A' : '#e94560'
             return (
               <div key={key} style={S.erogenousRow}>
                 <span style={{ ...S.eroLabel, color: poseColor }}>{label}</span>
-                <input type="range" min={-5} max={5} step={1} value={val}
+                <input type="range" min={1} max={5} step={1} value={val}
                   onChange={e => setPose(key, Number(e.target.value))} style={{ ...S.slider, accentColor: poseColor }} />
                 <span style={{ color: poseColor, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>
-                  {val > 0 ? `+${val}` : val}
+                  {val}
                 </span>
               </div>
             )

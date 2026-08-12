@@ -811,9 +811,10 @@ export default function SexScenePage({
     if (ended || phase === 'climax') return
     const sensitivity = getEroSensitivity(zone.key)
     const toolMult = getToolMult(activeTool, zone.key)
+    const posePref = (femaleChar.prefPose?.[poseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
     const gain = toolMult < 0
-      ? toolMult * 20                                        // ✗ 부위: 고정 페널티
-      : Math.max(1, sensitivity) * toolMult * ageMult * 4   // ✓ 부위: 기존 공식
+      ? toolMult * 20                                                     // ✗ 부위: 고정 페널티
+      : Math.max(1, sensitivity) * toolMult * ageMult * posePref * 4     // ✓ 부위: 자세 선호도 반영
     setFemaleArousal(prev => Math.min(1000, Math.max(0, prev + gain)))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
