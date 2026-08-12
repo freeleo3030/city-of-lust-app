@@ -219,7 +219,7 @@ function RestraintOverlaySvg({ restraintKey, pos, onMouseDown }: {
   const wrapStyle: React.CSSProperties = {
     position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
     transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
-    cursor: 'grab', opacity: 0.9, userSelect: 'none',
+    cursor: 'grab', opacity: 0.9, userSelect: 'none', zIndex: 20,
   }
   switch (restraintKey) {
     case 'handcuff':
@@ -324,6 +324,9 @@ export default function SexScenePage({
   const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
   const [restraintDragPos, setRestraintDragPos] = useState<Record<string, { x: number; y: number }>>({})
   const draggingRestraint = useRef<{ key: RestraintKey; offsetX: number; offsetY: number } | null>(null)
+  // 수갑: 왼쪽/오른쪽 각각 독립 위치
+  const [handcuffLeft,  setHandcuffLeft]  = useState({ x: 30, y: 30 })
+  const [handcuffRight, setHandcuffRight] = useState({ x: 70, y: 30 })
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
   const [toolAnim, setToolAnim] = useState<{ cx: number; cy: number } | null>(null)
@@ -503,6 +506,28 @@ export default function SexScenePage({
     window.addEventListener('mouseup', onUp)
   }, [restraintDragPos, restraintPos])
 
+  // 수갑 각 손목 드래그
+  const handleHandcuffDrag = useCallback((side: 'left' | 'right', e: React.MouseEvent) => {
+    e.stopPropagation()
+    const rect = imageContainerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const cur = side === 'left' ? handcuffLeft : handcuffRight
+    const ox = e.clientX - rect.left - (cur.x / 100) * rect.width
+    const oy = e.clientY - rect.top  - (cur.y / 100) * rect.height
+    const setter = side === 'left' ? setHandcuffLeft : setHandcuffRight
+    const onMove = (me: MouseEvent) => {
+      const r = imageContainerRef.current?.getBoundingClientRect()
+      if (!r) return
+      setter({
+        x: Math.min(100, Math.max(0, ((me.clientX - r.left - ox) / r.width)  * 100)),
+        y: Math.min(100, Math.max(0, ((me.clientY - r.top  - oy) / r.height) * 100)),
+      })
+    }
+    const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [handcuffLeft, handcuffRight])
+
   return (
     <div style={{
       background: '#0d0d1a', overflow: 'hidden', userSelect: 'none',
@@ -536,8 +561,32 @@ export default function SexScenePage({
             <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
           )}
 
-          {/* 구속 SVG 오버레이 — 드래그로 위치 변경 */}
-          {Array.from(restraints).map(rKey => {
+          {/* 수갑: 두 손목 각각 독립 드래그 + 체인으로 연결 */}
+          {restraints.has('handcuff') && (
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible' }}>
+              {/* 체인 */}
+              <line
+                x1={`${handcuffLeft.x}%`}  y1={`${handcuffLeft.y}%`}
+                x2={`${handcuffRight.x}%`} y2={`${handcuffRight.y}%`}
+                stroke="#888" strokeWidth="3" strokeDasharray="6 4"
+              />
+              {/* 왼쪽 수갑 */}
+              <g transform={`translate(${handcuffLeft.x}%, ${handcuffLeft.y}%)`} style={{ pointerEvents: 'all', cursor: 'grab' }}
+                onMouseDown={(e) => handleHandcuffDrag('left', e)}>
+                <ellipse cx="0" cy="0" rx="18" ry="12" fill="none" stroke="#aaa" strokeWidth="4" />
+                <circle cx="0" cy="0" r="5" fill="#555" />
+              </g>
+              {/* 오른쪽 수갑 */}
+              <g transform={`translate(${handcuffRight.x}%, ${handcuffRight.y}%)`} style={{ pointerEvents: 'all', cursor: 'grab' }}
+                onMouseDown={(e) => handleHandcuffDrag('right', e)}>
+                <ellipse cx="0" cy="0" rx="18" ry="12" fill="none" stroke="#aaa" strokeWidth="4" />
+                <circle cx="0" cy="0" r="5" fill="#555" />
+              </g>
+            </svg>
+          )}
+
+          {/* 나머지 구속구 오버레이 — 드래그로 위치 변경 */}
+          {Array.from(restraints).filter(k => k !== 'handcuff').map(rKey => {
             const pos = restraintDragPos[rKey] ?? restraintPos[rKey] ?? { x: 50, y: 50 }
             return (
               <RestraintOverlaySvg
