@@ -498,8 +498,8 @@ export default function SexScenePage({
         </div>
       </div>
 
-      {/* 콘텐츠 영역: 이미지 + 패널 가로 배치 */}
-      <div style={{ position: 'absolute', top: 80, bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'row' }}>
+      {/* 콘텐츠 영역: 이미지 + 패널 가로 배치 (top은 게이지바 실제높이 기준) */}
+      <div style={{ position: 'absolute', top: 100, bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'row' }}>
 
         {/* 이미지 + 핫스팟 */}
         <div style={{ position: 'relative', height: '100%', flexShrink: 0 }}>
@@ -608,8 +608,8 @@ export default function SexScenePage({
           background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          {/* 전체 목록 스크롤 영역 — 섹터 헤더 + 도구 펼쳐서 표시 */}
-          <div ref={panelScrollRef} style={{ flex: 1, overflowY: 'auto' }}>
+          {/* 전체 목록 — 섹터 헤더 + 도구 펼쳐서 표시 (overflowY 없음) */}
+          <div ref={panelScrollRef} style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {SECTORS.map(sec => {
               const tools = TOOL_DEFS.filter(t => t.sector === sec.key)
               const isSectorActive = sector === sec.key
@@ -619,12 +619,12 @@ export default function SexScenePage({
                   <div
                     onClick={() => setSector(sec.key)}
                     style={{
-                      padding: '12px 20px',
+                      padding: '7px 20px',
                       background: isSectorActive ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)',
                       borderLeft: isSectorActive ? '5px solid #c9a84c' : '5px solid #ffffff11',
                       borderBottom: '1px solid #ffffff18',
                       color: isSectorActive ? '#c9a84c' : '#ffffff66',
-                      fontSize: 32, fontWeight: 'bold', letterSpacing: 2, cursor: 'default',
+                      fontSize: 28, fontWeight: 'bold', letterSpacing: 2, cursor: 'default',
                     }}
                   >
                     {sec.label}
@@ -643,8 +643,8 @@ export default function SexScenePage({
                           background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
                           borderLeft: isActive ? '5px solid #c9a84c' : '5px solid transparent',
                           borderBottom: '1px solid #ffffff08',
-                          display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16,
-                          padding: '10px 16px 10px 24px',
+                          display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 14,
+                          padding: '5px 12px 5px 20px',
                           transition: 'all 0.12s',
                         }}
                       >
