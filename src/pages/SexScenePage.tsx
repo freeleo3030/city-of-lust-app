@@ -330,6 +330,8 @@ export default function SexScenePage({
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
   const [toolAnim, setToolAnim] = useState<{ cx: number; cy: number } | null>(null)
   const toolAnimTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const panelScrollRef = useRef<HTMLDivElement>(null)
+  React.useEffect(() => { if (panelScrollRef.current) panelScrollRef.current.scrollTop = 0 }, [])
   const [feedback, setFeedback] = useState<{ text: string; color: string } | null>(null)
   const [femaleFlash, setFemaleFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
@@ -606,89 +608,86 @@ export default function SexScenePage({
           background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          {/* 섹터 탭 — 세로 배열 */}
-          <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, borderBottom: '1px solid #ffffff18' }}>
+          {/* 전체 목록 스크롤 영역 — 섹터 헤더 + 도구 펼쳐서 표시 */}
+          <div ref={panelScrollRef} style={{ flex: 1, overflowY: 'auto' }}>
             {SECTORS.map(sec => {
-              const isActive = sector === sec.key
+              const tools = TOOL_DEFS.filter(t => t.sector === sec.key)
+              const isSectorActive = sector === sec.key
               return (
-                <button
-                  key={sec.key}
-                  tabIndex={-1}
-                  onClick={() => setSector(sec.key)}
-                  style={{
-                    width: '100%', border: 'none', cursor: 'pointer',
-                    padding: '14px 24px',
-                    background: isActive ? 'rgba(201,168,76,0.18)' : 'transparent',
-                    borderLeft: isActive ? '5px solid #c9a84c' : '5px solid transparent',
-                    borderBottom: '1px solid #ffffff10',
-                    color: isActive ? '#c9a84c' : '#ffffff55',
-                    fontSize: 34, fontWeight: isActive ? 'bold' : 'normal',
-                    textAlign: 'left',
-                    transition: 'all 0.12s',
-                  }}
-                >
-                  {sec.label}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* 활성 섹터의 도구 목록 — 스크롤 없이 표시 */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            {TOOL_DEFS.filter(t => t.sector === sector).map(t => {
-              const isActive = activeTool === t.key
-              return (
-                <button
-                  key={t.key}
-                  tabIndex={-1}
-                  onClick={() => setActiveTool(t.key)}
-                  style={{
-                    width: '100%', border: 'none', cursor: 'pointer',
-                    background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
-                    borderLeft: isActive ? '5px solid #c9a84c' : '5px solid transparent',
-                    borderBottom: '1px solid #ffffff08',
-                    display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16,
-                    padding: '10px 16px 10px 20px',
-                    transition: 'all 0.12s', flexShrink: 0,
-                  }}
-                >
-                  <ToolSvg toolKey={t.key} pressed={false} size={100} />
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
-                    <span style={{ fontSize: 36, color: isActive ? '#c9a84c' : '#ffffffcc', fontWeight: isActive ? 'bold' : 'normal' }}>
-                      {t.label}
-                    </span>
-                    <span style={{ fontSize: 26, color: '#ffffff44' }}>
-                      ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
-                    </span>
+                <div key={sec.key}>
+                  {/* 섹터 헤더 */}
+                  <div
+                    onClick={() => setSector(sec.key)}
+                    style={{
+                      padding: '12px 20px',
+                      background: isSectorActive ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)',
+                      borderLeft: isSectorActive ? '5px solid #c9a84c' : '5px solid #ffffff11',
+                      borderBottom: '1px solid #ffffff18',
+                      color: isSectorActive ? '#c9a84c' : '#ffffff66',
+                      fontSize: 32, fontWeight: 'bold', letterSpacing: 2, cursor: 'default',
+                    }}
+                  >
+                    {sec.label}
                   </div>
-                </button>
+
+                  {/* 도구 목록 */}
+                  {tools.map(t => {
+                    const isActive = activeTool === t.key
+                    return (
+                      <button
+                        key={t.key}
+                        tabIndex={-1}
+                        onClick={() => { setSector(sec.key); setActiveTool(t.key) }}
+                        style={{
+                          width: '100%', border: 'none', cursor: 'pointer',
+                          background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
+                          borderLeft: isActive ? '5px solid #c9a84c' : '5px solid transparent',
+                          borderBottom: '1px solid #ffffff08',
+                          display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16,
+                          padding: '10px 16px 10px 24px',
+                          transition: 'all 0.12s',
+                        }}
+                      >
+                        <ToolSvg toolKey={t.key} pressed={false} size={100} />
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+                          <span style={{ fontSize: 34, color: isActive ? '#c9a84c' : '#ffffffcc', fontWeight: isActive ? 'bold' : 'normal' }}>
+                            {t.label}
+                          </span>
+                          <span style={{ fontSize: 24, color: '#ffffff44' }}>
+                            ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+
+                  {/* SM 구속 토글 */}
+                  {sec.key === 'sm' && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px' }}>
+                      {RESTRAINT_DEFS.map(r => {
+                        const on = restraints.has(r.key)
+                        return (
+                          <button
+                            key={r.key}
+                            tabIndex={-1}
+                            onClick={() => toggleRestraint(r.key)}
+                            style={{
+                              background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
+                              borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                              color: on ? '#e94560' : '#ffffff55', fontSize: 26,
+                              boxShadow: on ? '0 0 8px #e9456066' : 'none',
+                            }}
+                          >
+                            {r.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               )
             })}
-
-            {/* SM 구속 토글 */}
-            {sector === 'sm' && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px', flexShrink: 0 }}>
-                {RESTRAINT_DEFS.map(r => {
-                  const on = restraints.has(r.key)
-                  return (
-                    <button
-                      key={r.key}
-                      tabIndex={-1}
-                      onClick={() => toggleRestraint(r.key)}
-                      style={{
-                        background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
-                        borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-                        color: on ? '#e94560' : '#ffffff55', fontSize: 28,
-                        boxShadow: on ? '0 0 8px #e9456066' : 'none',
-                      }}
-                    >
-                      {r.label}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
           </div>
 
           {/* 포기 — 항상 하단 고정 */}
