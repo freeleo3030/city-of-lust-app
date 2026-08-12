@@ -13,6 +13,7 @@ type CuffPair = {
   right: { x: number; y: number }
   mid:   { x: number; y: number }
   leftSize: number; rightSize: number
+  leftRotate: number; rightRotate: number
 }
 type ScenePhase = 'foreplay' | 'aroused' | 'climax' | 'afterglow'
 type ErogenousKey = 'breast' | 'neck' | 'ear' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
@@ -218,10 +219,11 @@ function ToolSvg({ toolKey, pressed, size = 80 }: { toolKey: ToolKey; pressed: b
 
 // 구속 SVG 오버레이
 // 가죽 수갑/족갑 고리 — 앞면(아래 반원) 진하게, 뒷면(위 반원) 흐리게
-function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
-  x: number; y: number; size: number; color: string; label: string
+function LeatherCuffRing({ x, y, size, color, label, rotate, onDrag, onResize, onRotate }: {
+  x: number; y: number; size: number; color: string; label: string; rotate: number
   onDrag: (e: React.MouseEvent) => void
   onResize: (e: React.MouseEvent) => void
+  onRotate: (centerX: number, centerY: number, e: React.MouseEvent) => void
 }) {
   const rx = size, ry = Math.round(size * 0.55)
   const cx = rx + 8, cy = ry + 8
@@ -231,8 +233,20 @@ function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
   const arc = (sweep: 0 | 1, rxi: number, ryi: number) =>
     `M ${cx - rxi} ${cy} A ${rxi} ${ryi} 0 0 ${sweep} ${cx + rxi} ${cy}`
 
+  const divRef = React.useRef<HTMLDivElement>(null)
+
+  const handleRotateDown = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const el = divRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top  + rect.height / 2
+    onRotate(centerX, centerY, e)
+  }
+
   return (
-    <div style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 50, userSelect: 'none' }}>
+    <div ref={divRef} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: `translate(-50%,-50%) rotate(${rotate}deg)`, zIndex: 50, userSelect: 'none' }}>
       <div onMouseDown={onDrag} style={{ cursor: 'grab', display: 'inline-block' }}>
         <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
           <defs>
@@ -244,16 +258,16 @@ function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
           </defs>
 
           {/* ── 뒷면 (위 반원) — 흐리게 ── */}
-          <path d={arc(0, rx, ry)}     fill="none" stroke="#0a0400"           strokeWidth="18" opacity="0.25" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke="#0a0400"             strokeWidth="18" opacity="0.25" />
           <path d={arc(0, rx, ry)}     fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" opacity="0.25" />
-          <path d={arc(0, rx, ry)}     fill="none" stroke={color}             strokeWidth="2"  opacity="0.2" />
-          <path d={arc(0, rx-6, ry-6)} fill="none" stroke="#ffffff18"         strokeWidth="1"  strokeDasharray="4 5" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke={color}               strokeWidth="2"  opacity="0.2" />
+          <path d={arc(0, rx-6, ry-6)} fill="none" stroke="#ffffff18"           strokeWidth="1"  strokeDasharray="4 5" />
 
           {/* ── 앞면 (아래 반원) — 진하게 ── */}
-          <path d={arc(1, rx, ry)}     fill="none" stroke="#0a0400"           strokeWidth="18" />
+          <path d={arc(1, rx, ry)}     fill="none" stroke="#0a0400"             strokeWidth="18" />
           <path d={arc(1, rx, ry)}     fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" />
-          <path d={arc(1, rx, ry)}     fill="none" stroke={color}             strokeWidth="2.5" opacity="0.7" />
-          <path d={arc(1, rx-6, ry-6)} fill="none" stroke="#ffffff33"         strokeWidth="1"  strokeDasharray="4 5" />
+          <path d={arc(1, rx, ry)}     fill="none" stroke={color}               strokeWidth="2.5" opacity="0.7" />
+          <path d={arc(1, rx-6, ry-6)} fill="none" stroke="#ffffff33"           strokeWidth="1"  strokeDasharray="4 5" />
 
           {/* 버클 점 (뒤쪽 상단) */}
           <circle cx={cx} cy={cy - ry} r="5" fill={color} stroke="#000" strokeWidth="1.5" opacity="0.35" />
@@ -267,6 +281,15 @@ function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 11, color: '#000', fontWeight: 'bold', boxShadow: '0 1px 4px #000a',
       }}>↔</div>
+      {/* 회전 핸들 */}
+      <div onMouseDown={handleRotateDown} style={{
+        position: 'absolute', left: '50%', top: -22, transform: 'translateX(-50%)',
+        width: 20, height: 20, cursor: 'alias',
+        background: '#1a1a2e', border: `1.5px solid ${color}`,
+        borderRadius: '50%', opacity: 0.9,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12, color: color, boxShadow: '0 1px 4px #000a',
+      }}>↻</div>
       <div style={{ position: 'absolute', bottom: -20, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: '#ffffff77', whiteSpace: 'nowrap' }}>{label}</div>
     </div>
   )
@@ -513,6 +536,7 @@ export default function SexScenePage({
     id: Date.now().toString(),
     left:  { x: 28, y }, right: { x: 72, y }, mid: { x: 50, y },
     leftSize: 80, rightSize: 80,
+    leftRotate: 0, rightRotate: 0,
   })
   const toggleHandcuffs = () => setHandcuffs(p => {
     if (p.length >= 1) { lastHandcuffs.current = p; return [] }
@@ -736,6 +760,25 @@ export default function SexScenePage({
     window.addEventListener('mouseup', onUp)
   }, [])
 
+  // 수갑/족갑 고리 회전 — 마우스와 고리 중심 각도로 계산
+  const startCuffRotate = useCallback((
+    type: 'hand' | 'leg', id: string, field: 'leftRotate' | 'rightRotate',
+    centerX: number, centerY: number, curRotate: number, e: React.MouseEvent
+  ) => {
+    e.stopPropagation()
+    const rect = imageContainerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    // 드래그 시작 시 마우스와 중심 사이 각도
+    const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI
+    const onMove = (me: MouseEvent) => {
+      const angle = Math.atan2(me.clientY - centerY, me.clientX - centerX) * 180 / Math.PI
+      updateCuff(type, id, { [field]: curRotate + (angle - startAngle) })
+    }
+    const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [])
+
   return (
     <div style={{
       background: '#0d0d1a', overflow: 'hidden', userSelect: 'none',
@@ -776,12 +819,14 @@ export default function SexScenePage({
                 w={imgDims.w} h={imgDims.h} color="#bbbbbb"
                 leftSize={c.leftSize} rightSize={c.rightSize}
                 onMidDrag={(e) => startCuffDrag('hand', c.id, 'mid', c.mid, e)} />
-              <LeatherCuffRing x={c.left.x}  y={c.left.y}  size={c.leftSize}  color="#aaaaaa" label="왼손"
+              <LeatherCuffRing x={c.left.x}  y={c.left.y}  size={c.leftSize}  color="#aaaaaa" label="왼손"  rotate={c.leftRotate}
                 onDrag={(e) => startCuffDrag('hand', c.id, 'left', c.left, e)}
-                onResize={(e) => startCuffResize('hand', c.id, 'leftSize', c.leftSize, e)} />
-              <LeatherCuffRing x={c.right.x} y={c.right.y} size={c.rightSize} color="#aaaaaa" label="오른손"
+                onResize={(e) => startCuffResize('hand', c.id, 'leftSize', c.leftSize, e)}
+                onRotate={(cx, cy, e) => startCuffRotate('hand', c.id, 'leftRotate', cx, cy, c.leftRotate, e)} />
+              <LeatherCuffRing x={c.right.x} y={c.right.y} size={c.rightSize} color="#aaaaaa" label="오른손" rotate={c.rightRotate}
                 onDrag={(e) => startCuffDrag('hand', c.id, 'right', c.right, e)}
-                onResize={(e) => startCuffResize('hand', c.id, 'rightSize', c.rightSize, e)} />
+                onResize={(e) => startCuffResize('hand', c.id, 'rightSize', c.rightSize, e)}
+                onRotate={(cx, cy, e) => startCuffRotate('hand', c.id, 'rightRotate', cx, cy, c.rightRotate, e)} />
             </React.Fragment>
           ))}
           {/* 족갑 쌍들 */}
@@ -791,12 +836,14 @@ export default function SexScenePage({
                 w={imgDims.w} h={imgDims.h} color="#c9a84c"
                 leftSize={c.leftSize} rightSize={c.rightSize}
                 onMidDrag={(e) => startCuffDrag('leg', c.id, 'mid', c.mid, e)} />
-              <LeatherCuffRing x={c.left.x}  y={c.left.y}  size={c.leftSize}  color="#c9a84c" label="왼발"
+              <LeatherCuffRing x={c.left.x}  y={c.left.y}  size={c.leftSize}  color="#c9a84c" label="왼발"  rotate={c.leftRotate}
                 onDrag={(e) => startCuffDrag('leg', c.id, 'left', c.left, e)}
-                onResize={(e) => startCuffResize('leg', c.id, 'leftSize', c.leftSize, e)} />
-              <LeatherCuffRing x={c.right.x} y={c.right.y} size={c.rightSize} color="#c9a84c" label="오른발"
+                onResize={(e) => startCuffResize('leg', c.id, 'leftSize', c.leftSize, e)}
+                onRotate={(cx, cy, e) => startCuffRotate('leg', c.id, 'leftRotate', cx, cy, c.leftRotate, e)} />
+              <LeatherCuffRing x={c.right.x} y={c.right.y} size={c.rightSize} color="#c9a84c" label="오른발" rotate={c.rightRotate}
                 onDrag={(e) => startCuffDrag('leg', c.id, 'right', c.right, e)}
-                onResize={(e) => startCuffResize('leg', c.id, 'rightSize', c.rightSize, e)} />
+                onResize={(e) => startCuffResize('leg', c.id, 'rightSize', c.rightSize, e)}
+                onRotate={(cx, cy, e) => startCuffRotate('leg', c.id, 'rightRotate', cx, cy, c.rightRotate, e)} />
             </React.Fragment>
           ))}
 
