@@ -844,14 +844,19 @@ export default function SexScenePage({
       return
     }
 
-    // 같은 부위 3회 이상 연속 공략 → penalty (절정 사진 단계 제외)
-    if (!isPhotoClimax && zone.key === lastZoneKey.current) {
+    // 같은 부위 4회 이상 연속 공략 → penalty (절정 사진 단계 제외)
+    // 가슴/허벅지/귀는 좌우 별도 카운트
+    const pairedZones = ['breast', 'thigh', 'ear']
+    const trackKey = pairedZones.includes(zone.key)
+      ? `${zone.key}_${zone.cx < 50 ? 'L' : 'R'}`
+      : zone.key
+    if (!isPhotoClimax && trackKey === lastZoneKey.current) {
       consecutiveCount.current += 1
     } else {
-      lastZoneKey.current = zone.key
+      lastZoneKey.current = trackKey
       consecutiveCount.current = 1
     }
-    if (consecutiveCount.current >= 3) {
+    if (consecutiveCount.current >= 4) {
       setFemaleArousal(prev => Math.max(0, prev - 15))
       setFemaleFlash(true)
       setTimeout(() => setFemaleFlash(false), 300)
