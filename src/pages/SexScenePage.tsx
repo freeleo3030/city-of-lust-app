@@ -526,7 +526,10 @@ export default function SexScenePage({
   React.useEffect(() => {
     const el = imageContainerRef.current
     if (!el) return
-    const obs = new ResizeObserver(([e]) => setImgDims({ w: e.contentRect.width, h: e.contentRect.height }))
+    // getBoundingClientRect = 화면 px (zoom 반영) → clientX 델타와 동일 단위
+    const update = () => { const r = el.getBoundingClientRect(); setImgDims({ w: r.width, h: r.height }) }
+    update()
+    const obs = new ResizeObserver(update)
     obs.observe(el)
     return () => obs.disconnect()
   }, [])
