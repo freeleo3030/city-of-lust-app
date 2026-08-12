@@ -210,31 +210,32 @@ function ToolSvg({ toolKey, pressed, size = 80 }: { toolKey: ToolKey; pressed: b
 }
 
 // 구속 SVG 오버레이
-function RestraintOverlaySvg({ restraintKey, pos }: { restraintKey: RestraintKey; pos: { x: number; y: number; rotate?: number } }) {
+function RestraintOverlaySvg({ restraintKey, pos, onMouseDown }: {
+  restraintKey: RestraintKey
+  pos: { x: number; y: number; rotate?: number }
+  onMouseDown?: (e: React.MouseEvent) => void
+}) {
   const rotate = pos.rotate ?? 0
+  const wrapStyle: React.CSSProperties = {
+    position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
+    transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
+    cursor: 'grab', opacity: 0.9, userSelect: 'none',
+  }
   switch (restraintKey) {
     case 'handcuff':
       return (
-        <div style={{
-          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-          transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
-          pointerEvents: 'none', opacity: 0.85,
-        }}>
-          <svg width="60" height="24" viewBox="0 0 60 24">
-            <rect x="2"  y="6" width="20" height="12" rx="6" fill="none" stroke="#888" strokeWidth="2.5" />
-            <rect x="38" y="6" width="20" height="12" rx="6" fill="none" stroke="#888" strokeWidth="2.5" />
-            <line x1="22" y1="12" x2="38" y2="12" stroke="#888" strokeWidth="2" />
+        <div style={wrapStyle} onMouseDown={onMouseDown}>
+          <svg width="300" height="120" viewBox="0 0 60 24">
+            <rect x="2"  y="6" width="20" height="12" rx="6" fill="none" stroke="#aaa" strokeWidth="2.5" />
+            <rect x="38" y="6" width="20" height="12" rx="6" fill="none" stroke="#aaa" strokeWidth="2.5" />
+            <line x1="22" y1="12" x2="38" y2="12" stroke="#aaa" strokeWidth="2" />
           </svg>
         </div>
       )
     case 'legcuff':
       return (
-        <div style={{
-          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-          transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
-          pointerEvents: 'none', opacity: 0.85,
-        }}>
-          <svg width="70" height="20" viewBox="0 0 70 20">
+        <div style={wrapStyle} onMouseDown={onMouseDown}>
+          <svg width="350" height="100" viewBox="0 0 70 20">
             <rect x="2"  y="4" width="22" height="12" rx="6" fill="none" stroke="#c9a84c" strokeWidth="2.5" />
             <rect x="46" y="4" width="22" height="12" rx="6" fill="none" stroke="#c9a84c" strokeWidth="2.5" />
             <line x1="24" y1="10" x2="46" y2="10" stroke="#c9a84c" strokeWidth="2" />
@@ -243,12 +244,8 @@ function RestraintOverlaySvg({ restraintKey, pos }: { restraintKey: RestraintKey
       )
     case 'blindfold':
       return (
-        <div style={{
-          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-          transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
-          pointerEvents: 'none', opacity: 0.88,
-        }}>
-          <svg width="64" height="22" viewBox="0 0 64 22">
+        <div style={wrapStyle} onMouseDown={onMouseDown}>
+          <svg width="320" height="110" viewBox="0 0 64 22">
             <rect x="0" y="6" width="64" height="10" rx="5" fill="#1a1a2e" stroke="#e94560" strokeWidth="1.5" />
             <line x1="0" y1="11" x2="64" y2="11" stroke="#e94560" strokeWidth="0.8" opacity="0.5" />
           </svg>
@@ -256,13 +253,9 @@ function RestraintOverlaySvg({ restraintKey, pos }: { restraintKey: RestraintKey
       )
     case 'collar':
       return (
-        <div style={{
-          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-          transform: `translate(-50%,-50%) rotate(${rotate}deg)`,
-          pointerEvents: 'none', opacity: 0.88,
-        }}>
-          <svg width="50" height="18" viewBox="0 0 50 18">
-            <path d="M4 9 Q25 2 46 9 Q25 16 4 9Z" fill="#e94560" opacity="0.8" />
+        <div style={wrapStyle} onMouseDown={onMouseDown}>
+          <svg width="250" height="90" viewBox="0 0 50 18">
+            <path d="M4 9 Q25 2 46 9 Q25 16 4 9Z" fill="#e94560" opacity="0.85" />
             <circle cx="25" cy="15" r="3" fill="#c9a84c" />
           </svg>
         </div>
@@ -329,6 +322,9 @@ export default function SexScenePage({
   const [sector, setSector] = useState<SectorKey>('body')
   const [pressedTool, setPressedTool] = useState<ToolKey | null>(null)
   const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
+  const [restraintDragPos, setRestraintDragPos] = useState<Record<string, { x: number; y: number }>>({})
+  const draggingRestraint = useRef<{ key: RestraintKey; offsetX: number; offsetY: number } | null>(null)
+  const imageContainerRef = useRef<HTMLDivElement>(null)
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
   const [toolAnim, setToolAnim] = useState<{ cx: number; cy: number } | null>(null)
   const toolAnimTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -478,6 +474,35 @@ export default function SexScenePage({
   // 구속 오버레이 위치 (자세 fallback: missionary)
   const restraintPos = RESTRAINT_POS[poseKey] ?? RESTRAINT_POS['missionary']
 
+  // 드래그 핸들러
+  const handleRestraintMouseDown = useCallback((key: RestraintKey, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const rect = imageContainerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const cur = restraintDragPos[key] ?? restraintPos[key] ?? { x: 50, y: 50 }
+    const curPxX = (cur.x / 100) * rect.width
+    const curPxY = (cur.y / 100) * rect.height
+    draggingRestraint.current = {
+      key,
+      offsetX: e.clientX - rect.left - curPxX,
+      offsetY: e.clientY - rect.top  - curPxY,
+    }
+    const onMove = (me: MouseEvent) => {
+      const r = imageContainerRef.current?.getBoundingClientRect()
+      if (!r || !draggingRestraint.current) return
+      const x = Math.min(100, Math.max(0, ((me.clientX - r.left - draggingRestraint.current.offsetX) / r.width)  * 100))
+      const y = Math.min(100, Math.max(0, ((me.clientY - r.top  - draggingRestraint.current.offsetY) / r.height) * 100))
+      setRestraintDragPos(prev => ({ ...prev, [key]: { x, y } }))
+    }
+    const onUp = () => {
+      draggingRestraint.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [restraintDragPos, restraintPos])
+
   return (
     <div style={{
       background: '#0d0d1a', overflow: 'hidden', userSelect: 'none',
@@ -504,17 +529,25 @@ export default function SexScenePage({
       <div style={{ position: 'absolute', top: 100, bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'row' }}>
 
         {/* 이미지 + 핫스팟 */}
-        <div style={{ position: 'relative', height: '100%', flexShrink: 0 }}>
+        <div ref={imageContainerRef} style={{ position: 'relative', height: '100%', flexShrink: 0 }}>
           {showSprite ? (
             <SpriteAnimation urls={currentSpriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
           ) : (
             <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
           )}
 
-          {/* 구속 SVG 오버레이 */}
-          {Array.from(restraints).map(rKey => (
-            <RestraintOverlaySvg key={rKey} restraintKey={rKey} pos={restraintPos[rKey] ?? { x: 50, y: 50 }} />
-          ))}
+          {/* 구속 SVG 오버레이 — 드래그로 위치 변경 */}
+          {Array.from(restraints).map(rKey => {
+            const pos = restraintDragPos[rKey] ?? restraintPos[rKey] ?? { x: 50, y: 50 }
+            return (
+              <RestraintOverlaySvg
+                key={rKey}
+                restraintKey={rKey}
+                pos={pos}
+                onMouseDown={(e) => handleRestraintMouseDown(rKey, e)}
+              />
+            )
+          })}
 
           {/* 도구 액션 오버레이 — 클릭 시 700ms 동안 해당 신체 부위에 표시 */}
           {toolAnim && !showClimax && (
