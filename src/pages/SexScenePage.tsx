@@ -552,15 +552,15 @@ function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
               stroke="#ffffff28" strokeWidth="0.8"/>
           ))}
 
-          {/* 고리 뒷면 (흐림) */}
-          <path d={arc(0,rx,ry)} fill="none" stroke="#0a0400"            strokeWidth="18" opacity="0.08"/>
-          <path d={arc(0,rx,ry)} fill="none" stroke="url(#collar-grad)" strokeWidth="14" opacity="0.08"/>
-          <path d={arc(0,rx,ry)} fill="none" stroke="#e94560"            strokeWidth="2"  opacity="0.07"/>
-          {/* 고리 앞면 */}
-          <path d={arc(1,rx,ry)} fill="none" stroke="#0a0400"            strokeWidth="18"/>
-          <path d={arc(1,rx,ry)} fill="none" stroke="url(#collar-grad)" strokeWidth="14"/>
-          <path d={arc(1,rx,ry)} fill="none" stroke="#e94560"            strokeWidth="2.5" opacity="0.7"/>
-          <path d={arc(1,rx-6,ry-6)} fill="none" stroke="#ffffff33"      strokeWidth="1" strokeDasharray="4 5"/>
+          {/* 고리 뒷면 위쪽 (흐림) */}
+          <path d={arc(1,rx,ry)} fill="none" stroke="#0a0400"            strokeWidth="18" opacity="0.08"/>
+          <path d={arc(1,rx,ry)} fill="none" stroke="url(#collar-grad)" strokeWidth="14" opacity="0.08"/>
+          <path d={arc(1,rx,ry)} fill="none" stroke="#e94560"            strokeWidth="2"  opacity="0.07"/>
+          {/* 고리 앞면 아래쪽 (보이는 부분) */}
+          <path d={arc(0,rx,ry)} fill="none" stroke="#0a0400"            strokeWidth="18"/>
+          <path d={arc(0,rx,ry)} fill="none" stroke="url(#collar-grad)" strokeWidth="14"/>
+          <path d={arc(0,rx,ry)} fill="none" stroke="#e94560"            strokeWidth="2.5" opacity="0.7"/>
+          <path d={arc(0,rx-6,ry-6)} fill="none" stroke="#ffffff33"      strokeWidth="1" strokeDasharray="4 5"/>
           {/* 버클 (하단 연결점 - 체인과 연결) */}
           <circle cx={cxSvg} cy={cySvg+ry} r="6" fill="#c9a84c" stroke="#8b6914" strokeWidth="1.5"/>
         </svg>
