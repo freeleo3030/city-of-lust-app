@@ -543,9 +543,12 @@ export default function SexScenePage({
     return lastHandcuffs.current.length > 0 ? lastHandcuffs.current : [newCuffPair(30)]
   })
   const toggleLegcuffs = () => setLegcuffs(p => {
-    if (p.length >= 2) { lastLegcuffs.current = p; return [] }
-    if (p.length === 0 && lastLegcuffs.current.length > 0) return lastLegcuffs.current
-    return [...p, newCuffPair(75)]
+    if (p.length >= 1) {
+      const next = p.slice(0, -1)
+      if (next.length === 0) lastLegcuffs.current = p
+      return next
+    }
+    return lastLegcuffs.current.length > 0 ? lastLegcuffs.current : [newCuffPair(75)]
   })
 
   // 수갑/족갑 쌍 업데이트 헬퍼
