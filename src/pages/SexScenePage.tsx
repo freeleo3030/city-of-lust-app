@@ -1030,19 +1030,34 @@ export default function SexScenePage({
                           </button>
                         )
                       })()}
-                      {/* 족갑 (최대 2쌍) */}
+                      {/* 족갑 (최대 2개, +/- 버튼) */}
                       {(() => {
                         const cnt = legcuffs.length
                         const on = cnt > 0
+                        const btnBase: React.CSSProperties = {
+                          border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
+                          cursor: 'pointer', fontSize: 22, fontWeight: 'bold',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: on ? '0 0 8px #e9456066' : 'none',
+                        }
                         return (
-                          <button tabIndex={-1} onClick={toggleLegcuffs}
-                            style={{ background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
-                              border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
-                              borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-                              color: on ? '#e94560' : '#ffffff55', fontSize: 26,
-                              boxShadow: on ? '0 0 8px #e9456066' : 'none' }}>
-                            족갑{cnt > 0 ? ` ×${cnt}` : ''}
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div style={{ color: on ? '#e94560' : '#ffffff55', fontSize: 26, padding: '0 4px' }}>
+                              족갑{cnt > 0 ? ` ×${cnt}` : ''}
+                            </div>
+                            <button tabIndex={-1}
+                              onClick={() => setLegcuffs(p => p.length < 2 ? [...p, newCuffPair(75)] : p)}
+                              style={{ ...btnBase, background: cnt < 2 ? 'rgba(233,69,96,0.15)' : 'rgba(255,255,255,0.03)',
+                                color: cnt < 2 ? '#e94560' : '#ffffff33',
+                                borderRadius: '6px 0 0 6px', width: 32, height: 36,
+                                borderRight: 'none', opacity: cnt >= 2 ? 0.4 : 1 }}>+</button>
+                            <button tabIndex={-1}
+                              onClick={() => setLegcuffs(p => { const next = p.slice(0,-1); if(next.length===0) lastLegcuffs.current=p; return next })}
+                              style={{ ...btnBase, background: cnt > 0 ? 'rgba(233,69,96,0.15)' : 'rgba(255,255,255,0.03)',
+                                color: cnt > 0 ? '#e94560' : '#ffffff33',
+                                borderRadius: '0 6px 6px 0', width: 32, height: 36,
+                                opacity: cnt === 0 ? 0.4 : 1 }}>−</button>
+                          </div>
                         )
                       })()}
                       {/* 안대 / 개목걸이 (기존 단일 토글) */}
