@@ -136,10 +136,12 @@ function ToolSvg({ toolKey, pressed, size = 80 }: { toolKey: ToolKey; pressed: b
   switch (toolKey) {
     case 'penis':
       return (
-        <svg width={s} height={s} viewBox="0 0 80 80" style={{ animation: anim('sx-thrust'), display: 'block' }}>
-          <ellipse cx="40" cy="16" rx="14" ry="15" fill="#ffb5c8" stroke="#e94560" strokeWidth="3" />
-          <rect x="27" y="28" width="26" height="42" rx="10" fill="#ffb5c8" stroke="#e94560" strokeWidth="3" />
-        </svg>
+        <img
+          src="/icons/penis.png"
+          width={s} height={s}
+          style={{ display: 'block', objectFit: 'contain', animation: anim('sx-thrust'), filter: 'invert(60%) sepia(80%) saturate(400%) hue-rotate(300deg)' }}
+          alt=""
+        />
       )
     case 'dildo':
       return (
