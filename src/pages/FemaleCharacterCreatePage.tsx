@@ -26,7 +26,7 @@ export interface FemaleCharacterData {
   personality: { introvert: number; indirect: number; friendly: number }
   // 메모
   memo: string
-  // 성감대 (숨김 스탯, 0~5)
+  // 성감대 (숨김 스탯, 일반: -3~+5 / 핵심: 4~16)
   erogenous: {
     breast: number; neckEar: number; thigh: number; clitoris: number
     vagina: number; anal: number; mouth: number
@@ -421,6 +421,7 @@ export default function FemaleCharacterCreatePage({
     : { neckEar: 3, thigh: 3, anal: 1, mouth: 3 })
   const breast = Math.min(5, Math.max(0, GEN_TOTAL - Object.values(genEro).reduce((a,b)=>a+b,0)))
   const setGenEro = (key: keyof typeof genEro, val: number) => {
+    val = Math.min(5, Math.max(-3, val))
     const others = Object.entries(genEro).filter(([k])=>k!==key).reduce((a,[,v])=>a+v,0)
     setGenEroState({ ...genEro, [key]: Math.min(5, Math.min(val, Math.max(0, GEN_TOTAL - others))) })
   }
@@ -994,7 +995,7 @@ export default function FemaleCharacterCreatePage({
     onComplete(char)
   }
 
-  const sensColor = (v: number) => v === 0 ? '#e94560' : v >= 4 ? '#c9a84c' : v >= 3 ? '#66BB6A' : '#ffffff66'
+  const sensColor = (v: number) => v < 0 ? '#e94560' : v === 0 ? '#ffffff44' : v >= 4 ? '#c9a84c' : v >= 2 ? '#66BB6A' : '#ffffff88'
   const sensColor10 = (v: number) => v === 0 ? '#e94560' : v >= 7 ? '#c9a84c' : v >= 5 ? '#66BB6A' : '#ffffff66'
 
   // 3단계: 표정·자세 생성 스튜디오
@@ -1882,7 +1883,7 @@ export default function FemaleCharacterCreatePage({
             return (
               <div key={key} style={S.erogenousRow}>
                 <span style={S.eroLabel}>{labelMap[key]}</span>
-                <input type="range" min={0} max={5} step={1} value={val}
+                <input type="range" min={-3} max={5} step={1} value={val}
                   onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
                 <span style={{ color, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
               </div>
@@ -1891,7 +1892,7 @@ export default function FemaleCharacterCreatePage({
           {/* 가슴 — 자동 */}
           <div style={S.erogenousRow}>
             <span style={{ ...S.eroLabel, color: sensColor(breast) }}>가슴 (자동)</span>
-            <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${(breast/5)*100}%`, background: sensColor(breast) }} /></div>
+            <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((breast+3)/8)*100}%`, background: sensColor(breast) }} /></div>
             <span style={{ color: sensColor(breast), fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{breast}</span>
           </div>
           {/* 엉덩이/허벅지, 항문 — 가슴 아래 */}
@@ -1901,7 +1902,7 @@ export default function FemaleCharacterCreatePage({
             return (
               <div key={key} style={S.erogenousRow}>
                 <span style={S.eroLabel}>{labelMap[key]}</span>
-                <input type="range" min={0} max={5} step={1} value={val}
+                <input type="range" min={-3} max={5} step={1} value={val}
                   onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
                 <span style={{ color, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
               </div>
