@@ -1229,7 +1229,7 @@ export default function SexScenePage({
           )}
 
           {/* 도구 액션 오버레이 — 클릭 시 700ms 동안 해당 신체 부위에 표시 */}
-          {toolAnim && !showClimax && (
+          {toolAnim && (
             <div style={{
               position: 'absolute',
               left: `${toolAnim.cx}%`,
@@ -1245,7 +1245,7 @@ export default function SexScenePage({
           )}
 
           {/* 핫스팟 오버레이 — zIndex:10 (수갑/족갑 아래) */}
-          {!showClimax && (
+          {(
             <svg
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
