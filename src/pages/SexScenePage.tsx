@@ -723,6 +723,9 @@ export default function SexScenePage({
   }
   // feedback state 제거 — chatLog로 통합
   const [femaleFlash, setFemaleFlash] = useState(false)
+  const [pointPopup, setPointPopup] = useState<{ value: number; cx: number; cy: number; id: number } | null>(null)
+  const pointPopupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pointPopupId = useRef(0)
   const [orgasmCount, setOrgasmCount] = useState(0)
   const [orgasmFlash, setOrgasmFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
@@ -852,24 +855,31 @@ export default function SexScenePage({
     const isSpriteAroused = femaleArousal >= 300 && femaleArousal < 600
     const isPhotoClimax = femaleArousal >= 900
 
-    const showPenalty = (msg: string) => {
+    const showPointPopup = (value: number, cx: number, cy: number) => {
+      if (pointPopupTimer.current) clearTimeout(pointPopupTimer.current)
+      setPointPopup({ value, cx, cy, id: ++pointPopupId.current })
+      pointPopupTimer.current = setTimeout(() => setPointPopup(null), 1200)
+    }
+
+    const showPenalty = (msg: string, cx = 50, cy = 50) => {
       setFemaleArousal(prev => Math.max(0, prev - 20))
       setFemaleFlash(true)
       setTimeout(() => setFemaleFlash(false), 300)
+      showPointPopup(-20, cx, cy)
       addChat(`⚠ ${msg}`, '#e94560')
     }
 
     if (isPhotoAroused && (zone.key === 'vagina' || zone.key === 'anal')) {
-      return showPenalty(rnd(MSGS.restrict_vagina))
+      return showPenalty(rnd(MSGS.restrict_vagina), zone.cx, zone.cy)
     }
     if (isPhotoAroused && activeTool === 'penis') {
-      return showPenalty(rnd(MSGS.restrict_penis))
+      return showPenalty(rnd(MSGS.restrict_penis), zone.cx, zone.cy)
     }
     if (isSpriteAroused && activeTool === 'penis') {
-      return showPenalty(rnd(MSGS.restrict_penis))
+      return showPenalty(rnd(MSGS.restrict_penis), zone.cx, zone.cy)
     }
     if (isPhotoClimax && activeTool !== 'penis') {
-      return showPenalty(rnd(MSGS.restrict_climax))
+      return showPenalty(rnd(MSGS.restrict_climax), zone.cx, zone.cy)
     }
 
     // 연속 공략 체크
@@ -885,7 +895,7 @@ export default function SexScenePage({
         consecutiveCount.current = 1
       }
       if (consecutiveCount.current >= 4) {
-        return showPenalty(rnd(MSGS.consec_same))
+        return showPenalty(rnd(MSGS.consec_same), zone.cx, zone.cy)
       }
 
       if (isPaired) {
@@ -896,7 +906,7 @@ export default function SexScenePage({
           groupCount.current = 1
         }
         if (groupCount.current >= 7) {
-          return showPenalty(rnd(MSGS.consec_group))
+          return showPenalty(rnd(MSGS.consec_group), zone.cx, zone.cy)
         }
       } else {
         lastGroupKey.current = ''
@@ -916,6 +926,8 @@ export default function SexScenePage({
     setFemaleArousal(prev => Math.min(1000, Math.max(0, prev + gain)))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
+
+    if (gain !== 0) showPointPopup(Math.round(gain), zone.cx, zone.cy)
 
     if (toolAnimTimer.current) clearTimeout(toolAnimTimer.current)
     setToolAnim({ cx: zone.cx, cy: zone.cy })
@@ -1244,6 +1256,25 @@ export default function SexScenePage({
             </div>
           )}
 
+          {/* 포인트 팝업 — 행위 결과 숫자 */}
+          {pointPopup && (
+            <div key={pointPopup.id} style={{
+              position: 'absolute',
+              left: `${pointPopup.cx}%`,
+              top: `${pointPopup.cy - 8}%`,
+              transform: 'translate(-50%, -100%)',
+              pointerEvents: 'none', zIndex: 55,
+              fontSize: 44, fontWeight: 'bold',
+              color: pointPopup.value >= 0 ? '#66FF99' : '#FF4466',
+              textShadow: pointPopup.value >= 0
+                ? '0 0 14px #00ff66, 0 2px 4px #000'
+                : '0 0 14px #ff0044, 0 2px 4px #000',
+              animation: 'pointFloat 1.2s ease forwards',
+            }}>
+              {pointPopup.value >= 0 ? `+${pointPopup.value}` : `${pointPopup.value}`}
+            </div>
+          )}
+
           {/* 핫스팟 오버레이 — zIndex:10 (수갑/족갑 아래) */}
           {(
             <svg
@@ -1548,6 +1579,11 @@ export default function SexScenePage({
           0%   { opacity: 1;   transform: translate(-50%, -50%) scale(1.1); }
           60%  { opacity: 0.9; transform: translate(-50%, -50%) scale(1.0); }
           100% { opacity: 0;   transform: translate(-50%, -60%) scale(0.8); }
+        }
+        @keyframes pointFloat {
+          0%   { opacity: 1;   transform: translate(-50%, -100%) scale(1.1); }
+          60%  { opacity: 1;   transform: translate(-50%, -130%) scale(1.0); }
+          100% { opacity: 0;   transform: translate(-50%, -160%) scale(0.85); }
         }
       `}</style>
     </div>
