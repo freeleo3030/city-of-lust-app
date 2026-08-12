@@ -610,6 +610,8 @@ export default function SexScenePage({
         }}>
           {/* 전체 목록 — 섹터 헤더 + 도구 펼쳐서 표시 (overflowY 없음) */}
           <div ref={panelScrollRef} style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            {/* 빈 헤더 버퍼: 게이지바 겹침으로 신체 잘릴 경우 대비 */}
+            <div style={{ padding: '7px 20px', borderBottom: '1px solid #ffffff18', flexShrink: 0, height: 42 }} />
             {SECTORS.map(sec => {
               const tools = TOOL_DEFS.filter(t => t.sector === sec.key)
               const isSectorActive = sector === sec.key
