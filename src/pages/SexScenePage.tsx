@@ -295,9 +295,15 @@ function ChainLinks({ ax, ay, mx, my, bx, by, w, h, color, leftSize, rightSize, 
   // 2차 베지어 곡선
   const curvePath = `M ${x1} ${y1} Q ${cx2} ${cy2} ${x2} ${y2}`
 
+  // 은색 금속 느낌 색상
+  const metalFill   = '#c8c8c8'
+  const metalStroke = '#555555'
+  const metalShine  = '#eeeeee'
+
   // 곡선 위 체인 링크
   const arcLen = Math.sqrt((x2-x1)**2 + (y2-y1)**2) * 1.2
   const n = Math.max(2, Math.floor(arcLen / 14))
+  const gradId = `chain-grad-${ax.toFixed(0)}-${ay.toFixed(0)}`
   const links: React.ReactNode[] = []
   for (let i = 0; i <= n; i++) {
     const t = i / n
@@ -308,10 +314,16 @@ function ChainLinks({ ax, ay, mx, my, bx, by, w, h, color, leftSize, rightSize, 
     const ang = Math.atan2(ty2, tx2) * 180 / Math.PI
     const isH = i % 2 === 0
     links.push(
-      <ellipse key={i} cx={bpx} cy={bpy}
-        rx={isH ? 8 : 4} ry={isH ? 4 : 8}
-        fill={color} fillOpacity="0.3" stroke={color} strokeWidth="2.5"
-        transform={`rotate(${ang},${bpx},${bpy})`} />
+      <g key={i} transform={`rotate(${ang},${bpx},${bpy})`}>
+        {/* 링크 몸체 */}
+        <ellipse cx={bpx} cy={bpy}
+          rx={isH ? 9 : 5} ry={isH ? 5 : 9}
+          fill={`url(#${gradId})`} stroke={metalStroke} strokeWidth="2" />
+        {/* 광택 하이라이트 */}
+        <ellipse cx={bpx - (isH?2:0)} cy={bpy - (isH?0:2)}
+          rx={isH ? 4 : 2} ry={isH ? 2 : 4}
+          fill={metalShine} fillOpacity="0.45" />
+      </g>
     )
   }
 
@@ -323,7 +335,14 @@ function ChainLinks({ ax, ay, mx, my, bx, by, w, h, color, leftSize, rightSize, 
       {/* 체인 SVG — pointerEvents 없음 */}
       <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', zIndex:40, overflow:'visible', pointerEvents:'none' }}
         viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
-        <path d={curvePath} fill="none" stroke={color} strokeWidth="1" strokeOpacity="0.15" />
+        <defs>
+          <radialGradient id={gradId} cx="35%" cy="30%" r="70%">
+            <stop offset="0%"   stopColor="#e8e8e8" />
+            <stop offset="50%"  stopColor="#a0a0a0" />
+            <stop offset="100%" stopColor="#606060" />
+          </radialGradient>
+        </defs>
+        <path d={curvePath} fill="none" stroke="#88888844" strokeWidth="1" />
         {links}
       </svg>
       {/* 중간 핸들 — absolute div, zIndex 60으로 모든 것 위 */}
