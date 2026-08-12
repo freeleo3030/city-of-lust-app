@@ -419,7 +419,7 @@ export default function FemaleCharacterCreatePage({
     ? { breast: d.erogenous.breast, neckEar: d.erogenous.neckEar, thigh: d.erogenous.thigh, anal: d.erogenous.anal, mouth: d.erogenous.mouth }
     : { breast: 3, neckEar: 3, thigh: 3, anal: 1, mouth: 3 })
   const setGenEro = (key: keyof typeof genEro, val: number) => {
-    setGenEroState(prev => ({ ...prev, [key]: Math.min(5, Math.max(-3, val)) }))
+    setGenEroState(prev => ({ ...prev, [key]: Math.min(5, Math.max(-5, val)) }))
   }
   const breast = genEro.breast
 
