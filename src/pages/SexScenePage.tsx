@@ -473,14 +473,14 @@ function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
   const ringSize = Math.round(80 * size)
   const rx = ringSize, ry = Math.round(ringSize * 0.55)
   const chainLen = 360
-  const gripLen = 80                  // 손잡이 길이
+  const gripLen = 80                   // 손잡이 길이
   const pad = 8
-  const totalH = gripLen + chainLen + ry * 2 + pad * 2
+  const totalH = ry * 2 + pad + chainLen + gripLen + pad
   const cxSvg = rx + pad
-  const cySvg = gripLen + chainLen + ry + pad  // 고리 중심 y
-  const chainEndY = gripLen + pad              // 쇠사슬 끝 (손잡이 바로 아래)
-  const chainStartY = cySvg - ry               // 고리 상단 연결점
-  const gripTop = pad                          // 손잡이 시작 y
+  const cySvg = ry + pad               // 고리 중심 y (위쪽)
+  const chainStartY = cySvg + ry       // 고리 하단 연결점
+  const chainEndY = pad + ry*2 + chainLen  // 쇠사슬 끝 (손잡이 바로 위)
+  const gripTop = chainEndY            // 손잡이 시작 y (아래쪽)
 
   const arc = (sweep:0|1, rxi:number, ryi:number) =>
     `M ${cxSvg-rxi} ${cySvg} A ${rxi} ${ryi} 0 0 ${sweep} ${cxSvg+rxi} ${cySvg}`
@@ -490,7 +490,7 @@ function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
   const n = Math.floor(chainLen / 14)
   for (let i = 0; i <= n; i++) {
     const t = i / n
-    const cy2 = chainStartY - t * (chainStartY - chainEndY)
+    const cy2 = chainStartY + t * (chainEndY - chainStartY)
     const isH = i % 2 === 0
     chainLinks.push(
       <g key={i}>
@@ -561,8 +561,8 @@ function CollarOverlay({ x, y, rotate, size, onDrag, onResize, onRotate }: {
           <path d={arc(1,rx,ry)} fill="none" stroke="url(#collar-grad)" strokeWidth="14"/>
           <path d={arc(1,rx,ry)} fill="none" stroke="#e94560"            strokeWidth="2.5" opacity="0.7"/>
           <path d={arc(1,rx-6,ry-6)} fill="none" stroke="#ffffff33"      strokeWidth="1" strokeDasharray="4 5"/>
-          {/* 버클 (상단 연결점 - 체인과 연결) */}
-          <circle cx={cxSvg} cy={cySvg-ry} r="6" fill="#c9a84c" stroke="#8b6914" strokeWidth="1.5"/>
+          {/* 버클 (하단 연결점 - 체인과 연결) */}
+          <circle cx={cxSvg} cy={cySvg+ry} r="6" fill="#c9a84c" stroke="#8b6914" strokeWidth="1.5"/>
         </svg>
       </div>
       {/* 리사이즈 */}
