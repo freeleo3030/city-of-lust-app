@@ -75,23 +75,34 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
 interface ToolDef {
   key: ToolKey
   label: string
-  baseMult: number
   sector: SectorKey
-  zoneOnly?: ErogenousKey[]
+}
+
+// 도구 × 부위 유효성 매트릭스 (0 = 효과 없음)
+const TOOL_ZONE_MATRIX: Record<ToolKey, Partial<Record<ErogenousKey, number>>> = {
+  tongue:     { breast:1.2, neck:1.1, ear:1.1, thigh:1.1, clitoris:1.3, vagina:1.2, anal:1.1, mouth:1.2 },
+  hand:       { breast:1.1,                     thigh:1.1,                vagina:1.3, anal:1.1              },
+  penis:      { breast:1.1,                               clitoris:1.2,   vagina:1.5, anal:1.1, mouth:1.1   },
+  dildo:      {                                            clitoris:1.1,   vagina:1.2, anal:1.1              },
+  vibrator:   { breast:1.1,                               clitoris:1.2,   vagina:1.2, anal:1.1              },
+  gel:        { breast:1.05,            thigh:1.05,        clitoris:1.05,  vagina:1.05,anal:1.05             },
+  // 채찍 기본값 — SM 보정 곱셈 적용됨
+  whip:       { breast:1.05,            thigh:1.05,        clitoris:1.1,   vagina:1.1, anal:1.05             },
+  anal_dildo: {                                                                          anal:1.3              },
 }
 
 const TOOL_DEFS: ToolDef[] = [
   // 신체
-  { key: 'penis',      label: '성기',      baseMult: 2.0, sector: 'body', zoneOnly: ['vagina', 'anal', 'mouth'] },
-  { key: 'tongue',     label: '혀',        baseMult: 1.8, sector: 'body' },
-  { key: 'hand',       label: '손',        baseMult: 1.0, sector: 'body' },
+  { key: 'penis',      label: '성기',      sector: 'body' },
+  { key: 'tongue',     label: '혀',        sector: 'body' },
+  { key: 'hand',       label: '손',        sector: 'body' },
   // 도구
-  { key: 'dildo',      label: '딜도',      baseMult: 2.2, sector: 'toy',  zoneOnly: ['vagina'] },
-  { key: 'vibrator',   label: '진동기',    baseMult: 2.0, sector: 'toy',  zoneOnly: ['breast', 'thigh', 'clitoris', 'vagina', 'anal'] },
-  { key: 'gel',        label: '마사지젤',  baseMult: 0.4, sector: 'toy',  zoneOnly: ['breast', 'thigh', 'clitoris', 'vagina', 'anal'] },
-  // 용품(SM)
-  { key: 'whip',       label: '채찍',      baseMult: 1.5, sector: 'sm' },
-  { key: 'anal_dildo', label: '애널딜도',  baseMult: 2.5, sector: 'sm',   zoneOnly: ['anal'] },
+  { key: 'dildo',      label: '딜도',      sector: 'toy'  },
+  { key: 'vibrator',   label: '진동기',    sector: 'toy'  },
+  { key: 'gel',        label: '마사지젤',  sector: 'toy'  },
+  // SM
+  { key: 'whip',       label: '채찍',      sector: 'sm'   },
+  { key: 'anal_dildo', label: '애널딜도',  sector: 'sm'   },
 ]
 
 const RESTRAINT_DEFS: { key: RestraintKey; label: string }[] = [
@@ -732,14 +743,20 @@ export default function SexScenePage({
     return Math.max(0.2, Math.min(3.0, base)) * (restrained ? 1.3 : 1.0)
   }, [femaleChar.smTendency, restraints])
 
-  // 도구 배율 계산 (구역 제한 포함)
+  // 도구 배율 계산 (매트릭스 기반)
   const getToolMult = useCallback((toolKey: ToolKey, zoneKey: string): number => {
-    const def = TOOL_DEFS.find(t => t.key === toolKey)
-    if (!def) return 1.0
-    const base = toolKey === 'whip' ? getWhipMult() : def.baseMult
-    if (def.zoneOnly && !def.zoneOnly.includes(zoneKey as ErogenousKey)) return base * 0.3
+    const zoneMatrix = TOOL_ZONE_MATRIX[toolKey]
+    if (!zoneMatrix) return 1.0
+    const base = zoneMatrix[zoneKey as ErogenousKey] ?? 0
+    if (base === 0) return 0
+    if (toolKey === 'whip') {
+      const sm = femaleChar.smTendency ?? 0
+      const smMod = 1.0 + (-sm * 0.05)
+      const restrained = restraints.has('handcuff') && restraints.has('legcuff')
+      return Math.max(0.1, base * smMod) * (restrained ? 1.3 : 1.0)
+    }
     return base
-  }, [getWhipMult])
+  }, [femaleChar.smTendency, restraints])
 
   // 현재 섹터의 도구 목록
   const sectorTools = TOOL_DEFS.filter(t => t.sector === sector)
@@ -1222,7 +1239,7 @@ export default function SexScenePage({
                             {t.label}
                           </span>
                           <span style={{ fontSize: 24, color: '#ffffff44' }}>
-                            ×{t.key === 'whip' ? getWhipMult().toFixed(1) : t.baseMult}
+                            ×{t.key === 'whip' ? getWhipMult().toFixed(2) : (Object.values(TOOL_ZONE_MATRIX[t.key]).filter(v => v && v > 0)[0] ?? 1).toFixed(2)}
                           </span>
                         </div>
                       </button>
