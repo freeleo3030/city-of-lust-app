@@ -217,7 +217,7 @@ function ToolSvg({ toolKey, pressed, size = 80 }: { toolKey: ToolKey; pressed: b
 }
 
 // 구속 SVG 오버레이
-// 가죽 수갑/족갑 고리 — 드래그 이동 + 리사이즈
+// 가죽 수갑/족갑 고리 — 앞면(아래 반원) 진하게, 뒷면(위 반원) 흐리게
 function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
   x: number; y: number; size: number; color: string; label: string
   onDrag: (e: React.MouseEvent) => void
@@ -226,6 +226,11 @@ function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
   const rx = size, ry = Math.round(size * 0.55)
   const cx = rx + 8, cy = ry + 8
   const w = rx * 2 + 16, h = ry * 2 + 16
+
+  // 반원 path 헬퍼 — sweep=0: 위쪽(뒤), sweep=1: 아래쪽(앞)
+  const arc = (sweep: 0 | 1, rxi: number, ryi: number) =>
+    `M ${cx - rxi} ${cy} A ${rxi} ${ryi} 0 0 ${sweep} ${cx + rxi} ${cy}`
+
   return (
     <div style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 50, userSelect: 'none' }}>
       <div onMouseDown={onDrag} style={{ cursor: 'grab', display: 'inline-block' }}>
@@ -237,16 +242,21 @@ function LeatherCuffRing({ x, y, size, color, label, onDrag, onResize }: {
               <stop offset="100%" stopColor="#1a0a00" />
             </radialGradient>
           </defs>
-          {/* 가죽 외곽 두꺼운 테두리 */}
-          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke="#0a0400" strokeWidth="18" />
-          {/* 가죽 메인 색상 */}
-          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" />
-          {/* 가죽 광택 라인 */}
-          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke={color} strokeWidth="2.5" opacity="0.6" />
-          {/* 스티치 느낌 */}
-          <ellipse cx={cx} cy={cy} rx={rx - 6} ry={ry - 6} fill="none" stroke="#ffffff22" strokeWidth="1" strokeDasharray="4 5" />
-          {/* 버클 점 */}
-          <circle cx={cx} cy={cy - ry} r="5" fill={color} stroke="#000" strokeWidth="1.5" />
+
+          {/* ── 뒷면 (위 반원) — 흐리게 ── */}
+          <path d={arc(0, rx, ry)}     fill="none" stroke="#0a0400"           strokeWidth="18" opacity="0.25" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" opacity="0.25" />
+          <path d={arc(0, rx, ry)}     fill="none" stroke={color}             strokeWidth="2"  opacity="0.2" />
+          <path d={arc(0, rx-6, ry-6)} fill="none" stroke="#ffffff18"         strokeWidth="1"  strokeDasharray="4 5" />
+
+          {/* ── 앞면 (아래 반원) — 진하게 ── */}
+          <path d={arc(1, rx, ry)}     fill="none" stroke="#0a0400"           strokeWidth="18" />
+          <path d={arc(1, rx, ry)}     fill="none" stroke={`url(#lg-${label})`} strokeWidth="14" />
+          <path d={arc(1, rx, ry)}     fill="none" stroke={color}             strokeWidth="2.5" opacity="0.7" />
+          <path d={arc(1, rx-6, ry-6)} fill="none" stroke="#ffffff33"         strokeWidth="1"  strokeDasharray="4 5" />
+
+          {/* 버클 점 (뒤쪽 상단) */}
+          <circle cx={cx} cy={cy - ry} r="5" fill={color} stroke="#000" strokeWidth="1.5" opacity="0.35" />
         </svg>
       </div>
       {/* 리사이즈 핸들 */}
