@@ -783,7 +783,9 @@ export default function SexScenePage({
     }
     // 젤 콤보: 젤 적용 후 손/딜도/진동기 사용 시
     if (gelApplied.current && (toolKey === 'hand' || toolKey === 'dildo' || toolKey === 'vibrator')) {
-      return GEL_COMBO_MATRIX[zoneKey as ErogenousKey] ?? 0
+      const base = TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
+      const bonus = GEL_COMBO_MATRIX[zoneKey as ErogenousKey] ?? 1
+      return base * bonus
     }
     return TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
   }, [femaleChar.smTendency, restraints])
