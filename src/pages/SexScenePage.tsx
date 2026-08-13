@@ -965,7 +965,7 @@ export default function SexScenePage({
       setFemaleArousal(prev => Math.max(0, prev - 10))
       setFemaleFlash(true)
       setTimeout(() => setFemaleFlash(false), 300)
-      showPointPopup(-20, cx, cy)
+      showPointPopup(-10, cx, cy)
       addChat(`⚠ ${msg}`, '#e94560')
     }
 
