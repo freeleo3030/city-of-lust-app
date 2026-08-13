@@ -1470,7 +1470,16 @@ export default function SexScenePage({
           flexShrink: 0, width: 340, height: '100%',
           background: 'rgba(10,10,22,0.97)', borderLeft: '1px solid #ffffff18',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          position: 'relative',
         }}>
+          {/* failEnding 시 사이드 패널 전체 비활성화 오버레이 */}
+          {failEnding && (
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 999,
+              background: 'rgba(0,0,0,0.55)',
+              pointerEvents: 'all',
+            }} />
+          )}
           {/* 전체 목록 — 섹터 헤더 + 도구 펼쳐서 표시 (overflowY 없음) */}
           <div ref={panelScrollRef} id="tool-panel" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             {/* 빈 헤더 버퍼: 게이지바 겹침으로 신체 잘릴 경우 대비 */}
