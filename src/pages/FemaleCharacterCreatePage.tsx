@@ -1881,9 +1881,6 @@ export default function FemaleCharacterCreatePage({
               </div>
             )
           })}
-          <div style={{ color: '#06b6d4', fontSize: 10, marginBottom: 4, paddingLeft: 2 }}>
-            💧 겨드랑이는 혀로만 자극 가능 (다른 도구 사용 시 페널티)
-          </div>
           {/* 가슴 — 독립 슬라이더 */}
           <div style={S.erogenousRow}>
             <span style={{ ...S.eroLabel, color: sensColor(breast) }}>가슴</span>
