@@ -1618,10 +1618,10 @@ export default function SexScenePage({
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
             {[
-              { key: 'missionary', label: '정상위' },
-              { key: 'doggy',      label: '후배위' },
-              { key: 'cowgirl',    label: '기승위' },
-              { key: 'side',       label: '측위'   },
+              { key: 'missionary', label: '정상위'   },
+              { key: 'doggy',      label: '후배위'   },
+              { key: 'cowgirl',    label: '여성상위' },
+              { key: 'side',       label: '버터플라이' },
             ].map(p => {
               const isCurrent = p.key === currentPoseKey
               return (
