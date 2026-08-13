@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
 import type { HotspotZone } from '../lib/generateCharImages'
 
@@ -745,6 +745,7 @@ export default function SexScenePage({
   const [orgasmFlash, setOrgasmFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
   const [ended, setEnded] = useState(false)
+  const [endResult, setEndResult] = useState<'success' | 'fail' | null>(null)
   const gelApplied = useRef(false)
   const toolUseCount = useRef<Record<string, number>>({})
   const lastUsedTool = useRef<string>('')
@@ -797,6 +798,23 @@ export default function SexScenePage({
     : _smProduct < 0
       ? 1.0 - Math.abs(_smProduct) / 100 * 0.5  // 충돌: 0.5 ~ 0.995
       : 1.0
+
+  // 총 궁합 점수 (0~100)
+  const compatScore = useMemo(() => {
+    // SM 궁합 (0~50점): smCompatMult 0.5→0점, 1.0→25점, 1.5→50점
+    const smScore = (smCompatMult - 0.5) / 1.0 * 50
+
+    // 발기 선호 궁합 (0~50점): 4개 스탯 각 12.5점, diff 0=12.5점 diff 50+=0점
+    const pref = femaleChar.prefErect ?? { power:25, duration:25, hardness:25, tech:25 }
+    const erectScore = [
+      { m: maleChar?.erectPower    ?? 25, f: pref.power },
+      { m: maleChar?.erectDuration ?? 25, f: pref.duration },
+      { m: maleChar?.erectHardness ?? 25, f: pref.hardness },
+      { m: maleChar?.erectTechnique?? 25, f: pref.tech },
+    ].reduce((sum, { m, f }) => sum + Math.max(0, 12.5 - Math.abs(m - f) / 4), 0)
+
+    return Math.round(Math.min(100, smScore + erectScore))
+  }, [smCompatMult, femaleChar, maleChar])
 
   // 남캐 성기/테크닉 스탯 (기본값: 50/50/25/25)
   const mPenisSize   = maleChar?.penisSize     ?? 50
@@ -853,7 +871,7 @@ export default function SexScenePage({
       if (orgasmCount >= 2) {
         setPhase('climax')
         setEnded(true)
-        setTimeout(() => onEnd('success'), 3000)
+        setTimeout(() => setEndResult('success'), 3000)
       }
       setOrgasmCount(prev => prev + 1)
     } else if (femaleArousal >= 50 && phase === 'foreplay') {
@@ -865,6 +883,7 @@ export default function SexScenePage({
     if (ended) return
     setEnded(true)
     setFailEnding(true)
+    setTimeout(() => setEndResult('fail'), 600)
   }, [ended])
 
   useEffect(() => {
@@ -1336,27 +1355,86 @@ export default function SexScenePage({
           )}
 
           {/* 실패 종료 텍스트 오버레이 */}
-          {failEnding && (
+          {failEnding && !endResult && (
             <div style={{
               position: 'absolute', inset: 0, borderRadius: 8,
               background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
               padding: '0 20px 36px',
               animation: 'fadeInFail 0.6s ease',
-              pointerEvents: 'auto',
+              pointerEvents: 'none',
             }}>
               <div style={{ fontSize: 36, color: '#e94560', fontWeight: 'bold', letterSpacing: 2, marginBottom: 10 }}>
                 실망이야...
               </div>
-              <div style={{ fontSize: 24, color: '#ffffff99', marginBottom: 20 }}>
+              <div style={{ fontSize: 24, color: '#ffffff99' }}>
                 {femaleChar.nickname ?? '그녀'}가 자리를 떠났다
               </div>
+            </div>
+
+          {/* 결과 화면 — 성공/실패 공통 */}
+          }{endResult && (
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: 8,
+              background: 'rgba(0,0,0,0.82)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 18, padding: '28px 24px',
+              animation: 'fadeInFail 0.5s ease',
+              pointerEvents: 'auto',
+            }}>
+              {/* 결과 타이틀 */}
+              <div style={{ fontSize: 32, fontWeight: 'bold', letterSpacing: 2,
+                color: endResult === 'success' ? '#c9a84c' : '#e94560' }}>
+                {endResult === 'success' ? '🏆 성공!' : '💔 실패'}
+              </div>
+
+              {/* 궁합 점수 */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: '#ffffff88', marginBottom: 6 }}>총 궁합률</div>
+                <div style={{ fontSize: 52, fontWeight: 'bold',
+                  color: compatScore >= 70 ? '#c9a84c' : compatScore >= 40 ? '#06b6d4' : '#e94560' }}>
+                  {compatScore}<span style={{ fontSize: 22, color: '#ffffff88' }}>%</span>
+                </div>
+                {/* 바 */}
+                <div style={{ width: 200, height: 8, background: '#ffffff22', borderRadius: 4, margin: '8px auto 0' }}>
+                  <div style={{ width: `${compatScore}%`, height: '100%', borderRadius: 4,
+                    background: compatScore >= 70 ? '#c9a84c' : compatScore >= 40 ? '#06b6d4' : '#e94560',
+                    transition: 'width 0.8s ease' }} />
+                </div>
+              </div>
+
+              {/* 세부 항목 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', maxWidth: 220 }}>
+                {[
+                  { label: 'SM 궁합', score: Math.round((smCompatMult - 0.5) / 1.0 * 50), max: 50 },
+                  { label: '발기 선호', score: Math.round((() => {
+                    const pref = femaleChar.prefErect ?? { power:25, duration:25, hardness:25, tech:25 }
+                    return [
+                      { m: maleChar?.erectPower ?? 25, f: pref.power },
+                      { m: maleChar?.erectDuration ?? 25, f: pref.duration },
+                      { m: maleChar?.erectHardness ?? 25, f: pref.hardness },
+                      { m: maleChar?.erectTechnique ?? 25, f: pref.tech },
+                    ].reduce((s,{m,f}) => s + Math.max(0, 12.5 - Math.abs(m-f)/4), 0)
+                  })()), max: 50 },
+                ].map(({ label, score, max }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: '#ffffff88', width: 64, flexShrink: 0 }}>{label}</span>
+                    <div style={{ flex: 1, height: 5, background: '#ffffff22', borderRadius: 3 }}>
+                      <div style={{ width: `${score / max * 100}%`, height: '100%', borderRadius: 3,
+                        background: '#c9a84c', transition: 'width 0.8s ease' }} />
+                    </div>
+                    <span style={{ fontSize: 12, color: '#ffffffbb', width: 36, textAlign: 'right' }}>{score}/{max}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 나가기 */}
               <button
-                onClick={() => onEnd('fail')}
+                onClick={() => onEnd(endResult)}
                 style={{
-                  padding: '10px 28px', fontSize: 16, fontWeight: 'bold',
-                  background: '#e94560', color: '#fff', border: 'none', borderRadius: 8,
-                  cursor: 'pointer', letterSpacing: 1,
+                  marginTop: 4, padding: '10px 36px', fontSize: 16, fontWeight: 'bold',
+                  background: endResult === 'success' ? '#c9a84c' : '#e94560',
+                  color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', letterSpacing: 1,
                 }}
               >
                 나가기
