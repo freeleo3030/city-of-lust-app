@@ -94,7 +94,7 @@ const TOOL_ZONE_MATRIX: Record<ToolKey, Record<ErogenousKey, number>> = {
 
 // 젤+손/딜도/진동기 콤보 배율 (breast/thigh/anal=1.1×, clitoris/vagina=1.15×)
 const GEL_COMBO_MATRIX: Record<ErogenousKey, number> = {
-  breast:1.1, neck:-0.2, ear:-0.2, thigh:1.1, clitoris:1.15, vagina:1.15, anal:1.1, mouth:-0.2,
+  breast:1.2, neck:-0.2, ear:-0.2, thigh:1.2, clitoris:1.3, vagina:1.2, anal:1.2, mouth:-0.2,
 }
 
 // 채찍 × SM 도구 착용 개수 (0=미착용 ~ 4=전부) 배율 매트릭스
