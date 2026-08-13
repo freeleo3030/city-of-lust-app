@@ -667,6 +667,7 @@ export default function SexScenePage({
   const [maleArousal, setMaleArousal] = useState(0)
   const [phase, setPhase] = useState<ScenePhase>('foreplay')
   const [activeTool, setActiveTool] = useState<ToolKey>('hand')
+  const activeToolRef = useRef<ToolKey>('hand')
   const [sector, setSector] = useState<SectorKey>('body')
   const [pressedTool, setPressedTool] = useState<ToolKey | null>(null)
   const [restraints, setRestraints] = useState<Set<RestraintKey>>(new Set())
@@ -860,19 +861,30 @@ export default function SexScenePage({
     if (maleArousal >= 100 && !ended) triggerFail()
   }, [maleArousal, ended, triggerFail])
 
-  // 남캐 흥분도 자동 증가 (SM 도구 배치 중엔 정지)
+  // activeToolRef 동기화 (interval 클로저에서 최신 tool 읽기 위해)
+  useEffect(() => { activeToolRef.current = activeTool }, [activeTool])
+
+  // 남캐 흥분도 자동 증가
+  // penis 사용 시: 1초마다 +3 / 다른 도구: 3초마다 +1 (누적 방식)
+  const maleArousalAccum = useRef(0)
   useEffect(() => {
     if (ended) return
     const id = setInterval(() => {
-      if (isDraggingSM.current) return
-      setMaleArousal(prev => {
-        setMaleFlash(true)
-        setTimeout(() => setMaleFlash(false), 300)
-        return prev + 1
-      })
-    }, 3000)
+      if (isDraggingSM.current || ended || failEnding) return
+      const isPenis = activeToolRef.current === 'penis'
+      maleArousalAccum.current += isPenis ? 3 : 1
+      if (isPenis || maleArousalAccum.current >= 3) {
+        const add = isPenis ? 3 : 1
+        maleArousalAccum.current = isPenis ? 0 : maleArousalAccum.current - 3
+        setMaleArousal(prev => {
+          setMaleFlash(true)
+          setTimeout(() => setMaleFlash(false), 300)
+          return prev + add
+        })
+      }
+    }, 1000)
     return () => clearInterval(id)
-  }, [ended])
+  }, [ended, failEnding])
 
   const getEroSensitivity = (key: string) => {
     const eroKey = (key === 'neck' || key === 'ear') ? 'neckEar' : key
