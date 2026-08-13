@@ -1354,58 +1354,57 @@ export default function SexScenePage({
             <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
           )}
 
-          {/* 실패 종료 텍스트 오버레이 */}
+          {/* 실패 종료 텍스트 오버레이 — 어두운 배경 없이 텍스트만 */}
           {failEnding && !endResult && (
             <div style={{
               position: 'absolute', inset: 0, borderRadius: 8,
-              background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
               padding: '0 20px 36px',
               animation: 'fadeInFail 0.6s ease',
               pointerEvents: 'none',
             }}>
-              <div style={{ fontSize: 36, color: '#e94560', fontWeight: 'bold', letterSpacing: 2, marginBottom: 10 }}>
+              <div style={{ fontSize: 36, color: '#e94560', fontWeight: 'bold', letterSpacing: 2, marginBottom: 10,
+                textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
                 실망이야...
               </div>
-              <div style={{ fontSize: 24, color: '#ffffff99' }}>
+              <div style={{ fontSize: 24, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
                 {femaleChar.nickname ?? '그녀'}가 자리를 떠났다
               </div>
             </div>
           )}
 
-          {/* 결과 화면 — 성공/실패 공통 */}
+          {/* 결과 화면 — 우측 하단 */}
           {endResult && (
             <div style={{
-              position: 'absolute', inset: 0, borderRadius: 8,
-              background: 'rgba(0,0,0,0.82)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              gap: 18, padding: '28px 24px',
+              position: 'absolute', bottom: 16, right: 16,
+              background: 'rgba(0,0,0,0.78)',
+              borderRadius: 12, padding: '20px 22px',
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14,
               animation: 'fadeInFail 0.5s ease',
-              pointerEvents: 'auto',
+              pointerEvents: 'auto', minWidth: 200,
             }}>
               {/* 결과 타이틀 */}
-              <div style={{ fontSize: 32, fontWeight: 'bold', letterSpacing: 2,
+              <div style={{ fontSize: 36, fontWeight: 'bold', letterSpacing: 2,
                 color: endResult === 'success' ? '#c9a84c' : '#e94560' }}>
                 {endResult === 'success' ? '🏆 성공!' : '💔 실패'}
               </div>
 
               {/* 궁합 점수 */}
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 13, color: '#ffffff88', marginBottom: 6 }}>총 궁합률</div>
-                <div style={{ fontSize: 52, fontWeight: 'bold',
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 18, color: '#ffffff88', marginBottom: 4 }}>총 궁합률</div>
+                <div style={{ fontSize: 60, fontWeight: 'bold', lineHeight: 1,
                   color: compatScore >= 70 ? '#c9a84c' : compatScore >= 40 ? '#06b6d4' : '#e94560' }}>
-                  {compatScore}<span style={{ fontSize: 22, color: '#ffffff88' }}>%</span>
+                  {compatScore}<span style={{ fontSize: 28, color: '#ffffff88' }}>%</span>
                 </div>
-                {/* 바 */}
-                <div style={{ width: 200, height: 8, background: '#ffffff22', borderRadius: 4, margin: '8px auto 0' }}>
-                  <div style={{ width: `${compatScore}%`, height: '100%', borderRadius: 4,
+                <div style={{ width: 200, height: 10, background: '#ffffff22', borderRadius: 5, margin: '8px 0 0' }}>
+                  <div style={{ width: `${compatScore}%`, height: '100%', borderRadius: 5,
                     background: compatScore >= 70 ? '#c9a84c' : compatScore >= 40 ? '#06b6d4' : '#e94560',
                     transition: 'width 0.8s ease' }} />
                 </div>
               </div>
 
               {/* 세부 항목 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', maxWidth: 220 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
                 {[
                   { label: 'SM 궁합', score: Math.round((smCompatMult - 0.5) / 1.0 * 50), max: 50 },
                   { label: '발기 선호', score: Math.round((() => {
@@ -1419,12 +1418,12 @@ export default function SexScenePage({
                   })()), max: 50 },
                 ].map(({ label, score, max }) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: '#ffffff88', width: 64, flexShrink: 0 }}>{label}</span>
-                    <div style={{ flex: 1, height: 5, background: '#ffffff22', borderRadius: 3 }}>
-                      <div style={{ width: `${score / max * 100}%`, height: '100%', borderRadius: 3,
+                    <span style={{ fontSize: 18, color: '#ffffff88', width: 72, flexShrink: 0 }}>{label}</span>
+                    <div style={{ flex: 1, height: 7, background: '#ffffff22', borderRadius: 4 }}>
+                      <div style={{ width: `${score / max * 100}%`, height: '100%', borderRadius: 4,
                         background: '#c9a84c', transition: 'width 0.8s ease' }} />
                     </div>
-                    <span style={{ fontSize: 12, color: '#ffffffbb', width: 36, textAlign: 'right' }}>{score}/{max}</span>
+                    <span style={{ fontSize: 18, color: '#ffffffbb', width: 48, textAlign: 'right' }}>{score}/{max}</span>
                   </div>
                 ))}
               </div>
@@ -1433,9 +1432,9 @@ export default function SexScenePage({
               <button
                 onClick={() => onEnd(endResult)}
                 style={{
-                  marginTop: 4, padding: '10px 36px', fontSize: 16, fontWeight: 'bold',
+                  padding: '14px 40px', fontSize: 22, fontWeight: 'bold',
                   background: endResult === 'success' ? '#c9a84c' : '#e94560',
-                  color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', letterSpacing: 1,
+                  color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', letterSpacing: 1,
                 }}
               >
                 나가기
