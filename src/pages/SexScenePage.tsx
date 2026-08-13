@@ -846,7 +846,7 @@ export default function SexScenePage({
         setTimeout(() => onEnd('success'), 3000)
       }
       setOrgasmCount(prev => prev + 1)
-    } else if (femaleArousal >= 100 && phase === 'foreplay') {
+    } else if (femaleArousal >= 50 && phase === 'foreplay') {
       setPhase('aroused')
     }
   }, [femaleArousal, orgasmCount, phase, ended, onEnd])
@@ -920,8 +920,8 @@ export default function SexScenePage({
     if (now - lastActionTime.current < 500) return
     lastActionTime.current = now
 
-    const isPhotoAroused = femaleArousal < 100
-    const isSpriteAroused = femaleArousal >= 100 && femaleArousal < 200
+    const isPhotoAroused = femaleArousal < 50
+    const isSpriteAroused = femaleArousal >= 50 && femaleArousal < 200
     const isPhotoClimax = femaleArousal >= 400
 
     const showPointPopup = (value: number, cx: number, cy: number) => {
@@ -1105,7 +1105,7 @@ export default function SexScenePage({
   // 흥분도 구간별 표시 모드
   const displayMode = femaleArousal >= 400 ? 'photo_climax'
     : femaleArousal >= 200 ? 'sprite_climax'
-    : femaleArousal >= 100 ? 'sprite_aroused'
+    : femaleArousal >= 50 ? 'sprite_aroused'
     : 'photo_aroused'
 
   const currentSpriteUrls = displayMode === 'sprite_climax'
