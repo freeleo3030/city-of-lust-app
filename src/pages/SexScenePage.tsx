@@ -1694,6 +1694,7 @@ export default function SexScenePage({
                     setHoveredZone(null)
                     setMaleArousal(prev => Math.max(0, Math.round(prev * 0.7)))
                     setFemaleArousal(prev => Math.max(0, Math.round(prev * 0.5)))
+                    toolUseCount.current = {}
                     setShowPoseSelect(false)
                     addChat(`체위를 바꿨어... (${p.label}) 처음부터 다시 달궈줘`, '#c9a84c')
                   }}
