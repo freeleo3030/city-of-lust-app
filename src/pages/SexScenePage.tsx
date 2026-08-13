@@ -16,7 +16,7 @@ type CuffPair = {
   leftRotate: number; rightRotate: number
 }
 type ScenePhase = 'foreplay' | 'aroused' | 'climax' | 'afterglow'
-type ErogenousKey = 'breast' | 'neck' | 'ear' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth'
+type ErogenousKey = 'breast' | 'neck' | 'ear' | 'thigh' | 'clitoris' | 'vagina' | 'anal' | 'mouth' | 'armpit'
 
 // ─── 핫스팟 좌표 — fallback용 하드코딩 ─────────────────────────────────────
 
@@ -26,6 +26,8 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'neck',     label: '목',             cx: 50, cy: 27, rx: 7,  ry: 3,  color: '#c77dff' },
     { key: 'ear',      label: '귀L',            cx: 36, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'ear',      label: '귀R',            cx: 64, cy: 20, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'armpit',   label: '겨드랑이L',      cx: 22, cy: 38, rx: 6,  ry: 5,  color: '#06b6d4' },
+    { key: 'armpit',   label: '겨드랑이R',      cx: 78, cy: 38, rx: 6,  ry: 5,  color: '#06b6d4' },
     { key: 'breast',   label: '가슴',           cx: 37, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',           cx: 63, cy: 41, rx: 13, ry: 11, color: '#ff6b9d' },
     { key: 'thigh',    label: '엉덩이/허벅지', cx: 22, cy: 72, rx: 16, ry: 13, color: '#f77f00' },
@@ -37,6 +39,7 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'mouth',    label: '입',             cx: 23, cy: 22, rx: 12, ry: 9,  color: '#ff6b9d' },
     { key: 'neck',     label: '목',             cx: 32, cy: 30, rx: 8,  ry: 5,  color: '#c77dff' },
     { key: 'ear',      label: '귀',             cx: 22, cy: 22, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'armpit',   label: '겨드랑이',       cx: 55, cy: 42, rx: 6,  ry: 5,  color: '#06b6d4' },
     { key: 'breast',   label: '가슴',           cx: 42, cy: 60, rx: 10, ry: 10, color: '#ff6b9d' },
     { key: 'anal',     label: '항문',           cx: 56, cy: 53, rx: 7,  ry: 5,  color: '#c9a84c' },
     { key: 'vagina',   label: '질',             cx: 55, cy: 62, rx: 8,  ry: 5,  color: '#e94560' },
@@ -49,6 +52,8 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'neck',     label: '목',             cx: 47, cy: 23, rx: 7,  ry: 4,  color: '#c77dff' },
     { key: 'ear',      label: '귀L',            cx: 33, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
     { key: 'ear',      label: '귀R',            cx: 61, cy: 14, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'armpit',   label: '겨드랑이L',      cx: 18, cy: 34, rx: 6,  ry: 5,  color: '#06b6d4' },
+    { key: 'armpit',   label: '겨드랑이R',      cx: 79, cy: 34, rx: 6,  ry: 5,  color: '#06b6d4' },
     { key: 'breast',   label: '가슴',           cx: 35, cy: 38, rx: 16, ry: 13, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',           cx: 60, cy: 37, rx: 14, ry: 12, color: '#ff6b9d' },
     { key: 'thigh',    label: '엉덩이/허벅지', cx: 22, cy: 75, rx: 13, ry: 16, color: '#f77f00' },
@@ -60,6 +65,7 @@ const HOTSPOTS: Record<string, HotspotZone[]> = {
     { key: 'mouth',    label: '입',             cx: 50, cy: 28, rx: 11, ry: 7,  color: '#ff6b9d' },
     { key: 'neck',     label: '목',             cx: 50, cy: 37, rx: 7,  ry: 3,  color: '#c77dff' },
     { key: 'ear',      label: '귀',             cx: 38, cy: 27, rx: 4,  ry: 5,  color: '#a855f7' },
+    { key: 'armpit',   label: '겨드랑이',       cx: 22, cy: 45, rx: 6,  ry: 5,  color: '#06b6d4' },
     { key: 'breast',   label: '가슴',           cx: 36, cy: 48, rx: 14, ry: 11, color: '#ff6b9d' },
     { key: 'breast',   label: '가슴',           cx: 62, cy: 47, rx: 14, ry: 11, color: '#ff6b9d' },
     { key: 'thigh',    label: '엉덩이/허벅지', cx: 22, cy: 65, rx: 13, ry: 17, color: '#f77f00' },
@@ -81,29 +87,29 @@ interface ToolDef {
 // 도구 × 부위 유효성 매트릭스
 // 양수 = 흥분도 상승 배율, 음수 = 흥분도 하락 페널티
 const TOOL_ZONE_MATRIX: Record<ToolKey, Record<ErogenousKey, number>> = {
-  tongue:     { breast:1.2,  neck:1.1,  ear:1.1,  thigh:1.1,  clitoris:1.3,  vagina:1.2,  anal:1.1,  mouth:1.2  },
-  hand:       { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:1.2,  vagina:1.3,  anal:1.1,  mouth:-0.2 },
-  penis:      { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.5,  anal:1.1,  mouth:1.1  },
-  dildo:      { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.1,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
-  vibrator:   { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
-  gel:        { breast:0,    neck:0,    ear:0,    thigh:0,    clitoris:0,    vagina:0,    anal:0,    mouth:0    }, // 단독 사용 무효과
+  tongue:     { breast:1.2,  neck:1.1,  ear:1.1,  thigh:1.1,  clitoris:1.3,  vagina:1.2,  anal:1.1,  mouth:1.2,  armpit:1.3  },
+  hand:       { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:1.2,  vagina:1.3,  anal:1.1,  mouth:-0.2, armpit:-0.3 },
+  penis:      { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.5,  anal:1.1,  mouth:1.1,  armpit:-0.3 },
+  dildo:      { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.1,  vagina:1.2,  anal:1.1,  mouth:-0.2, armpit:-0.3 },
+  vibrator:   { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2, armpit:-0.3 },
+  gel:        { breast:0,    neck:0,    ear:0,    thigh:0,    clitoris:0,    vagina:0,    anal:0,    mouth:0,    armpit:0    }, // 단독 사용 무효과
   // 채찍: SM 도구 착용 개수(0~4)에 따라 WHIP_LEVEL_MATRIX 사용
-  whip:       { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 },
-  anal_dildo: { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:-0.2, vagina:-0.2, anal:1.3,  mouth:-0.2 },
+  whip:       { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2, armpit:-0.3 },
+  anal_dildo: { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:-0.2, vagina:-0.2, anal:1.3,  mouth:-0.2, armpit:-0.3 },
 }
 
 // 젤+손/딜도/진동기 콤보 배율 (breast/thigh/anal=1.1×, clitoris/vagina=1.15×)
 const GEL_COMBO_MATRIX: Record<ErogenousKey, number> = {
-  breast:1.2, neck:-0.2, ear:-0.2, thigh:1.2, clitoris:1.3, vagina:1.2, anal:1.2, mouth:-0.2,
+  breast:1.2, neck:-0.2, ear:-0.2, thigh:1.2, clitoris:1.3, vagina:1.2, anal:1.2, mouth:-0.2, armpit:-0.3,
 }
 
 // 채찍 × SM 도구 착용 개수 (0=미착용 ~ 4=전부) 배율 매트릭스
 const WHIP_LEVEL_MATRIX: Record<ErogenousKey, number>[] = [
-  { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 }, // 0개
-  { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 }, // 1개
-  { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2 }, // 2개
-  { breast:1.2,  neck:-0.2, ear:-0.2, thigh:1.2,  clitoris:1.3,  vagina:1.3,  anal:1.2,  mouth:-0.2 }, // 3개
-  { breast:1.3,  neck:-0.2, ear:-0.2, thigh:1.3,  clitoris:1.4,  vagina:1.5,  anal:1.3,  mouth:-0.2 }, // 4개
+  { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2, armpit:-0.3 }, // 0개
+  { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2, armpit:-0.3 }, // 1개
+  { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2, armpit:-0.3 }, // 2개
+  { breast:1.2,  neck:-0.2, ear:-0.2, thigh:1.2,  clitoris:1.3,  vagina:1.3,  anal:1.2,  mouth:-0.2, armpit:-0.3 }, // 3개
+  { breast:1.3,  neck:-0.2, ear:-0.2, thigh:1.3,  clitoris:1.4,  vagina:1.5,  anal:1.3,  mouth:-0.2, armpit:-0.3 }, // 4개
 ]
 
 const TOOL_DEFS: ToolDef[] = [
@@ -890,6 +896,8 @@ export default function SexScenePage({
     const eroKey = (key === 'neck' || key === 'ear') ? 'neckEar' : key
     return femaleChar.erogenous?.[eroKey as keyof typeof femaleChar.erogenous] ?? 2
   }
+
+  // 겨드랑이는 혀(tongue)만 허용 — 다른 도구는 이미 TOOL_ZONE_MATRIX에서 -0.3 페널티
 
   // ─── 피드백 메시지 풀 ────────────────────────────────────────────────────────
   const MSGS = {

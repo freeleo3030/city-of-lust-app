@@ -29,7 +29,7 @@ export interface FemaleCharacterData {
   // 성감대 (숨김 스탯, 일반: -3~+5 / 핵심: 4~16)
   erogenous: {
     breast: number; neckEar: number; thigh: number; clitoris: number
-    vagina: number; anal: number; mouth: number
+    vagina: number; anal: number; mouth: number; armpit: number
   }
   // 남성 선호도 (숨김 스탯)
   prefAge: { age20: number; age30: number; age40: number }         // 합계=100, age40 자동
@@ -415,8 +415,8 @@ export default function FemaleCharacterCreatePage({
 
   // 일반 성감대: 전부 독립 슬라이더 (-3~5)
   const [genEro, setGenEroState] = useState(d?.erogenous
-    ? { breast: d.erogenous.breast, neckEar: d.erogenous.neckEar, thigh: d.erogenous.thigh, anal: d.erogenous.anal, mouth: d.erogenous.mouth }
-    : { breast: 3, neckEar: 3, thigh: 3, anal: 1, mouth: 3 })
+    ? { breast: d.erogenous.breast, neckEar: d.erogenous.neckEar, thigh: d.erogenous.thigh, anal: d.erogenous.anal, mouth: d.erogenous.mouth, armpit: d.erogenous.armpit ?? 2 }
+    : { breast: 3, neckEar: 3, thigh: 3, anal: 1, mouth: 3, armpit: 2 })
   const setGenEro = (key: keyof typeof genEro, val: number) => {
     setGenEroState(prev => ({ ...prev, [key]: Math.min(5, Math.max(-5, val)) }))
   }
@@ -1868,9 +1868,9 @@ export default function FemaleCharacterCreatePage({
           <div style={{ margin: '4px 0' }}>
             <span style={{ color: '#ffffff88', fontSize: 11 }}>일반 성감대 · -3=거부 · +5=최고</span>
           </div>
-          {/* 입·입술, 목·귀 — 가슴 위 */}
-          {(['mouth','neckEar'] as const).map(key => {
-            const labelMap = { mouth:'입·입술', neckEar:'목·귀' }
+          {/* 입·입술, 목·귀, 겨드랑이 */}
+          {(['mouth','neckEar','armpit'] as const).map(key => {
+            const labelMap = { mouth:'입·입술', neckEar:'목·귀', armpit:'겨드랑이' }
             const val = genEro[key]; const color = sensColor(val)
             return (
               <div key={key} style={S.erogenousRow}>
@@ -1881,6 +1881,9 @@ export default function FemaleCharacterCreatePage({
               </div>
             )
           })}
+          <div style={{ color: '#06b6d4', fontSize: 10, marginBottom: 4, paddingLeft: 2 }}>
+            💧 겨드랑이는 혀로만 자극 가능 (다른 도구 사용 시 페널티)
+          </div>
           {/* 가슴 — 독립 슬라이더 */}
           <div style={S.erogenousRow}>
             <span style={{ ...S.eroLabel, color: sensColor(breast) }}>가슴</span>
