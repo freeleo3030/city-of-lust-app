@@ -1395,7 +1395,7 @@ export default function SexScenePage({
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
           {/* 전체 목록 — 섹터 헤더 + 도구 펼쳐서 표시 (overflowY 없음) */}
-          <div ref={panelScrollRef} style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div ref={panelScrollRef} id="tool-panel" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             {/* 빈 헤더 버퍼: 게이지바 겹침으로 신체 잘릴 경우 대비 */}
             <div style={{ padding: '7px 20px', borderBottom: '1px solid #ffffff18', flexShrink: 0, height: 42 }} />
             {SECTORS.map(sec => {
@@ -1405,6 +1405,7 @@ export default function SexScenePage({
                 <div key={sec.key}>
                   {/* 섹터 헤더 */}
                   <div
+                    className="panel-header"
                     onClick={() => setSector(sec.key)}
                     style={{
                       padding: '7px 20px',
@@ -1425,6 +1426,7 @@ export default function SexScenePage({
                       <button
                         key={t.key}
                         tabIndex={-1}
+                        className="panel-tool"
                         onClick={() => { setSector(sec.key); setActiveTool(t.key) }}
                         style={{
                           width: '100%', border: 'none', cursor: 'pointer',
@@ -1438,10 +1440,10 @@ export default function SexScenePage({
                       >
                         <ToolSvg toolKey={t.key} pressed={false} size={66} />
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
-                          <span style={{ fontSize: 34, color: isActive ? '#c9a84c' : '#ffffffcc', fontWeight: isActive ? 'bold' : 'normal' }}>
+                          <span className="panel-tool-label" style={{ fontSize: 34, color: isActive ? '#c9a84c' : '#ffffffcc', fontWeight: isActive ? 'bold' : 'normal' }}>
                             {t.label}
                           </span>
-                          <span style={{ fontSize: 24, color: '#ffffff44' }}>
+                          <span className="panel-tool-mult" style={{ fontSize: 24, color: '#ffffff44' }}>
                             ×{t.key === 'whip' ? getWhipMult().toFixed(2) : (Object.values(TOOL_ZONE_MATRIX[t.key]).filter(v => v && v > 0)[0] ?? 1).toFixed(2)}
                           </span>
                         </div>
@@ -1457,7 +1459,7 @@ export default function SexScenePage({
                         const cnt = handcuffs.length
                         const on = cnt > 0
                         return (
-                          <button tabIndex={-1} onClick={toggleHandcuffs}
+                          <button tabIndex={-1} onClick={toggleHandcuffs} className="panel-sm-btn"
                             style={{ background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
                               border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
                               borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
@@ -1501,7 +1503,7 @@ export default function SexScenePage({
                       {RESTRAINT_DEFS.filter(r => r.key !== 'handcuff' && r.key !== 'legcuff').map(r => {
                         const on = restraints.has(r.key)
                         return (
-                          <button key={r.key} tabIndex={-1} onClick={() => toggleRestraint(r.key)}
+                          <button key={r.key} tabIndex={-1} onClick={() => toggleRestraint(r.key)} className="panel-sm-btn"
                             style={{ background: on ? 'rgba(233,69,96,0.2)' : 'rgba(255,255,255,0.04)',
                               border: `1px solid ${on ? '#e94560' : '#ffffff22'}`,
                               borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
@@ -1520,7 +1522,7 @@ export default function SexScenePage({
 
           {/* 테크닉 섹션 */}
           <div>
-            <div style={{
+            <div className="panel-tech-header" style={{
               padding: '7px 20px', background: 'rgba(255,255,255,0.03)',
               borderLeft: '5px solid #ffffff11', borderBottom: '1px solid #ffffff18',
               color: '#ffffff66', fontSize: 28, fontWeight: 'bold', letterSpacing: 2,
@@ -1529,6 +1531,7 @@ export default function SexScenePage({
               tabIndex={-1}
               disabled={maleArousal <= 0}
               onClick={() => setShowPoseSelect(true)}
+              className="panel-tech-btn"
               style={{
                 width: '100%', padding: '10px 0', borderRadius: 0, cursor: maleArousal > 0 ? 'pointer' : 'not-allowed',
                 background: maleArousal > 0 ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.03)',
@@ -1660,6 +1663,25 @@ export default function SexScenePage({
       )}
 
       <style>{`
+        /* 도구 패널 반응형 — 화면 높이에 따라 폰트·패딩 축소 */
+        @media (max-height: 800px) {
+          #tool-panel .panel-header     { font-size: 22px !important; padding: 5px 16px !important; }
+          #tool-panel .panel-tool       { padding: 7px 14px !important; }
+          #tool-panel .panel-tool-label { font-size: 22px !important; }
+          #tool-panel .panel-tool-mult  { font-size: 18px !important; }
+          #tool-panel .panel-sm-btn     { font-size: 20px !important; padding: 4px 10px !important; }
+          .panel-tech-header            { font-size: 22px !important; padding: 5px 16px !important; }
+          .panel-tech-btn               { font-size: 22px !important; }
+        }
+        @media (max-height: 640px) {
+          #tool-panel .panel-header     { font-size: 17px !important; padding: 3px 12px !important; }
+          #tool-panel .panel-tool       { padding: 4px 12px !important; }
+          #tool-panel .panel-tool-label { font-size: 17px !important; }
+          #tool-panel .panel-tool-mult  { font-size: 14px !important; }
+          #tool-panel .panel-sm-btn     { font-size: 16px !important; padding: 3px 8px !important; }
+          .panel-tech-header            { font-size: 17px !important; padding: 3px 12px !important; }
+          .panel-tech-btn               { font-size: 17px !important; }
+        }
         @keyframes fadeUp {
           0%   { opacity: 1; transform: translate(-50%, -50%); }
           100% { opacity: 0; transform: translate(-50%, -80%); }
