@@ -1304,7 +1304,8 @@ export default function SexScenePage({
             </div>
           )}
 
-          {/* 수갑 쌍들 */}
+          {/* failEnding 중엔 모든 오버레이 숨김 */}
+          {!failEnding && <>{/* 수갑 쌍들 */}
           {handcuffs.map(c => (
             <React.Fragment key={c.id}>
               <ChainLinks ax={c.left.x} ay={c.left.y} mx={c.mid.x} my={c.mid.y} bx={c.right.x} by={c.right.y}
@@ -1461,6 +1462,7 @@ export default function SexScenePage({
               </div>
             </div>
           )}
+          </>}
         </div>
 
       {/* 사이드 패널: 이미지 바로 오른쪽에 flex child로 배치 */}
