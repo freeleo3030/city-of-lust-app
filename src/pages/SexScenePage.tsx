@@ -777,13 +777,14 @@ export default function SexScenePage({
 
   // 나이 배율
   const age = femaleChar.age ?? 25
-  const ageMult = age < 30 ? 0.8 : age < 40 ? 1.0 : 1.5
+  const ageMult = age < 30 ? 0.8 : age < 40 ? 1.0 : 1.2
 
   // 채찍 배율 계산 (smTendency: 음수=M성향=채찍 좋아함, 양수=S성향=싫어함→음수)
+  // SM 효과 50% 적용 (smMod 보정 반절)
   const getWhipMult = useCallback(() => {
     const sm = femaleChar.smTendency ?? 0
-    if (sm > 0) return -(sm / 10)  // S성향: 채찍 맞으면 흥분 감소
-    const base = 1.5 + (-sm * 0.05)  // M성향: 강도 상승
+    if (sm > 0) return -(sm / 20)  // S성향: 반절 감소
+    const base = 1.5 + (-sm * 0.025)  // M성향: smMod 반절
     const restrained = restraints.has('handcuff') && restraints.has('legcuff')
     return Math.min(3.0, base) * (restrained ? 1.3 : 1.0)
   }, [femaleChar.smTendency, restraints])
@@ -792,16 +793,16 @@ export default function SexScenePage({
   const getToolMult = useCallback((toolKey: ToolKey, zoneKey: string): number => {
     if (toolKey === 'whip' || toolKey === 'anal_dildo') {
       const sm = femaleChar.smTendency ?? 0
-      if (sm > 0) return -(sm / 10)  // S성향: SM 도구 사용 시 흥분 감소
+      if (sm > 0) return -(sm / 20)  // S성향: SM 도구 사용 시 흥분 감소 (반절)
       if (toolKey === 'anal_dildo') {
         const base = TOOL_ZONE_MATRIX.anal_dildo[zoneKey as ErogenousKey] ?? 0
-        const smMod = 1.0 + (-sm * 0.05)  // M성향: 강도 상승
+        const smMod = 1.0 + (-sm * 0.025)  // M성향: 반절 보정
         return base <= 0 ? base : Math.min(3.0, base * smMod)
       }
       const level = Math.min(4, restraints.size)
       const base = WHIP_LEVEL_MATRIX[level][zoneKey as ErogenousKey] ?? 0
       if (base <= 0) return base
-      const smMod = 1.0 + (-sm * 0.05)
+      const smMod = 1.0 + (-sm * 0.025)  // M성향: 반절 보정
       return Math.min(3.0, base * smMod)
     }
     // 젤 콤보: 젤 적용 후 손/딜도/진동기 사용 시
@@ -988,11 +989,12 @@ export default function SexScenePage({
     const sensitivity = getEroSensitivity(zone.key)
     const toolMult = getToolMult(activeTool, zone.key)
     const posePref = (femaleChar.prefPose?.[currentPoseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
+    const sensMod = sensitivity * 0.5  // sensitivity 효과 50% 적용
     const gain = toolMult < 0
       ? toolMult * 20
       : sensitivity < 0
-        ? sensitivity * 5
-        : Math.max(1, sensitivity) * toolMult * ageMult * posePref * 4
+        ? sensMod * 5
+        : Math.max(1, sensMod) * toolMult * ageMult * posePref * 4
 
     setFemaleArousal(prev => Math.min(1000, Math.max(0, prev + gain)))
     setFemaleFlash(true)
