@@ -102,6 +102,8 @@ const ALL_ZONE_OPTIONS: HotspotZone[] = [
   { key: 'clitoris', label: '클리토리스', cx: 50, cy: 80, rx: 4,   ry: 2,   color: '#e94560' },
   { key: 'vagina',   label: '질',         cx: 50, cy: 85, rx: 3.5, ry: 2,   color: '#e94560' },
   { key: 'anal',     label: '항문',       cx: 50, cy: 91, rx: 6,   ry: 4,   color: '#c9a84c' },
+  { key: 'armpit',   label: '겨드랑이L',  cx: 22, cy: 38, rx: 8,   ry: 5,   color: '#06b6d4' },
+  { key: 'armpit',   label: '겨드랑이R',  cx: 78, cy: 38, rx: 8,   ry: 5,   color: '#06b6d4' },
 ]
 
 // ─── 핫스팟 드래그 에디터 ────────────────────────────────────────────────────
