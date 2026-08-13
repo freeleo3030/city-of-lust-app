@@ -1035,7 +1035,8 @@ export default function SexScenePage({
     : spriteUrls
   const showSprite = (displayMode === 'sprite_aroused' || displayMode === 'sprite_climax') && currentSpriteUrls.length >= 1
   const showClimax = displayMode === 'photo_climax'
-  const imgSrc = femaleArousal >= 600 ? climaxImg : arousedImg
+  const disappointedImg = femaleChar.expressionImages?.[3] ?? femaleChar.imageUrl ?? ''
+  const imgSrc = failEnding ? disappointedImg : (femaleArousal >= 600 ? climaxImg : arousedImg)
 
   const exprKey: 'aroused' | 'climax' = femaleArousal >= 600 ? 'climax' : 'aroused'
   const climaxSpriteStored  = poseImages[`${currentPoseKey}_climax_sprite_hotspots`]  as unknown as HotspotZone[] | undefined
@@ -1236,10 +1237,31 @@ export default function SexScenePage({
 
         {/* 이미지 + 핫스팟 */}
         <div ref={imageContainerRef} style={{ position: 'relative', height: '100%', flexShrink: 0 }}>
-          {showSprite ? (
+          {failEnding ? (
+            <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
+          ) : showSprite ? (
             <SpriteAnimation urls={currentSpriteUrls} fps={4} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} />
           ) : (
             <img src={imgSrc} style={{ height: '100%', width: 'auto', display: 'block', borderRadius: 8 }} alt="" draggable={false} />
+          )}
+
+          {/* 실패 종료 텍스트 오버레이 */}
+          {failEnding && (
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: 8,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
+              padding: '0 20px 36px',
+              animation: 'fadeInFail 0.6s ease',
+              pointerEvents: 'none',
+            }}>
+              <div style={{ fontSize: 36, color: '#e94560', fontWeight: 'bold', letterSpacing: 2, marginBottom: 10 }}>
+                실망이야...
+              </div>
+              <div style={{ fontSize: 24, color: '#ffffff99' }}>
+                {femaleChar.nickname ?? '그녀'}가 자리를 떠났다
+              </div>
+            </div>
           )}
 
           {/* 수갑 쌍들 */}
@@ -1621,32 +1643,6 @@ export default function SexScenePage({
 
       </div>{/* flex row 닫기 */}
 
-      {/* 실패 종료 오버레이 — 실망 표정 */}
-      {failEnding && (() => {
-        const disappointedImg = femaleChar.expressionImages?.[3] ?? femaleChar.imageUrl ?? ''
-        return (
-          <div style={{
-            position: 'absolute', inset: 0, zIndex: 300,
-            background: 'rgba(0,0,0,0.88)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24,
-            animation: 'fadeInFail 0.6s ease',
-          }}>
-            {disappointedImg && (
-              <img src={disappointedImg} alt="실망" style={{
-                width: 280, height: 360, objectFit: 'cover', borderRadius: 16,
-                border: '2px solid #e9456055',
-                boxShadow: '0 0 40px #e9456033',
-              }} />
-            )}
-            <div style={{ fontSize: 32, color: '#e94560', fontWeight: 'bold', letterSpacing: 2 }}>
-              실망이야...
-            </div>
-            <div style={{ fontSize: 22, color: '#ffffff55' }}>
-              {femaleChar.nickname ?? '그녀'}가 자리를 떠났다
-            </div>
-          </div>
-        )
-      })()}
 
       {/* 체위 선택 모달 */}
       {showPoseSelect && (
