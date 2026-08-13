@@ -994,7 +994,7 @@ export default function SexScenePage({
       ? toolMult * 20
       : sensitivity < 0
         ? sensMod * 5
-        : Math.max(1, sensMod) * toolMult * ageMult * posePref * 4
+        : toolMult * ageMult * posePref * 2 + sensMod
 
     setFemaleArousal(prev => Math.min(1000, Math.max(0, prev + gain)))
     setFemaleFlash(true)
