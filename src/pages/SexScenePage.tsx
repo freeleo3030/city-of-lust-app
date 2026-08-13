@@ -662,6 +662,7 @@ export default function SexScenePage({
 }) {
   const [currentPoseKey, setCurrentPoseKey] = useState(poseKey)
   const [showPoseSelect, setShowPoseSelect] = useState(false)
+  const [failEnding, setFailEnding] = useState(false)
   const [femaleArousal, setFemaleArousal] = useState(0)
   const [maleArousal, setMaleArousal] = useState(0)
   const [phase, setPhase] = useState<ScenePhase>('foreplay')
@@ -821,12 +822,16 @@ export default function SexScenePage({
     }
   }, [femaleArousal, orgasmCount, phase, ended, onEnd])
 
+  const triggerFail = useCallback(() => {
+    if (ended) return
+    setEnded(true)
+    setFailEnding(true)
+    setTimeout(() => onEnd('fail'), 3500)
+  }, [ended, onEnd])
+
   useEffect(() => {
-    if (maleArousal >= 100 && !ended) {
-      setEnded(true)
-      setTimeout(() => onEnd('fail'), 2000)
-    }
-  }, [maleArousal, ended, onEnd])
+    if (maleArousal >= 100 && !ended) triggerFail()
+  }, [maleArousal, ended, triggerFail])
 
   // 남캐 흥분도 자동 증가 (SM 도구 배치 중엔 정지)
   useEffect(() => {
@@ -1554,7 +1559,7 @@ export default function SexScenePage({
           {/* 포기 — 항상 하단 고정 */}
           <button
             tabIndex={-1}
-            onClick={() => onEnd('fail')}
+            onClick={() => triggerFail()}
             style={{
               width: '100%', border: 'none',
               borderTop: '1px solid #ffffff18', padding: '18px',
@@ -1615,6 +1620,33 @@ export default function SexScenePage({
         </div>
 
       </div>{/* flex row 닫기 */}
+
+      {/* 실패 종료 오버레이 — 실망 표정 */}
+      {failEnding && (() => {
+        const disappointedImg = femaleChar.expressionImages?.[3] ?? femaleChar.imageUrl ?? ''
+        return (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 300,
+            background: 'rgba(0,0,0,0.88)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24,
+            animation: 'fadeInFail 0.6s ease',
+          }}>
+            {disappointedImg && (
+              <img src={disappointedImg} alt="실망" style={{
+                width: 280, height: 360, objectFit: 'cover', borderRadius: 16,
+                border: '2px solid #e9456055',
+                boxShadow: '0 0 40px #e9456033',
+              }} />
+            )}
+            <div style={{ fontSize: 32, color: '#e94560', fontWeight: 'bold', letterSpacing: 2 }}>
+              실망이야...
+            </div>
+            <div style={{ fontSize: 22, color: '#ffffff55' }}>
+              {femaleChar.nickname ?? '그녀'}가 자리를 떠났다
+            </div>
+          </div>
+        )
+      })()}
 
       {/* 체위 선택 모달 */}
       {showPoseSelect && (
@@ -1690,6 +1722,10 @@ export default function SexScenePage({
           #tool-panel .panel-sm-btn     { font-size: 16px !important; padding: 3px 8px !important; }
           .panel-tech-header            { font-size: 17px !important; padding: 3px 12px !important; }
           .panel-tech-btn               { font-size: 17px !important; }
+        }
+        @keyframes fadeInFail {
+          from { opacity: 0; transform: scale(1.03); }
+          to   { opacity: 1; transform: scale(1); }
         }
         @keyframes fadeUp {
           0%   { opacity: 1; transform: translate(-50%, -50%); }
