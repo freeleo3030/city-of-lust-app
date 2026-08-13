@@ -739,6 +739,7 @@ export default function SexScenePage({
   const [maleFlash, setMaleFlash] = useState(false)
   const [ended, setEnded] = useState(false)
   const gelApplied = useRef(false)
+  const toolUseCount = useRef<Record<string, number>>({})
   const lastActionTime = useRef<number>(0)
   const lastZoneKey = useRef<string>('')
   const consecutiveCount = useRef<number>(0)
@@ -924,6 +925,17 @@ export default function SexScenePage({
     }
     if (isPhotoClimax && activeTool === 'penis' && zone.key !== 'vagina' && zone.key !== 'anal') {
       return showPenalty('지금은 그곳이 아니야... 안으로 들어와야 해.', zone.cx, zone.cy)
+    }
+
+    // 도구 사용 횟수 제한 (3회 초과 시 penalty)
+    // 제외: SM 장구류(수갑/족갑/안대/개목걸이), 젤, 그리고 절정사진에서 penis
+    const UNLIMITED_TOOLS = new Set(['handcuff', 'legcuff', 'blindfold', 'collar', 'gel'])
+    if (!UNLIMITED_TOOLS.has(activeTool) && !(isPhotoClimax && activeTool === 'penis')) {
+      const count = (toolUseCount.current[activeTool] ?? 0) + 1
+      toolUseCount.current[activeTool] = count
+      if (count > 3) {
+        return showPenalty('이제 그건 별로야... 다른 걸 써봐', zone.cx, zone.cy)
+      }
     }
 
     // 연속 공략 체크
