@@ -756,7 +756,7 @@ export default function SexScenePage({
     const timer = setInterval(() => {
       if (ended || failEnding) return
       if (Date.now() - lastActionTime.current > 10000) {
-        setFemaleArousal(prev => Math.max(0, prev - 10))
+        setFemaleArousal(prev => Math.max(0, prev - 2))
       }
     }, 1000)
     return () => clearInterval(timer)
@@ -1029,7 +1029,7 @@ export default function SexScenePage({
       ]
       return stats.reduce((sum, { m, f }) => {
         const diff = m - f
-        return sum + (diff >= 0 ? diff / 200 : diff / 100)
+        return sum + (diff >= 0 ? diff / 100 : diff / 100)
       }, 0)
     })() : 0
 
@@ -1039,7 +1039,7 @@ export default function SexScenePage({
       : 0
 
     const gain = toolMult < 0
-      ? toolMult * 20
+      ? toolMult * 10
       : sensitivity < 0
         ? sensMod * 5
         : toolMult * ageMult * posePref * 2 + sensMod + malePrefBonus + maleSizeBonus
