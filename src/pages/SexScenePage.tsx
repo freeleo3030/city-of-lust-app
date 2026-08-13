@@ -660,6 +660,8 @@ export default function SexScenePage({
   maleChar: any
   onEnd: (result: 'success' | 'fail') => void
 }) {
+  const [currentPoseKey, setCurrentPoseKey] = useState(poseKey)
+  const [showPoseSelect, setShowPoseSelect] = useState(false)
   const [femaleArousal, setFemaleArousal] = useState(0)
   const [maleArousal, setMaleArousal] = useState(0)
   const [phase, setPhase] = useState<ScenePhase>('foreplay')
@@ -747,17 +749,17 @@ export default function SexScenePage({
 
   // 포즈 이미지 URL 추출
   const poseImages = femaleChar.poseImages ?? {}
-  const arousedImg = poseImages[`${poseKey}_aroused`] ?? ''
-  const climaxImg  = poseImages[`${poseKey}_climax`]  ?? ''
+  const arousedImg = poseImages[`${currentPoseKey}_aroused`] ?? ''
+  const climaxImg  = poseImages[`${currentPoseKey}_climax`]  ?? ''
 
   // 스프라이트 URL 추출
   const spriteUrls: string[] = [0, 1, 2]
-    .map(i => poseImages[`${poseKey}_aroused_sprite_${i}`] ?? poseImages[`${poseKey}_sprite_${i}`] ?? '')
+    .map(i => poseImages[`${currentPoseKey}_aroused_sprite_${i}`] ?? poseImages[`${currentPoseKey}_sprite_${i}`] ?? '')
     .filter(Boolean)
   const climaxSpriteUrls: string[] = [0, 1, 2]
-    .map(i => poseImages[`${poseKey}_climax_sprite_${i}`] ?? '')
+    .map(i => poseImages[`${currentPoseKey}_climax_sprite_${i}`] ?? '')
     .filter(Boolean)
-  console.log('[SexScene] poseKey:', poseKey, '| poseImages keys:', Object.keys(poseImages), '| spriteUrls:', spriteUrls.length)
+  console.log('[SexScene] poseKey:', currentPoseKey, '| poseImages keys:', Object.keys(poseImages), '| spriteUrls:', spriteUrls.length)
 
   // 나이 배율
   const age = femaleChar.age ?? 25
@@ -945,7 +947,7 @@ export default function SexScenePage({
 
     const sensitivity = getEroSensitivity(zone.key)
     const toolMult = getToolMult(activeTool, zone.key)
-    const posePref = (femaleChar.prefPose?.[poseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
+    const posePref = (femaleChar.prefPose?.[currentPoseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
     const gain = toolMult < 0
       ? toolMult * 20
       : sensitivity < 0
@@ -1031,14 +1033,14 @@ export default function SexScenePage({
   const hotspots: HotspotZone[] = (() => {
     if (exprKey === 'climax') {
       if (showSprite && climaxSpriteStored?.length) return climaxSpriteStored
-      return climaxStored?.length ? climaxStored : (arousedStored?.length ? arousedStored : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary']))
+      return climaxStored?.length ? climaxStored : (arousedStored?.length ? arousedStored : (HOTSPOTS[currentPoseKey] ?? HOTSPOTS['missionary']))
     }
     if (showSprite && arousedSpriteStored?.length) return arousedSpriteStored
-    return arousedStored?.length ? arousedStored : (HOTSPOTS[poseKey] ?? HOTSPOTS['missionary'])
+    return arousedStored?.length ? arousedStored : (HOTSPOTS[currentPoseKey] ?? HOTSPOTS['missionary'])
   })()
 
   // 구속 오버레이 위치 (자세 fallback: missionary)
-  const restraintPos = RESTRAINT_POS[poseKey] ?? RESTRAINT_POS['missionary']
+  const restraintPos = RESTRAINT_POS[currentPoseKey] ?? RESTRAINT_POS['missionary']
 
   // 드래그 핸들러
   const handleRestraintMouseDown = useCallback((key: RestraintKey, e: React.MouseEvent) => {
@@ -1516,6 +1518,24 @@ export default function SexScenePage({
             })}
           </div>
 
+          {/* 테크닉 섹션 */}
+          <div style={{ borderTop: '1px solid #ffffff18', padding: '10px 16px 6px' }}>
+            <div style={{ fontSize: 20, color: '#c9a84c', fontWeight: 'bold', letterSpacing: 2, marginBottom: 8 }}>테크닉</div>
+            <button
+              tabIndex={-1}
+              disabled={maleArousal <= 0}
+              onClick={() => setShowPoseSelect(true)}
+              style={{
+                width: '100%', padding: '10px 0', borderRadius: 8, cursor: maleArousal > 0 ? 'pointer' : 'not-allowed',
+                background: maleArousal > 0 ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${maleArousal > 0 ? '#c9a84c88' : '#ffffff22'}`,
+                color: maleArousal > 0 ? '#c9a84c' : '#ffffff33', fontSize: 26, fontWeight: 'bold',
+              }}
+            >
+              체위 변경
+            </button>
+          </div>
+
           {/* 포기 — 항상 하단 고정 */}
           <button
             tabIndex={-1}
@@ -1580,6 +1600,60 @@ export default function SexScenePage({
         </div>
 
       </div>{/* flex row 닫기 */}
+
+      {/* 체위 선택 모달 */}
+      {showPoseSelect && (
+        <div style={{
+          position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.82)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          zIndex: 200,
+        }}>
+          <div style={{ fontSize: 32, color: '#c9a84c', fontWeight: 'bold', marginBottom: 8 }}>체위 변경</div>
+          <div style={{ fontSize: 24, color: '#ffffff66', marginBottom: 28 }}>
+            남캐 흥분도 −30% · 여캐 흥분도 −50%
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {[
+              { key: 'missionary', label: '정상위' },
+              { key: 'doggy',      label: '후배위' },
+              { key: 'cowgirl',    label: '기승위' },
+              { key: 'side',       label: '측위'   },
+            ].map(p => {
+              const isCurrent = p.key === currentPoseKey
+              return (
+                <button key={p.key} tabIndex={-1}
+                  onClick={() => {
+                    if (isCurrent) return
+                    setCurrentPoseKey(p.key)
+                    setMaleArousal(prev => Math.max(0, Math.round(prev * 0.7)))
+                    setFemaleArousal(prev => Math.max(0, Math.round(prev * 0.5)))
+                    setShowPoseSelect(false)
+                    addChat(`체위를 바꿨어... (${p.label}) 처음부터 다시 달궈줘`, '#c9a84c')
+                  }}
+                  style={{
+                    width: 140, height: 100, borderRadius: 12, cursor: isCurrent ? 'default' : 'pointer',
+                    background: isCurrent ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.06)',
+                    border: `2px solid ${isCurrent ? '#c9a84c' : '#ffffff22'}`,
+                    color: isCurrent ? '#c9a84c' : '#ffffff99',
+                    fontSize: 30, fontWeight: 'bold',
+                    opacity: isCurrent ? 0.5 : 1,
+                  }}
+                >
+                  {p.label}
+                  {isCurrent && <div style={{ fontSize: 18, color: '#c9a84c88' }}>현재</div>}
+                </button>
+              )
+            })}
+          </div>
+          <button tabIndex={-1} onClick={() => setShowPoseSelect(false)}
+            style={{
+              marginTop: 28, padding: '10px 36px', borderRadius: 8, cursor: 'pointer',
+              background: 'transparent', border: '1px solid #ffffff33',
+              color: '#ffffff55', fontSize: 24,
+            }}
+          >취소</button>
+        </div>
+      )}
 
       <style>{`
         @keyframes fadeUp {
