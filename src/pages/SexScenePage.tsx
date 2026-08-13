@@ -779,31 +779,45 @@ export default function SexScenePage({
   const age = femaleChar.age ?? 25
   const ageMult = age < 30 ? 0.8 : age < 40 ? 1.0 : 1.2
 
+  // 남캐 SM 궁합 배율 (male: 음수=S, 양수=M / female: 음수=M, 양수=S)
+  // 같은 부호 = 상생(S지배+M복종), 다른 부호 = 충돌
+  const maleSM = maleChar?.smTendency ?? 0
+  const femaleSM = femaleChar.smTendency ?? 0
+  const smCompatMult = maleSM * femaleSM > 0 ? 1.5
+                     : maleSM * femaleSM < 0 ? 0.5
+                     : 1.0
+
+  // 남캐 성기/테크닉 스탯 (기본값: 50/50/25/25)
+  const mPenisSize   = maleChar?.penisSize     ?? 50
+  const mPenisGirth  = maleChar?.penisGirth    ?? 50
+  const mHardness    = maleChar?.erectHardness ?? 25
+  const mTechnique   = maleChar?.erectTechnique ?? 25
+
   // 채찍 배율 계산 (smTendency: 음수=M성향=채찍 좋아함, 양수=S성향=싫어함→음수)
-  // SM 효과 50% 적용 (smMod 보정 반절)
+  // SM 효과 50% 적용 (smMod 보정 반절) + 남녀 SM 궁합 적용
   const getWhipMult = useCallback(() => {
     const sm = femaleChar.smTendency ?? 0
-    if (sm > 0) return -(sm / 20)  // S성향: 반절 감소
+    if (sm > 0) return -(sm / 20) * smCompatMult  // S성향: 감소 (궁합 충돌 시 더 큰 감소)
     const base = 1.5 + (-sm * 0.025)  // M성향: smMod 반절
     const restrained = restraints.has('handcuff') && restraints.has('legcuff')
-    return Math.min(3.0, base) * (restrained ? 1.3 : 1.0)
-  }, [femaleChar.smTendency, restraints])
+    return Math.min(3.0, base) * (restrained ? 1.3 : 1.0) * smCompatMult
+  }, [femaleChar.smTendency, restraints, smCompatMult])
 
   // 도구 배율 계산 (매트릭스 기반, 음수 = 흥분도 하락)
   const getToolMult = useCallback((toolKey: ToolKey, zoneKey: string): number => {
     if (toolKey === 'whip' || toolKey === 'anal_dildo') {
       const sm = femaleChar.smTendency ?? 0
-      if (sm > 0) return -(sm / 20)  // S성향: SM 도구 사용 시 흥분 감소 (반절)
+      if (sm > 0) return -(sm / 20) * smCompatMult  // S성향: 감소 (궁합 반영)
       if (toolKey === 'anal_dildo') {
         const base = TOOL_ZONE_MATRIX.anal_dildo[zoneKey as ErogenousKey] ?? 0
         const smMod = 1.0 + (-sm * 0.025)  // M성향: 반절 보정
-        return base <= 0 ? base : Math.min(3.0, base * smMod)
+        return base <= 0 ? base : Math.min(3.0, base * smMod) * smCompatMult
       }
       const level = Math.min(4, restraints.size)
       const base = WHIP_LEVEL_MATRIX[level][zoneKey as ErogenousKey] ?? 0
       if (base <= 0) return base
       const smMod = 1.0 + (-sm * 0.025)  // M성향: 반절 보정
-      return Math.min(3.0, base * smMod)
+      return Math.min(3.0, base * smMod) * smCompatMult
     }
     // 젤 콤보: 젤 적용 후 손/딜도/진동기 사용 시
     if (gelApplied.current && (toolKey === 'hand' || toolKey === 'dildo' || toolKey === 'vibrator')) {
@@ -812,7 +826,7 @@ export default function SexScenePage({
       return base * bonus
     }
     return TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
-  }, [femaleChar.smTendency, restraints])
+  }, [femaleChar.smTendency, restraints, smCompatMult])
 
   // 현재 섹터의 도구 목록
   const sectorTools = TOOL_DEFS.filter(t => t.sector === sector)
@@ -990,11 +1004,19 @@ export default function SexScenePage({
     const toolMult = getToolMult(activeTool, zone.key)
     const posePref = (femaleChar.prefPose?.[currentPoseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
     const sensMod = sensitivity * 0.5  // sensitivity 효과 50% 적용
+
+    // 남캐 penis 스탯: 길이+두께 합산(기준 100), 단단함(기준 25) → penis 도구 배율
+    const malePenisMult = activeTool === 'penis'
+      ? 1.0 + (mPenisSize + mPenisGirth - 100) / 200 + (mHardness - 25) / 100
+      : 1.0
+    // 남캐 테크닉: 모든 도구에 additive 보너스 (기준 25, 최대 +0.75)
+    const maleTechBonus = (mTechnique - 25) / 100
+
     const gain = toolMult < 0
       ? toolMult * 20
       : sensitivity < 0
-        ? sensMod * 5
-        : toolMult * ageMult * posePref * 2 + sensMod
+        ? sensMod * 5 + maleTechBonus
+        : toolMult * ageMult * posePref * malePenisMult * 2 + sensMod + maleTechBonus
 
     setFemaleArousal(prev => Math.min(500, Math.max(0, prev + gain)))
     setFemaleFlash(true)
