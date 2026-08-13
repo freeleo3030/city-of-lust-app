@@ -776,13 +776,18 @@ export default function SexScenePage({
 
   // 도구 배율 계산 (매트릭스 기반, 음수 = 흥분도 하락)
   const getToolMult = useCallback((toolKey: ToolKey, zoneKey: string): number => {
-    if (toolKey === 'whip') {
+    if (toolKey === 'whip' || toolKey === 'anal_dildo') {
       const sm = femaleChar.smTendency ?? 0
-      if (sm > 0) return -(sm / 10)  // S성향: 채찍 맞으면 흥분 감소
+      if (sm > 0) return -(sm / 10)  // S성향: SM 도구 사용 시 흥분 감소
+      if (toolKey === 'anal_dildo') {
+        const base = TOOL_ZONE_MATRIX.anal_dildo[zoneKey as ErogenousKey] ?? 0
+        const smMod = 1.0 + (-sm * 0.05)  // M성향: 강도 상승
+        return base <= 0 ? base : Math.min(3.0, base * smMod)
+      }
       const level = Math.min(4, restraints.size)
       const base = WHIP_LEVEL_MATRIX[level][zoneKey as ErogenousKey] ?? 0
       if (base <= 0) return base
-      const smMod = 1.0 + (-sm * 0.05)  // M성향: 강도 상승
+      const smMod = 1.0 + (-sm * 0.05)
       return Math.min(3.0, base * smMod)
     }
     // 젤 콤보: 젤 적용 후 손/딜도/진동기 사용 시
