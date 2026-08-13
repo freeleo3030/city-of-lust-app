@@ -86,7 +86,13 @@ const TOOL_ZONE_MATRIX: Record<ToolKey, Record<ErogenousKey, number>> = {
   penis:      { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.5,  anal:1.1,  mouth:1.1  },
   dildo:      { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.1,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
   vibrator:   { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
-  gel:        { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.05, vagina:1.05, anal:1.05, mouth:-0.2 },
+  gel:        { breast:0,    neck:0,    ear:0,    thigh:0,    clitoris:0,    vagina:0,    anal:0,    mouth:0    }, // 단독 사용 무효과
+  // 젤+손/딜도/진동기 콤보 배율
+  // breast/thigh/anal=1.1×, clitoris/vagina=1.15×, 나머지 X
+const GEL_COMBO_MATRIX: Record<ErogenousKey, number> = {
+  breast:1.1, neck:-0.2, ear:-0.2, thigh:1.1, clitoris:1.15, vagina:1.15, anal:1.1, mouth:-0.2,
+}
+
   // 채찍: SM 도구 착용 개수(0~4)에 따라 WHIP_LEVEL_MATRIX 사용
   whip:       { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 },
   anal_dildo: { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:-0.2, vagina:-0.2, anal:1.3,  mouth:-0.2 },
@@ -730,6 +736,7 @@ export default function SexScenePage({
   const [orgasmFlash, setOrgasmFlash] = useState(false)
   const [maleFlash, setMaleFlash] = useState(false)
   const [ended, setEnded] = useState(false)
+  const gelApplied = useRef(false)
   const lastZoneKey = useRef<string>('')
   const consecutiveCount = useRef<number>(0)
   const lastGroupKey = useRef<string>('')
@@ -773,6 +780,10 @@ export default function SexScenePage({
       const sm = femaleChar.smTendency ?? 0
       const smMod = 1.0 + (-sm * 0.05)
       return Math.max(0.1, base * smMod)
+    }
+    // 젤 콤보: 젤 적용 후 손/딜도/진동기 사용 시
+    if (gelApplied.current && (toolKey === 'hand' || toolKey === 'dildo' || toolKey === 'vibrator')) {
+      return GEL_COMBO_MATRIX[zoneKey as ErogenousKey] ?? 0
     }
     return TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
   }, [femaleChar.smTendency, restraints])
@@ -914,6 +925,16 @@ export default function SexScenePage({
       }
     }
 
+    // 젤 적용 상태 관리
+    if (activeTool === 'gel') {
+      gelApplied.current = true
+      showPointPopup(0, zone.cx, zone.cy)
+      addChat('촉촉하게 발라줬어...♥', '#c9a84c')
+      return
+    }
+    const isGelCombo = gelApplied.current && (activeTool === 'hand' || activeTool === 'dildo' || activeTool === 'vibrator')
+    if (!isGelCombo) gelApplied.current = false
+
     const sensitivity = getEroSensitivity(zone.key)
     const toolMult = getToolMult(activeTool, zone.key)
     const posePref = (femaleChar.prefPose?.[poseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
@@ -933,9 +954,15 @@ export default function SexScenePage({
     setToolAnim({ cx: zone.cx, cy: zone.cy })
     toolAnimTimer.current = setTimeout(() => setToolAnim(null), 700)
 
+    // 젤 콤보 소모
+    if (isGelCombo) gelApplied.current = false
+
     let msgText: string
     let msgColor: string
-    if (toolMult < 0) {
+    if (isGelCombo && gain > 0) {
+      msgText = `젤 덕분에 더 좋아...♥ `+ (rnd(MSGS.gain_mid))
+      msgColor = '#c9a84c'
+    } else if (toolMult < 0) {
       msgText = rnd(MSGS.bad_tool)
       msgColor = '#e94560'
     } else if (sensitivity < 0) {
