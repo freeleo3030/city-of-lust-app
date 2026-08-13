@@ -2020,7 +2020,7 @@ export default function FemaleCharacterCreatePage({
 
           {([
             ['정상위','missionary'],['후배위','doggy'],
-            ['여성상위','cowgirl'],['좌위','side'],
+            ['여성상위','cowgirl'],['버터플라이','side'],
           ] as [string, keyof typeof prefPose][]).map(([label, key]) => {
             const val = prefPose[key]
             const poseColor = val >= 4 ? '#c9a84c' : val >= 2 ? '#66BB6A' : '#e94560'
