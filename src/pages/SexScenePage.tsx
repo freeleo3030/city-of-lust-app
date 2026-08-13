@@ -894,16 +894,16 @@ export default function SexScenePage({
   useEffect(() => { activeToolRef.current = activeTool }, [activeTool])
 
   // 남캐 흥분도 자동 증가
-  // penis 사용 시: 1초마다 +3 / 다른 도구: 3초마다 +1 (누적 방식)
+  // penis 사용 시: 1초마다 +2 / 다른 도구: 3초마다 +1 (누적 방식)
   const maleArousalAccum = useRef(0)
   useEffect(() => {
     if (ended) return
     const id = setInterval(() => {
       if (isDraggingSM.current || ended || failEnding) return
       const isPenis = activeToolRef.current === 'penis'
-      maleArousalAccum.current += isPenis ? 3 : 1
+      maleArousalAccum.current += isPenis ? 2 : 1
       if (isPenis || maleArousalAccum.current >= 3) {
-        const add = isPenis ? 3 : 1
+        const add = isPenis ? 2 : 1
         maleArousalAccum.current = isPenis ? 0 : maleArousalAccum.current - 3
         setMaleArousal(prev => {
           setMaleFlash(true)
