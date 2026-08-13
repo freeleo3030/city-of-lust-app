@@ -748,6 +748,17 @@ export default function SexScenePage({
   const chatLogRef = useRef<HTMLDivElement>(null)
   const chatIdRef = useRef(0)
 
+  // 3초 무행동 시 여캐 흥분도 초당 10씩 감소
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (ended || failEnding) return
+      if (Date.now() - lastActionTime.current > 3000) {
+        setFemaleArousal(prev => Math.max(0, prev - 10))
+      }
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [ended, failEnding])
+
   // 포즈 이미지 URL 추출
   const poseImages = femaleChar.poseImages ?? {}
   const arousedImg = poseImages[`${currentPoseKey}_aroused`] ?? ''
