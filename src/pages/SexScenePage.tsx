@@ -87,15 +87,14 @@ const TOOL_ZONE_MATRIX: Record<ToolKey, Record<ErogenousKey, number>> = {
   dildo:      { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.1,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
   vibrator:   { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2 },
   gel:        { breast:0,    neck:0,    ear:0,    thigh:0,    clitoris:0,    vagina:0,    anal:0,    mouth:0    }, // 단독 사용 무효과
-  // 젤+손/딜도/진동기 콤보 배율
-  // breast/thigh/anal=1.1×, clitoris/vagina=1.15×, 나머지 X
-const GEL_COMBO_MATRIX: Record<ErogenousKey, number> = {
-  breast:1.1, neck:-0.2, ear:-0.2, thigh:1.1, clitoris:1.15, vagina:1.15, anal:1.1, mouth:-0.2,
-}
-
   // 채찍: SM 도구 착용 개수(0~4)에 따라 WHIP_LEVEL_MATRIX 사용
   whip:       { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2 },
   anal_dildo: { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:-0.2, vagina:-0.2, anal:1.3,  mouth:-0.2 },
+}
+
+// 젤+손/딜도/진동기 콤보 배율 (breast/thigh/anal=1.1×, clitoris/vagina=1.15×)
+const GEL_COMBO_MATRIX: Record<ErogenousKey, number> = {
+  breast:1.1, neck:-0.2, ear:-0.2, thigh:1.1, clitoris:1.15, vagina:1.15, anal:1.1, mouth:-0.2,
 }
 
 // 채찍 × SM 도구 착용 개수 (0=미착용 ~ 4=전부) 배율 매트릭스
