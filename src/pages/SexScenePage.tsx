@@ -736,6 +736,7 @@ export default function SexScenePage({
   const [maleFlash, setMaleFlash] = useState(false)
   const [ended, setEnded] = useState(false)
   const gelApplied = useRef(false)
+  const lastActionTime = useRef<number>(0)
   const lastZoneKey = useRef<string>('')
   const consecutiveCount = useRef<number>(0)
   const lastGroupKey = useRef<string>('')
@@ -860,6 +861,9 @@ export default function SexScenePage({
   // 핫스팟 클릭
   const handleZoneClick = useCallback((zone: HotspotZone) => {
     if (ended || phase === 'climax') return
+    const now = Date.now()
+    if (now - lastActionTime.current < 500) return
+    lastActionTime.current = now
 
     const isPhotoAroused = femaleArousal < 300
     const isSpriteAroused = femaleArousal >= 300 && femaleArousal < 600
