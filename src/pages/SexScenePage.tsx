@@ -1369,15 +1369,15 @@ export default function SexScenePage({
             </div>
           )}
 
-          {/* 결과 화면 — 우측 하단 */}
+          {/* 결과 화면 — 이미지 중앙 */}
           {endResult && (
             <div style={{
-              position: 'absolute', bottom: 16, right: 16,
-              background: 'rgba(0,0,0,0.78)',
-              borderRadius: 12, padding: '20px 22px',
-              display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14,
+              position: 'absolute', inset: 0, borderRadius: 8,
+              background: 'rgba(0,0,0,0.62)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 14, padding: '24px',
               animation: 'fadeInFail 0.5s ease',
-              pointerEvents: 'auto', minWidth: 200,
+              pointerEvents: 'auto',
             }}>
               {/* 결과 타이틀 */}
               <div style={{ fontSize: 36, fontWeight: 'bold', letterSpacing: 2,
@@ -1386,7 +1386,7 @@ export default function SexScenePage({
               </div>
 
               {/* 궁합 점수 */}
-              <div style={{ textAlign: 'right' }}>
+              <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 18, color: '#ffffff88', marginBottom: 4 }}>총 궁합률</div>
                 <div style={{ fontSize: 60, fontWeight: 'bold', lineHeight: 1,
                   color: compatScore >= 70 ? '#c9a84c' : compatScore >= 40 ? '#06b6d4' : '#e94560' }}>
@@ -1766,7 +1766,7 @@ export default function SexScenePage({
           {/* 포기 — 항상 하단 고정 */}
           <button
             tabIndex={-1}
-            onClick={() => { setEnded(true); setEndResult('fail') }}
+            onClick={() => triggerFail()}
             style={{
               width: '100%', border: 'none',
               borderTop: '1px solid #ffffff18', padding: '18px',
