@@ -740,6 +740,7 @@ export default function SexScenePage({
   const [ended, setEnded] = useState(false)
   const gelApplied = useRef(false)
   const toolUseCount = useRef<Record<string, number>>({})
+  const lastUsedTool = useRef<string>('')
   const lastActionTime = useRef<number>(0)
   const lastZoneKey = useRef<string>('')
   const consecutiveCount = useRef<number>(0)
@@ -931,6 +932,11 @@ export default function SexScenePage({
     // 제외: SM 장구류(수갑/족갑/안대/개목걸이), 젤, 그리고 절정사진에서 penis
     const UNLIMITED_TOOLS = new Set(['handcuff', 'legcuff', 'blindfold', 'collar', 'gel'])
     if (!UNLIMITED_TOOLS.has(activeTool) && !(isPhotoClimax && activeTool === 'penis')) {
+      // 다른 도구로 바꿨으면 이전 도구 카운트 리셋
+      if (lastUsedTool.current && lastUsedTool.current !== activeTool) {
+        toolUseCount.current[lastUsedTool.current] = 0
+      }
+      lastUsedTool.current = activeTool
       const count = (toolUseCount.current[activeTool] ?? 0) + 1
       toolUseCount.current[activeTool] = count
       if (count > 3) {
