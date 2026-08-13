@@ -22,6 +22,8 @@ export interface CharacterData {
   penisSize: number; penisGirth: number
   // 발기 (S3)
   erectPower: number; erectDuration: number; erectHardness: number; erectTechnique: number
+  // SM 성향 (-10: 극S → 0: 중립 → +10: 극M)
+  smTendency: number
   appearanceDesc?: string
   walkingVideoUrl?: string
 }
@@ -105,6 +107,8 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
     setErect({ ...erect, [key]: Math.max(ERECT_MIN, Math.min(val, 100 - ERECT_MIN - otherSum)) })
   }
 
+  const [smTendency, setSmTendency] = useState(d?.smTendency ?? 0)
+
   const [appearanceDesc, setAppearanceDesc] = useState(d?.appearanceDesc ?? '')
   const [genProgress, setGenProgress] = useState('')
   const [generatedImageUrl, setGeneratedImageUrl] = useState(d?.generatedImageUrl ?? '')
@@ -166,6 +170,7 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
       penisSize: penis.penisSize, penisGirth: penis.penisGirth,
       erectPower: erect.erectPower, erectDuration: erect.erectDuration,
       erectHardness: erect.erectHardness, erectTechnique,
+      smTendency,
       appearanceDesc: appearanceDesc.trim() || undefined,
       generatedImageUrl: imgUrl || undefined,
       walkingVideoUrl: walkingVideoUrl || undefined,
@@ -395,6 +400,43 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
               </div>
             </div>
 
+            {/* SM 성향 */}
+            <div style={S.section}>
+              <label style={S.label}>
+                SM 성향
+                <span style={{ color: '#ffffff33', fontSize: 11, marginLeft: 8 }}>
+                  여캐 SM 성향과의 궁합이 SEX 효과에 영향
+                </span>
+              </label>
+              <div style={S.smRow}>
+                <span style={{ color: '#4FC3F7', fontSize: 12, fontWeight: 'bold', minWidth: 32 }}>S</span>
+                <input
+                  type="range" min={-10} max={10} step={1} value={smTendency}
+                  onChange={e => setSmTendency(parseInt(e.target.value))}
+                  style={{ ...S.slider, accentColor: smTendency < 0 ? '#4FC3F7' : smTendency > 0 ? '#e94560' : '#ffffff55' }}
+                />
+                <span style={{ color: '#e94560', fontSize: 12, fontWeight: 'bold', minWidth: 32, textAlign: 'right' }}>M</span>
+                <span style={{
+                  fontSize: 15, fontWeight: 'bold', minWidth: 28, textAlign: 'right',
+                  color: smTendency < 0 ? '#4FC3F7' : smTendency > 0 ? '#e94560' : '#ffffff55',
+                }}>
+                  {smTendency > 0 ? `+${smTendency}` : smTendency}
+                </span>
+              </div>
+              <div style={S.smDesc}>
+                {smTendency <= -7 ? '극S 성향 — 지배를 즐김. M 여캐 최강 궁합'
+                  : smTendency <= -3 ? 'S 성향 — 리드하는 걸 좋아함'
+                  : smTendency < 3 ? '중립 — SM 도구에 큰 반응 없음'
+                  : smTendency < 7 ? 'M 성향 — 리드당하는 걸 즐김'
+                  : '극M 성향 — 복종을 즐김. S 여캐 최강 궁합'}
+              </div>
+              <div style={S.smCompatNote}>
+                ⚡ 궁합: 남S × 여M / 남M × 여S → SM 도구 효과 <span style={{ color: '#66BB6A' }}>x1.5</span>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                성향 충돌 → <span style={{ color: '#e94560' }}>패널티</span>
+              </div>
+            </div>
+
             {/* 성장 레벨 안내 */}
             <div style={S.growthCard}>
               <div style={{ color: '#c9a84c', fontSize: 12, fontWeight: 'bold', marginBottom: 8 }}>📈 게임 내 성장 (생성 후)</div>
@@ -614,6 +656,12 @@ const S: Record<string, React.CSSProperties> = {
     width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
     borderRadius: 8, padding: '12px 16px', color: '#fff', fontSize: 14,
     outline: 'none', resize: 'none' as const, fontFamily: 'inherit', boxSizing: 'border-box' as const,
+  },
+  smRow: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 },
+  smDesc: { color: '#ffffff66', fontSize: 11, marginBottom: 6, paddingLeft: 2 },
+  smCompatNote: {
+    background: 'rgba(255,255,255,0.04)', border: '1px solid #ffffff11',
+    borderRadius: 6, padding: '6px 10px', color: '#ffffff55', fontSize: 11,
   },
   statColumns: { display: 'flex', gap: 24, alignItems: 'flex-start' },
   statCol: { flex: 1, minWidth: 0 },
