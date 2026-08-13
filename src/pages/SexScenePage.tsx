@@ -905,7 +905,7 @@ export default function SexScenePage({
     }
 
     const showPenalty = (msg: string, cx = 50, cy = 50) => {
-      setFemaleArousal(prev => Math.max(0, prev - 20))
+      setFemaleArousal(prev => Math.max(0, prev - 10))
       setFemaleFlash(true)
       setTimeout(() => setFemaleFlash(false), 300)
       showPointPopup(-20, cx, cy)
