@@ -38,8 +38,8 @@ export interface FemaleCharacterData {
   prefPersonality: { intel: number; humor: number; virtue: number; manner: number } // 합계=100, manner 자동
   prefErect: { power: number; duration: number; hardness: number; tech: number }    // 합계=100, tech 자동
   prefPose: { missionary: number; doggy: number; cowgirl: number; side: number }
-  smTendency: number     // 여캐 자신의 S/M 성향: -100(완전 M) ~ +100(완전 S)
-  prefSmTendency: number // 선호하는 남성 S/M 성향: -100(M남 선호) ~ +100(S남 선호)
+  smTendency: number     // 여캐 자신의 S/M 성향: -10(완전 M) ~ +10(완전 S)
+  prefSmTendency: number // 선호하는 남성 S/M 성향: -10(M남 선호) ~ +10(S남 선호)
   dateCostShare: number  // 데이트 비용 부담율 0~100%
   // 외모 설명 (이미지 생성용)
   appearanceDesc?: string
@@ -353,18 +353,18 @@ function SpriteAnimation({ urls, fps = 4, style }: { urls: string[]; fps?: numbe
 }
 
 function smLabel(v: number) {
-  return v <= -60 ? '극 M' : v < -20 ? 'M 성향' : v >= 60 ? '극 S' : v > 20 ? 'S 성향' : '중립'
+  return v <= -7 ? '극 M' : v < -3 ? 'M 성향' : v >= 7 ? '극 S' : v > 3 ? 'S 성향' : '중립'
 }
 function SmSlider(val: number, set: (v: number) => void) {
-  const color = val < -20 ? '#e94560' : val > 20 ? '#c9a84c' : '#ffffff66'
+  const color = val < -3 ? '#e94560' : val > 3 ? '#c9a84c' : '#ffffff66'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <span style={{ fontWeight: 'bold', fontSize: 13, minWidth: 52, color }}>{smLabel(val)}</span>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#ffffff33' }}>
-          <span>M −100</span><span>0</span><span>S +100</span>
+          <span>M −10</span><span>0</span><span>S +10</span>
         </div>
-        <input type="range" min={-100} max={100} step={5} value={val}
+        <input type="range" min={-10} max={10} step={1} value={val}
           onChange={e => set(Number(e.target.value))}
           style={{ width: '100%', accentColor: color } as any} />
       </div>
