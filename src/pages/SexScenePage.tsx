@@ -1519,17 +1519,21 @@ export default function SexScenePage({
           </div>
 
           {/* 테크닉 섹션 */}
-          <div style={{ borderTop: '1px solid #ffffff18', padding: '10px 16px 6px' }}>
-            <div style={{ fontSize: 20, color: '#c9a84c', fontWeight: 'bold', letterSpacing: 2, marginBottom: 8 }}>테크닉</div>
+          <div>
+            <div style={{
+              padding: '7px 20px', background: 'rgba(255,255,255,0.03)',
+              borderLeft: '5px solid #ffffff11', borderBottom: '1px solid #ffffff18',
+              color: '#ffffff66', fontSize: 28, fontWeight: 'bold', letterSpacing: 2,
+            }}>테크닉</div>
             <button
               tabIndex={-1}
               disabled={maleArousal <= 0}
               onClick={() => setShowPoseSelect(true)}
               style={{
-                width: '100%', padding: '10px 0', borderRadius: 8, cursor: maleArousal > 0 ? 'pointer' : 'not-allowed',
-                background: maleArousal > 0 ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${maleArousal > 0 ? '#c9a84c88' : '#ffffff22'}`,
-                color: maleArousal > 0 ? '#c9a84c' : '#ffffff33', fontSize: 26, fontWeight: 'bold',
+                width: '100%', padding: '10px 0', borderRadius: 0, cursor: maleArousal > 0 ? 'pointer' : 'not-allowed',
+                background: maleArousal > 0 ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.03)',
+                border: 'none', borderBottom: '1px solid #ffffff18',
+                color: maleArousal > 0 ? '#c9a84c' : '#ffffff33', fontSize: 28, fontWeight: 'bold',
               }}
             >
               체위 변경
