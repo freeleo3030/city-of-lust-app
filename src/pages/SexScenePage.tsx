@@ -790,9 +790,12 @@ export default function SexScenePage({
   // 같은 부호 = 상생(S지배+M복종), 다른 부호 = 충돌
   const maleSM = maleChar?.smTendency ?? 0
   const femaleSM = femaleChar.smTendency ?? 0
-  const smCompatMult = maleSM * femaleSM > 0 ? 1.5
-                     : maleSM * femaleSM < 0 ? 0.5
-                     : 1.0
+  const _smProduct = maleSM * femaleSM  // -100 ~ +100
+  const smCompatMult = _smProduct < 0
+    ? 1.0 + Math.abs(_smProduct) / 100 * 0.5   // 궁합: 1.005 ~ 1.5
+    : _smProduct > 0
+      ? 1.0 - _smProduct / 100 * 0.5            // 충돌: 0.5 ~ 0.995
+      : 1.0
 
   // 남캐 성기/테크닉 스탯 (기본값: 50/50/25/25)
   const mPenisSize   = maleChar?.penisSize     ?? 50
