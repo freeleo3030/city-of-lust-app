@@ -765,23 +765,25 @@ export default function SexScenePage({
   const age = femaleChar.age ?? 25
   const ageMult = age < 30 ? 0.8 : age < 40 ? 1.0 : 1.5
 
-  // 채찍 배율 계산 (smTendency: 음수=M성향=채찍 좋아함, 양수=S성향=저항)
+  // 채찍 배율 계산 (smTendency: 음수=M성향=채찍 좋아함, 양수=S성향=싫어함→음수)
   const getWhipMult = useCallback(() => {
     const sm = femaleChar.smTendency ?? 0
-    const base = 1.5 + (-sm * 0.15)  // M이면 높음, S면 낮음
+    if (sm > 0) return -(sm / 10)  // S성향: 채찍 맞으면 흥분 감소
+    const base = 1.5 + (-sm * 0.05)  // M성향: 강도 상승
     const restrained = restraints.has('handcuff') && restraints.has('legcuff')
-    return Math.max(0.2, Math.min(3.0, base)) * (restrained ? 1.3 : 1.0)
+    return Math.min(3.0, base) * (restrained ? 1.3 : 1.0)
   }, [femaleChar.smTendency, restraints])
 
   // 도구 배율 계산 (매트릭스 기반, 음수 = 흥분도 하락)
   const getToolMult = useCallback((toolKey: ToolKey, zoneKey: string): number => {
     if (toolKey === 'whip') {
+      const sm = femaleChar.smTendency ?? 0
+      if (sm > 0) return -(sm / 10)  // S성향: 채찍 맞으면 흥분 감소
       const level = Math.min(4, restraints.size)
       const base = WHIP_LEVEL_MATRIX[level][zoneKey as ErogenousKey] ?? 0
       if (base <= 0) return base
-      const sm = femaleChar.smTendency ?? 0
-      const smMod = 1.0 + (-sm * 0.05)
-      return Math.max(0.1, base * smMod)
+      const smMod = 1.0 + (-sm * 0.05)  // M성향: 강도 상승
+      return Math.min(3.0, base * smMod)
     }
     // 젤 콤보: 젤 적용 후 손/딜도/진동기 사용 시
     if (gelApplied.current && (toolKey === 'hand' || toolKey === 'dildo' || toolKey === 'vibrator')) {
