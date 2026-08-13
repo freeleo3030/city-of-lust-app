@@ -1026,10 +1026,10 @@ export default function SexScenePage({
   const imgSrc = femaleArousal >= 600 ? climaxImg : arousedImg
 
   const exprKey: 'aroused' | 'climax' = femaleArousal >= 600 ? 'climax' : 'aroused'
-  const climaxSpriteStored  = poseImages[`${poseKey}_climax_sprite_hotspots`]  as unknown as HotspotZone[] | undefined
-  const arousedSpriteStored = poseImages[`${poseKey}_aroused_sprite_hotspots`] as unknown as HotspotZone[] | undefined
-  const climaxStored  = poseImages[`${poseKey}_climax_hotspots`]  as unknown as HotspotZone[] | undefined
-  const arousedStored = poseImages[`${poseKey}_aroused_hotspots`] as unknown as HotspotZone[] | undefined
+  const climaxSpriteStored  = poseImages[`${currentPoseKey}_climax_sprite_hotspots`]  as unknown as HotspotZone[] | undefined
+  const arousedSpriteStored = poseImages[`${currentPoseKey}_aroused_sprite_hotspots`] as unknown as HotspotZone[] | undefined
+  const climaxStored  = poseImages[`${currentPoseKey}_climax_hotspots`]  as unknown as HotspotZone[] | undefined
+  const arousedStored = poseImages[`${currentPoseKey}_aroused_hotspots`] as unknown as HotspotZone[] | undefined
   const hotspots: HotspotZone[] = (() => {
     if (exprKey === 'climax') {
       if (showSprite && climaxSpriteStored?.length) return climaxSpriteStored
