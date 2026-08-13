@@ -1315,6 +1315,7 @@ export default function SexScenePage({
           {/* 핫스팟 오버레이 — zIndex:10 (수갑/족갑 아래) */}
           {(
             <svg
+              key={currentPoseKey}
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 10 }}
@@ -1632,6 +1633,7 @@ export default function SexScenePage({
                   onClick={() => {
                     if (isCurrent) return
                     setCurrentPoseKey(p.key)
+                    setHoveredZone(null)
                     setMaleArousal(prev => Math.max(0, Math.round(prev * 0.7)))
                     setFemaleArousal(prev => Math.max(0, Math.round(prev * 0.5)))
                     setShowPoseSelect(false)
