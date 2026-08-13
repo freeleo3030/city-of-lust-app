@@ -39,7 +39,6 @@ export interface FemaleCharacterData {
   prefErect: { power: number; duration: number; hardness: number; tech: number }    // 합계=100, tech 자동
   prefPose: { missionary: number; doggy: number; cowgirl: number; side: number }
   smTendency: number     // 여캐 자신의 S/M 성향: -10(완전 M) ~ +10(완전 S)
-  prefSmTendency: number // 선호하는 남성 S/M 성향: -10(M남 선호) ~ +10(S남 선호)
   dateCostShare: number  // 데이트 비용 부담율 0~100%
   // 외모 설명 (이미지 생성용)
   appearanceDesc?: string
@@ -489,7 +488,6 @@ export default function FemaleCharacterCreatePage({
   // 선호 자세 (0~5)
   const [prefPose, setPrefPose] = useState(d?.prefPose ?? { missionary:3, doggy:3, cowgirl:3, side:3 })
   const [smTendency, setSmTendency] = useState(d?.smTendency ?? 0)
-  const prefSmTendency = -smTendency  // 여캐 M → 남캐 S 자동 연동
   const [dateCostShare, setDateCostShare] = useState(d?.dateCostShare ?? 0)
   const [appearanceDesc, setAppearanceDesc] = useState(d?.appearanceDesc ?? '')
   const [hairColor, setHairColor] = useState<string>(d?.hairColor ?? '')
@@ -919,7 +917,7 @@ export default function FemaleCharacterCreatePage({
       prefWealth,
       prefPersonality: { intel: prefIntel, humor: prefHumor, virtue: prefVirtue, manner: prefManner },
       prefErect: { power: prefPower, duration: prefDuration, hardness: prefHardness, tech: prefTech },
-      prefPose, smTendency, prefSmTendency, dateCostShare,
+      prefPose, smTendency, dateCostShare,
       appearanceDesc: buildAppearanceDesc(),
       hairColor: hairColor || undefined,
       hairLength: hairLength || undefined,
@@ -968,7 +966,7 @@ export default function FemaleCharacterCreatePage({
           personality, memo, erogenous,
           prefAge: char.prefAge, prefLook: char.prefLook, prefWealth,
           prefPersonality: char.prefPersonality, prefErect: char.prefErect,
-          prefPose, smTendency, prefSmTendency, dateCostShare,
+          prefPose, smTendency, dateCostShare,
           appearanceDesc: buildAppearanceDesc(),
           hairColor: hairColor || undefined,
           hairLength: hairLength || undefined,
@@ -2036,12 +2034,6 @@ export default function FemaleCharacterCreatePage({
             )
           })}
 
-          {/* 선호 남성 S/M 성향 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 선호하는 남성 S/M 성향 (자동) ──</div>
-          <div style={{ color: '#ffffff44', fontSize: 11, marginBottom: 6 }}>나의 성향과 반대로 자동 설정됩니다</div>
-          <div style={{ pointerEvents: 'none', opacity: 0.7 }}>
-            {SmSlider(prefSmTendency, () => {})}
-          </div>
         </div>
 
         {/* 외모 설명 */}
