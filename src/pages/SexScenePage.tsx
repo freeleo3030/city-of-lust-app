@@ -1005,18 +1005,32 @@ export default function SexScenePage({
     const posePref = (femaleChar.prefPose?.[currentPoseKey as keyof typeof femaleChar.prefPose] ?? 3) / 3
     const sensMod = sensitivity * 0.5  // sensitivity 효과 50% 적용
 
-    // 남캐 penis 스탯: 길이+두께 합산(기준 100), 단단함(기준 25) → penis 도구 배율
-    const malePenisMult = activeTool === 'penis'
-      ? 1.0 + (mPenisSize + mPenisGirth - 100) / 200 + (mHardness - 25) / 100
-      : 1.0
-    // 남캐 테크닉: 모든 도구에 additive 보너스 (기준 25, 최대 +0.75)
-    const maleTechBonus = (mTechnique - 25) / 100
+    // 남캐 발기 스탯 vs 여캐 발기 선호: 초과면 보너스, 미달이면 페널티
+    // penis 도구 사용 시만 적용 (각 stat: diff >= 0 → +diff/200, diff < 0 → +diff/100)
+    const malePrefBonus = activeTool === 'penis' ? (() => {
+      const pref = femaleChar.prefErect ?? { power: 25, duration: 25, hardness: 25, tech: 25 }
+      const stats = [
+        { m: maleChar?.erectPower    ?? 25, f: pref.power },
+        { m: maleChar?.erectDuration ?? 25, f: pref.duration },
+        { m: mHardness,                     f: pref.hardness },
+        { m: mTechnique,                    f: pref.tech },
+      ]
+      return stats.reduce((sum, { m, f }) => {
+        const diff = m - f
+        return sum + (diff >= 0 ? diff / 200 : diff / 100)
+      }, 0)
+    })() : 0
+
+    // 성기 크기: 길이+두께 합산(기준 100) → penis 도구 additive 보너스
+    const maleSizeBonus = activeTool === 'penis'
+      ? (mPenisSize + mPenisGirth - 100) / 200
+      : 0
 
     const gain = toolMult < 0
       ? toolMult * 20
       : sensitivity < 0
-        ? sensMod * 5 + maleTechBonus
-        : toolMult * ageMult * posePref * malePenisMult * 2 + sensMod + maleTechBonus
+        ? sensMod * 5
+        : toolMult * ageMult * posePref * 2 + sensMod + malePrefBonus + maleSizeBonus
 
     setFemaleArousal(prev => Math.min(500, Math.max(0, prev + gain)))
     setFemaleFlash(true)
