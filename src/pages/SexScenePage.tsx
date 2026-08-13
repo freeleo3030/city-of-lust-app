@@ -817,10 +817,10 @@ export default function SexScenePage({
   // 현재 섹터의 도구 목록
   const sectorTools = TOOL_DEFS.filter(t => t.sector === sector)
 
-  // 흥분도에 따른 페이즈 결정 + 멀티 오르가즘 (930/960/1000)
+  // 흥분도에 따른 페이즈 결정 + 멀티 오르가즘 (430/460/500)
   useEffect(() => {
     if (ended) return
-    const thresholds = [930, 960, 1000]
+    const thresholds = [430, 460, 500]
     const nextThreshold = thresholds[orgasmCount]
     if (nextThreshold !== undefined && femaleArousal >= nextThreshold) {
       setOrgasmFlash(true)
@@ -831,7 +831,7 @@ export default function SexScenePage({
         setTimeout(() => onEnd('success'), 3000)
       }
       setOrgasmCount(prev => prev + 1)
-    } else if (femaleArousal >= 300 && phase === 'foreplay') {
+    } else if (femaleArousal >= 100 && phase === 'foreplay') {
       setPhase('aroused')
     }
   }, [femaleArousal, orgasmCount, phase, ended, onEnd])
@@ -894,9 +894,9 @@ export default function SexScenePage({
     if (now - lastActionTime.current < 500) return
     lastActionTime.current = now
 
-    const isPhotoAroused = femaleArousal < 300
-    const isSpriteAroused = femaleArousal >= 300 && femaleArousal < 600
-    const isPhotoClimax = femaleArousal >= 900
+    const isPhotoAroused = femaleArousal < 100
+    const isSpriteAroused = femaleArousal >= 100 && femaleArousal < 200
+    const isPhotoClimax = femaleArousal >= 400
 
     const showPointPopup = (value: number, cx: number, cy: number) => {
       if (pointPopupTimer.current) clearTimeout(pointPopupTimer.current)
@@ -996,7 +996,7 @@ export default function SexScenePage({
         ? sensMod * 5
         : toolMult * ageMult * posePref * 2 + sensMod
 
-    setFemaleArousal(prev => Math.min(1000, Math.max(0, prev + gain)))
+    setFemaleArousal(prev => Math.min(500, Math.max(0, prev + gain)))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
 
@@ -1055,9 +1055,9 @@ export default function SexScenePage({
   }
 
   // 흥분도 구간별 표시 모드
-  const displayMode = femaleArousal >= 900 ? 'photo_climax'
-    : femaleArousal >= 600 ? 'sprite_climax'
-    : femaleArousal >= 300 ? 'sprite_aroused'
+  const displayMode = femaleArousal >= 400 ? 'photo_climax'
+    : femaleArousal >= 200 ? 'sprite_climax'
+    : femaleArousal >= 100 ? 'sprite_aroused'
     : 'photo_aroused'
 
   const currentSpriteUrls = displayMode === 'sprite_climax'
@@ -1066,9 +1066,9 @@ export default function SexScenePage({
   const showSprite = (displayMode === 'sprite_aroused' || displayMode === 'sprite_climax') && currentSpriteUrls.length >= 1
   const showClimax = displayMode === 'photo_climax'
   const disappointedImg = femaleChar.expressionImages?.[3] ?? femaleChar.imageUrl ?? ''
-  const imgSrc = failEnding ? disappointedImg : (femaleArousal >= 600 ? climaxImg : arousedImg)
+  const imgSrc = failEnding ? disappointedImg : (femaleArousal >= 200 ? climaxImg : arousedImg)
 
-  const exprKey: 'aroused' | 'climax' = femaleArousal >= 600 ? 'climax' : 'aroused'
+  const exprKey: 'aroused' | 'climax' = femaleArousal >= 200 ? 'climax' : 'aroused'
   const climaxSpriteStored  = poseImages[`${currentPoseKey}_climax_sprite_hotspots`]  as unknown as HotspotZone[] | undefined
   const arousedSpriteStored = poseImages[`${currentPoseKey}_aroused_sprite_hotspots`] as unknown as HotspotZone[] | undefined
   const climaxStored  = poseImages[`${currentPoseKey}_climax_hotspots`]  as unknown as HotspotZone[] | undefined
@@ -1255,7 +1255,7 @@ export default function SexScenePage({
         background: 'rgba(13,13,26,0.95)', borderBottom: '1px solid #ffffff11',
         padding: '8px 16px 4px', display: 'flex', flexDirection: 'column', gap: 4,
       }}>
-        <ArousalGauge value={femaleArousal} max={1000} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
+        <ArousalGauge value={femaleArousal} max={500} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
         <ArousalGauge value={maleArousal}   label="💙 남캐"   color="#4a90e2" flash={maleFlash} />
         <div style={{ color: '#ffffff44', fontSize: 11, letterSpacing: 2, textAlign: 'center' }}>
           {displayMode === 'photo_aroused' ? '전희' : displayMode === 'sprite_aroused' ? '흥분' : displayMode === 'sprite_climax' ? '절정 진입' : '절정 ✨'}
