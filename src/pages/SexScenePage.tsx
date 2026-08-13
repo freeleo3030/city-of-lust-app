@@ -1371,9 +1371,10 @@ export default function SexScenePage({
                 {femaleChar.nickname ?? '그녀'}가 자리를 떠났다
               </div>
             </div>
+          )}
 
           {/* 결과 화면 — 성공/실패 공통 */}
-          }{endResult && (
+          {endResult && (
             <div style={{
               position: 'absolute', inset: 0, borderRadius: 8,
               background: 'rgba(0,0,0,0.82)',
