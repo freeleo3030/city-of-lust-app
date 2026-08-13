@@ -755,7 +755,7 @@ export default function SexScenePage({
   useEffect(() => {
     const timer = setInterval(() => {
       if (ended || failEnding) return
-      if (Date.now() - lastActionTime.current > 3000) {
+      if (Date.now() - lastActionTime.current > 10000) {
         setFemaleArousal(prev => Math.max(0, prev - 10))
       }
     }, 1000)
