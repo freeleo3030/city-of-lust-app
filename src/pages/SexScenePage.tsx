@@ -839,8 +839,7 @@ export default function SexScenePage({
     if (ended) return
     setEnded(true)
     setFailEnding(true)
-    setTimeout(() => onEnd('fail'), 3500)
-  }, [ended, onEnd])
+  }, [ended])
 
   useEffect(() => {
     if (maleArousal >= 100 && !ended) triggerFail()
@@ -1282,14 +1281,24 @@ export default function SexScenePage({
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
               padding: '0 20px 36px',
               animation: 'fadeInFail 0.6s ease',
-              pointerEvents: 'none',
+              pointerEvents: 'auto',
             }}>
               <div style={{ fontSize: 36, color: '#e94560', fontWeight: 'bold', letterSpacing: 2, marginBottom: 10 }}>
                 실망이야...
               </div>
-              <div style={{ fontSize: 24, color: '#ffffff99' }}>
+              <div style={{ fontSize: 24, color: '#ffffff99', marginBottom: 20 }}>
                 {femaleChar.nickname ?? '그녀'}가 자리를 떠났다
               </div>
+              <button
+                onClick={() => onEnd('fail')}
+                style={{
+                  padding: '10px 28px', fontSize: 16, fontWeight: 'bold',
+                  background: '#e94560', color: '#fff', border: 'none', borderRadius: 8,
+                  cursor: 'pointer', letterSpacing: 1,
+                }}
+              >
+                나가기
+              </button>
             </div>
           )}
 
