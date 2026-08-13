@@ -893,27 +893,27 @@ export default function SexScenePage({
   // activeToolRef 동기화 (interval 클로저에서 최신 tool 읽기 위해)
   useEffect(() => { activeToolRef.current = activeTool }, [activeTool])
 
-  // 남캐 흥분도 자동 증가
-  // penis 사용 시: 1초마다 +2 / 다른 도구: 3초마다 +1 (누적 방식)
+  // 남캐 흥분도: 비성기 도구는 3클릭마다 +1 (누적), 성기는 클릭 시 직접 +2
   const maleArousalAccum = useRef(0)
-  useEffect(() => {
-    if (ended) return
-    const id = setInterval(() => {
-      if (isDraggingSM.current || ended || failEnding) return
-      const isPenis = activeToolRef.current === 'penis'
-      maleArousalAccum.current += isPenis ? 2 : 1
-      if (isPenis || maleArousalAccum.current >= 3) {
-        const add = isPenis ? 2 : 1
-        maleArousalAccum.current = isPenis ? 0 : maleArousalAccum.current - 3
+  const addMaleArousal = useCallback((isPenis: boolean) => {
+    if (isPenis) {
+      setMaleArousal(prev => {
+        setMaleFlash(true)
+        setTimeout(() => setMaleFlash(false), 300)
+        return prev + 2
+      })
+    } else {
+      maleArousalAccum.current += 1
+      if (maleArousalAccum.current >= 3) {
+        maleArousalAccum.current = 0
         setMaleArousal(prev => {
           setMaleFlash(true)
           setTimeout(() => setMaleFlash(false), 300)
-          return prev + add
+          return prev + 1
         })
       }
-    }, 1000)
-    return () => clearInterval(id)
-  }, [ended, failEnding])
+    }
+  }, [])
 
   const getEroSensitivity = (key: string) => {
     const eroKey = (key === 'neck' || key === 'ear') ? 'neckEar' : key
@@ -1078,6 +1078,7 @@ export default function SexScenePage({
     setFemaleArousal(prev => Math.min(500, Math.max(0, prev + gain)))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
+    addMaleArousal(activeTool === 'penis')
 
     if (gain !== 0) showPointPopup(Math.round(gain), zone.cx, zone.cy)
 
