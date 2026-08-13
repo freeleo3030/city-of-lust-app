@@ -887,7 +887,7 @@ export default function SexScenePage({
   }, [ended])
 
   useEffect(() => {
-    if (maleArousal >= 100 && !ended) triggerFail()
+    if (maleArousal >= 600 && !ended) triggerFail()
   }, [maleArousal, ended, triggerFail])
 
   // activeToolRef 동기화 (interval 클로저에서 최신 tool 읽기 위해)
@@ -899,12 +899,7 @@ export default function SexScenePage({
     if (ended) return
     const id = setInterval(() => {
       if (isDraggingSM.current || ended || failEnding) return
-      const add = activeToolRef.current === 'penis' ? 2 : 1
-      setMaleArousal(prev => {
-        setMaleFlash(true)
-        setTimeout(() => setMaleFlash(false), 300)
-        return prev + add
-      })
+      setMaleArousal(prev => prev + 1)  // 자동 +1/초 (시간 경과)
     }, 1000)
     return () => clearInterval(id)
   }, [ended, failEnding])
@@ -1072,6 +1067,13 @@ export default function SexScenePage({
     setFemaleArousal(prev => Math.min(500, Math.max(0, prev + gain)))
     setFemaleFlash(true)
     setTimeout(() => setFemaleFlash(false), 300)
+    if (activeTool === 'penis') {
+      setMaleArousal(prev => {
+        setMaleFlash(true)
+        setTimeout(() => setMaleFlash(false), 300)
+        return prev + 3
+      })
+    }
 
     if (gain !== 0) showPointPopup(Math.round(gain), zone.cx, zone.cy)
 
@@ -1329,7 +1331,7 @@ export default function SexScenePage({
         padding: '8px 16px 4px', display: 'flex', flexDirection: 'column', gap: 4,
       }}>
         <ArousalGauge value={femaleArousal} max={500} label="💗 흥분도" color="#e94560" flash={femaleFlash} />
-        <ArousalGauge value={maleArousal}   label="💙 남캐"   color="#4a90e2" flash={maleFlash} />
+        <ArousalGauge value={maleArousal} max={600} label="💙 남캐" color="#4a90e2" flash={maleFlash} />
         <div style={{ color: '#ffffff44', fontSize: 11, letterSpacing: 2, textAlign: 'center' }}>
           {displayMode === 'photo_aroused' ? '전희' : displayMode === 'sprite_aroused' ? '흥분' : displayMode === 'sprite_climax' ? '절정 진입' : '절정 ✨'}
         </div>
