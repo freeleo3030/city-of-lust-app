@@ -1766,7 +1766,7 @@ export default function SexScenePage({
           {/* 포기 — 항상 하단 고정 */}
           <button
             tabIndex={-1}
-            onClick={() => triggerFail()}
+            onClick={() => { setEnded(true); setEndResult('fail') }}
             style={{
               width: '100%', border: 'none',
               borderTop: '1px solid #ffffff18', padding: '18px',
