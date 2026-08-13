@@ -891,6 +891,9 @@ export default function SexScenePage({
     if (isPhotoClimax && activeTool !== 'penis') {
       return showPenalty(rnd(MSGS.restrict_climax), zone.cx, zone.cy)
     }
+    if (isPhotoClimax && activeTool === 'penis' && zone.key !== 'vagina' && zone.key !== 'anal') {
+      return showPenalty('지금은 그곳이 아니야... 안으로 들어와야 해.', zone.cx, zone.cy)
+    }
 
     // 연속 공략 체크
     const pairedZones = ['breast', 'thigh', 'ear']
