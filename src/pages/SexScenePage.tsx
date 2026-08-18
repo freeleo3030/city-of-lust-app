@@ -975,6 +975,7 @@ export default function SexScenePage({
             // 현재 상황
             femaleArousal,
             pose: poseLabel[currentPoseKey] ?? currentPoseKey,
+            maleAge: maleChar?.age ?? null,
             // 흥분도 단계별 제한 (Grok이 대화에서 인식하도록)
             restrictions: femaleArousal < 50
               ? { penis: false, vagina: false, anal: false, note: '아직 몸이 충분히 달아오르지 않아 삽입 자체가 불가능한 상태' }
