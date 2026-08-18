@@ -975,6 +975,14 @@ export default function SexScenePage({
             // 현재 상황
             femaleArousal,
             pose: poseLabel[currentPoseKey] ?? currentPoseKey,
+            // 흥분도 단계별 제한 (Grok이 대화에서 인식하도록)
+            restrictions: femaleArousal < 50
+              ? { penis: false, vagina: false, anal: false, note: '아직 몸이 충분히 달아오르지 않아 삽입 자체가 불가능한 상태' }
+              : femaleArousal < 200
+              ? { penis: false, vagina: true, anal: true, note: '어느 정도 달아올랐지만 삽입은 아직 이르고 손/혀/도구 애무는 가능한 상태' }
+              : femaleArousal < 400
+              ? { penis: true, vagina: true, anal: true, note: '충분히 흥분해서 삽입도 가능한 상태' }
+              : { penis: true, vagina: true, anal: false, note: '절정 직전 — 지금은 질 삽입에만 집중하고 싶은 상태' },
             // SM 성향
             smTendency: femaleChar.smTendency ?? 0,
             // 성감대 민감도
