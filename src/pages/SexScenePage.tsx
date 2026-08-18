@@ -87,20 +87,21 @@ interface ToolDef {
 // 도구 × 부위 유효성 매트릭스
 // 양수 = 흥분도 상승 배율, 음수 = 흥분도 하락 페널티
 const TOOL_ZONE_MATRIX: Record<ToolKey, Record<ErogenousKey, number>> = {
-  tongue:     { breast:1.2,  neck:1.1,  ear:1.1,  thigh:1.1,  clitoris:1.3,  vagina:1.2,  anal:1.1,  mouth:1.2,  armpit:1.3  },
-  hand:       { breast:1.1,  neck:-0.2, ear:-0.2, thigh:1.1,  clitoris:1.2,  vagina:1.3,  anal:1.1,  mouth:-0.2, armpit:-0.3 },
-  penis:      { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.5,  anal:1.1,  mouth:1.1,  armpit:-0.3 },
-  dildo:      { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.1,  vagina:1.2,  anal:1.1,  mouth:-0.2, armpit:-0.3 },
-  vibrator:   { breast:1.1,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.2,  vagina:1.2,  anal:1.1,  mouth:-0.2, armpit:-0.3 },
+  tongue:     { breast:1.3,  neck:1.2,  ear:1.1,  thigh:1.1,  clitoris:1.5,  vagina:1.2,  anal:-0.2, mouth:1.2,  armpit:1.2  },
+  hand:       { breast:1.2,  neck:0.6,  ear:0.8,  thigh:1.1,  clitoris:1.2,  vagina:1.3,  anal:-0.2, mouth:0.4,  armpit:-0.1 },
+  penis:      { breast:1.0,  neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:1.1,  vagina:2.0,  anal:1.5,  mouth:1.1,  armpit:-0.1 },
+  dildo:      { breast:0.5,  neck:-0.2, ear:-0.2, thigh:0.6,  clitoris:1.1,  vagina:1.3,  anal:-0.2, mouth:0.4,  armpit:-0.1 },
+  vibrator:   { breast:0.8,  neck:-0.2, ear:-0.2, thigh:0.8,  clitoris:1.3,  vagina:1.2,  anal:-0.2, mouth:-0.1, armpit:-0.1 },
   gel:        { breast:0,    neck:0,    ear:0,    thigh:0,    clitoris:0,    vagina:0,    anal:0,    mouth:0,    armpit:0    }, // 단독 사용 무효과
   // 채찍: SM 도구 착용 개수(0~4)에 따라 WHIP_LEVEL_MATRIX 사용
-  whip:       { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2, armpit:-0.3 },
-  anal_dildo: { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:-0.2, vagina:-0.2, anal:1.3,  mouth:-0.2, armpit:-0.3 },
+  whip:       { breast:1.05, neck:-0.2, ear:-0.2, thigh:1.05, clitoris:1.1,  vagina:1.1,  anal:1.05, mouth:-0.2, armpit:-0.1 },
+  anal_dildo: { breast:-0.2, neck:-0.2, ear:-0.2, thigh:-0.2, clitoris:-0.2, vagina:-0.2, anal:1.1,  mouth:-0.2, armpit:-0.1 },
 }
 
-// 젤+손/딜도/진동기 콤보 배율 (breast/thigh/anal=1.1×, clitoris/vagina=1.15×)
+// 젤+손/딜도/진동기 콤보 배율 — gain 전체에 곱함 (잘못된 성감대는 1.0 = 효과 없음)
 const GEL_COMBO_MATRIX: Record<ErogenousKey, number> = {
-  breast:1.2, neck:-0.2, ear:-0.2, thigh:1.2, clitoris:1.3, vagina:1.2, anal:1.2, mouth:-0.2, armpit:-0.3,
+  clitoris:2.0, vagina:1.8, breast:1.6, anal:1.6, thigh:1.5,
+  neck:1.0, ear:1.0, mouth:1.0, armpit:1.0,
 }
 
 // 채찍 × SM 도구 착용 개수 (0=미착용 ~ 4=전부) 배율 매트릭스
@@ -667,7 +668,10 @@ export default function SexScenePage({
   onEnd: (result: 'success' | 'fail') => void
 }) {
   const [currentPoseKey, setCurrentPoseKey] = useState(poseKey)
+  const usedPoseKeys = useRef<Set<string>>(new Set([poseKey]))
   const [showPoseSelect, setShowPoseSelect] = useState(false)
+  const [poseChangeCount, setPoseChangeCount] = useState(0)
+  const MAX_POSE_CHANGES = 4
   const [failEnding, setFailEnding] = useState(false)
   const [femaleArousal, setFemaleArousal] = useState(0)
   const [maleArousal, setMaleArousal] = useState(0)
@@ -754,9 +758,11 @@ export default function SexScenePage({
   const consecutiveCount = useRef<number>(0)
   const lastGroupKey = useRef<string>('')
   const groupCount = useRef<number>(0)
-  const [chatLog, setChatLog] = useState<{ text: string; color: string; id: number }[]>([])
+  const [chatLog, setChatLog] = useState<{ text: string; color: string; id: number; sender?: 'female' | 'player' }[]>([])
   const chatLogRef = useRef<HTMLDivElement>(null)
   const chatIdRef = useRef(0)
+  const [chatInput, setChatInput] = useState('')
+  const chatInputRef = useRef<HTMLInputElement>(null)
 
   // 3초 무행동 시 여캐 흥분도 초당 10씩 감소
   useEffect(() => {
@@ -799,21 +805,28 @@ export default function SexScenePage({
       ? 1.0 - Math.abs(_smProduct) / 100 * 0.5  // 충돌: 0.5 ~ 0.995
       : 1.0
 
-  // 총 궁합 점수 (0~100)
+  // 총 궁합 점수 (0~100): SM 30 + 발기선호 40 + 자세선호 30
   const compatScore = useMemo(() => {
-    // SM 궁합 (0~50점): smCompatMult 0.5→0점, 1.0→25점, 1.5→50점
-    const smScore = (smCompatMult - 0.5) / 1.0 * 50
+    // SM 궁합 (0~30점): smCompatMult 0.5→0점, 1.0→15점, 1.5→30점
+    const smScore = (smCompatMult - 0.5) / 1.0 * 30
 
-    // 발기 선호 궁합 (0~50점): 4개 스탯 각 12.5점, diff 0=12.5점 diff 50+=0점
+    // 발기 선호 궁합 (0~40점): 4개 스탯 각 10점, diff 0=10점 diff 50+=0점
     const pref = femaleChar.prefErect ?? { power:25, duration:25, hardness:25, tech:25 }
     const erectScore = [
       { m: maleChar?.erectPower    ?? 25, f: pref.power },
       { m: maleChar?.erectDuration ?? 25, f: pref.duration },
       { m: maleChar?.erectHardness ?? 25, f: pref.hardness },
       { m: maleChar?.erectTechnique?? 25, f: pref.tech },
-    ].reduce((sum, { m, f }) => sum + Math.max(0, 12.5 - Math.abs(m - f) / 4), 0)
+    ].reduce((sum, { m, f }) => sum + Math.max(0, 10 - Math.abs(m - f) / 5), 0)
 
-    return Math.round(Math.min(100, smScore + erectScore))
+    // 자세 선호도 (0~30점): 세션에서 사용한 자세들의 prefPose 평균
+    // prefPose 각 키는 1~5 → (avg-1)/4 * 30 으로 환산
+    const pp = femaleChar.prefPose ?? { missionary: 3, doggystyle: 3, cowgirl: 3, side: 3 }
+    const usedKeys = Array.from(usedPoseKeys.current)
+    const avgPref = usedKeys.reduce((s, k) => s + ((pp as any)[k] ?? 3), 0) / usedKeys.length
+    const poseScore = Math.round((avgPref - 1) / 4 * 30)
+
+    return Math.round(Math.min(100, smScore + erectScore + poseScore))
   }, [smCompatMult, femaleChar, maleChar])
 
   // 남캐 성기/테크닉 스탯 (기본값: 50/50/25/25)
@@ -847,12 +860,6 @@ export default function SexScenePage({
       if (base <= 0) return base
       const smMod = 1.0 + (-sm * 0.025)  // M성향: 반절 보정
       return Math.min(3.0, base * smMod) * smCompatMult
-    }
-    // 젤 콤보: 젤 적용 후 손/딜도/진동기 사용 시
-    if (gelApplied.current && (toolKey === 'hand' || toolKey === 'dildo' || toolKey === 'vibrator')) {
-      const base = TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
-      const bonus = GEL_COMBO_MATRIX[zoneKey as ErogenousKey] ?? 1
-      return base * bonus
     }
     return TOOL_ZONE_MATRIX[toolKey]?.[zoneKey as ErogenousKey] ?? 0
   }, [femaleChar.smTendency, restraints, smCompatMult])
@@ -929,8 +936,66 @@ export default function SexScenePage({
   const rnd = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
   // 대화창 로그 추가 헬퍼
-  const addChat = (text: string, color: string) => {
-    setChatLog(prev => [...prev.slice(-49), { text, color, id: ++chatIdRef.current }])
+  const addChat = (text: string, color: string, sender: 'female' | 'player' = 'female') => {
+    setChatLog(prev => [...prev.slice(-49), { text, color, id: ++chatIdRef.current, sender }])
+  }
+
+  const [chatLoading, setChatLoading] = useState(false)
+  const chatHistory = useRef<{ role: string; content: string }[]>([])
+
+  const sendPlayerChat = async () => {
+    const text = chatInput.trim()
+    if (!text || ended || chatLoading) return
+    addChat(text, '#ffffff', 'player')
+    setChatInput('')
+    setChatLoading(true)
+    chatHistory.current.push({ role: 'user', content: text })
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const poseLabel: Record<string, string> = { missionary: '정상위', doggystyle: '후배위', cowgirl: '여성상위', side: '측위' }
+      const res = await fetch(`${supabaseUrl}/functions/v1/grok-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
+        body: JSON.stringify({
+          message: text,
+          history: chatHistory.current.slice(-6),
+          charContext: {
+            // 기본 정보
+            name: femaleChar.name,
+            nickname: femaleChar.nickname,
+            age: femaleChar.age,
+            married: femaleChar.married,
+            job: femaleChar.job,
+            bodyType: femaleChar.bodyType,
+            // 성격
+            personality: femaleChar.personality,
+            interestTags: femaleChar.interestTags,
+            dislikeTags: femaleChar.dislikeTags,
+            // 현재 상황
+            femaleArousal,
+            pose: poseLabel[currentPoseKey] ?? currentPoseKey,
+            // SM 성향
+            smTendency: femaleChar.smTendency ?? 0,
+            // 성감대 민감도
+            erogenous: femaleChar.erogenous,
+            // 남성 선호도
+            prefErect: femaleChar.prefErect,
+            prefSize: femaleChar.prefSize,
+            prefPose: femaleChar.prefPose,
+            prefAge: femaleChar.prefAge,
+          },
+        }),
+      })
+      const data = await res.json()
+      const reply = data.reply ?? '...'
+      chatHistory.current.push({ role: 'assistant', content: reply })
+      addChat(reply, '#c9a84c', 'female')
+    } catch {
+      addChat('...', '#c9a84c', 'female')
+    } finally {
+      setChatLoading(false)
+    }
   }
 
   // 핫스팟 클릭
@@ -967,17 +1032,23 @@ export default function SexScenePage({
     if (isSpriteAroused && activeTool === 'penis') {
       return showPenalty(rnd(MSGS.restrict_penis), zone.cx, zone.cy)
     }
-    if (isPhotoClimax && activeTool !== 'penis') {
-      return showPenalty(rnd(MSGS.restrict_climax), zone.cx, zone.cy)
-    }
-    if (isPhotoClimax && activeTool === 'penis' && zone.key !== 'vagina' && zone.key !== 'anal') {
-      return showPenalty('지금은 그곳이 아니야... 안으로 들어와야 해.', zone.cx, zone.cy)
+    // 절정 사진 도구·성감대 제한
+    const CLIMAX_ALLOWED_TOOLS = new Set(['penis', 'hand', 'dildo', 'vibrator'])
+    const CLIMAX_ALLOWED_ZONES = new Set(['vagina'])
+    if (isPhotoClimax) {
+      if (!CLIMAX_ALLOWED_TOOLS.has(activeTool)) {
+        return showPenalty(rnd(MSGS.restrict_climax), zone.cx, zone.cy)
+      }
+      if (!CLIMAX_ALLOWED_ZONES.has(zone.key)) {
+        return showPenalty('지금은 거기가 아니야... 그 곳에 집중해줘.', zone.cx, zone.cy)
+      }
+
     }
 
     // 도구 사용 횟수 제한 (3회 초과 시 penalty)
-    // 제외: SM 장구류(수갑/족갑/안대/개목걸이), 젤, 그리고 절정사진에서 penis
+    // 제외: SM 장구류(수갑/족갑/안대/개목걸이), 젤
     const UNLIMITED_TOOLS = new Set(['handcuff', 'legcuff', 'blindfold', 'collar', 'gel'])
-    if (!UNLIMITED_TOOLS.has(activeTool) && !(isPhotoClimax && activeTool === 'penis')) {
+    if (!UNLIMITED_TOOLS.has(activeTool)) {
       // 다른 도구로 바꿨으면 이전 도구 카운트 리셋
       if (lastUsedTool.current && lastUsedTool.current !== activeTool) {
         toolUseCount.current[lastUsedTool.current] = 0
@@ -1047,22 +1118,23 @@ export default function SexScenePage({
         { m: mHardness,                     f: pref.hardness },
         { m: mTechnique,                    f: pref.tech },
       ]
-      return stats.reduce((sum, { m, f }) => {
-        const diff = m - f
-        return sum + (diff >= 0 ? diff / 100 : diff / 100)
-      }, 0)
+      return stats.reduce((sum, { m, f }) => sum + (m * f) / 10000, 0)
     })() : 0
 
     // 성기 크기: 길이+두께 합산(기준 100) → penis 도구 additive 보너스
-    const maleSizeBonus = activeTool === 'penis'
-      ? (mPenisSize + mPenisGirth - 100) / 200
-      : 0
+    const maleSizeBonus = activeTool === 'penis' ? (() => {
+      const pref = femaleChar.prefSize ?? { size: 50, girth: 50 }
+      return (mPenisSize * pref.size + mPenisGirth * pref.girth) / 10000
+    })() : 0
 
-    const gain = toolMult < 0
+    const rawGain = toolMult < 0
       ? toolMult * 10
       : sensitivity < 0
         ? sensMod * 5
         : toolMult * ageMult * posePref * 2 + sensMod + malePrefBonus + maleSizeBonus
+    // 젤 콤보: 최종 gain에 GEL_COMBO_MATRIX 배율 곱 (sensMod 포함 전체에 적용)
+    const gelMult = isGelCombo ? (GEL_COMBO_MATRIX[zone.key as ErogenousKey] ?? 1) : 1
+    const gain = rawGain > 0 ? rawGain * gelMult : rawGain
 
     setFemaleArousal(prev => Math.min(500, Math.max(0, prev + gain)))
     setFemaleFlash(true)
@@ -1378,6 +1450,7 @@ export default function SexScenePage({
               gap: 14, padding: '24px',
               animation: 'fadeInFail 0.5s ease',
               pointerEvents: 'auto',
+              zIndex: 200,
             }}>
               {/* 결과 타이틀 */}
               <div style={{ fontSize: 36, fontWeight: 'bold', letterSpacing: 2,
@@ -1402,7 +1475,7 @@ export default function SexScenePage({
               {/* 세부 항목 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
                 {[
-                  { label: 'SM 궁합', score: Math.round((smCompatMult - 0.5) / 1.0 * 50), max: 50 },
+                  { label: 'SM 궁합', score: Math.round((smCompatMult - 0.5) / 1.0 * 30), max: 30 },
                   { label: '발기 선호', score: Math.round((() => {
                     const pref = femaleChar.prefErect ?? { power:25, duration:25, hardness:25, tech:25 }
                     return [
@@ -1410,8 +1483,14 @@ export default function SexScenePage({
                       { m: maleChar?.erectDuration ?? 25, f: pref.duration },
                       { m: maleChar?.erectHardness ?? 25, f: pref.hardness },
                       { m: maleChar?.erectTechnique ?? 25, f: pref.tech },
-                    ].reduce((s,{m,f}) => s + Math.max(0, 12.5 - Math.abs(m-f)/4), 0)
-                  })()), max: 50 },
+                    ].reduce((s,{m,f}) => s + Math.max(0, 10 - Math.abs(m-f)/5), 0)
+                  })()), max: 40 },
+                  { label: '자세 선호', score: (() => {
+                    const pp = femaleChar.prefPose ?? { missionary: 3, doggystyle: 3, cowgirl: 3, side: 3 }
+                    const used = Array.from(usedPoseKeys.current)
+                    const avg = used.reduce((s, k) => s + ((pp as any)[k] ?? 3), 0) / used.length
+                    return Math.round((avg - 1) / 4 * 30)
+                  })(), max: 30 },
                 ].map(({ label, score, max }) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 18, color: '#ffffff88', width: 72, flexShrink: 0 }}>{label}</span>
@@ -1749,17 +1828,19 @@ export default function SexScenePage({
             }}>테크닉</div>
             <button
               tabIndex={-1}
-              disabled={maleArousal <= 0}
+              disabled={maleArousal <= 0 || poseChangeCount >= MAX_POSE_CHANGES}
               onClick={() => setShowPoseSelect(true)}
               className="panel-tech-btn"
               style={{
-                width: '100%', padding: '10px 0', borderRadius: 0, cursor: maleArousal > 0 ? 'pointer' : 'not-allowed',
-                background: maleArousal > 0 ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.03)',
+                width: '100%', padding: '10px 0', borderRadius: 0,
+                cursor: (maleArousal > 0 && poseChangeCount < MAX_POSE_CHANGES) ? 'pointer' : 'not-allowed',
+                background: (maleArousal > 0 && poseChangeCount < MAX_POSE_CHANGES) ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.03)',
                 border: 'none', borderBottom: '1px solid #ffffff18',
-                color: maleArousal > 0 ? '#c9a84c' : '#ffffff33', fontSize: 28, fontWeight: 'bold',
+                color: (maleArousal > 0 && poseChangeCount < MAX_POSE_CHANGES) ? '#c9a84c' : '#ffffff33',
+                fontSize: 28, fontWeight: 'bold',
               }}
             >
-              체위 변경
+              체위 변경 {poseChangeCount > 0 ? `(${poseChangeCount}/${MAX_POSE_CHANGES})` : ''}
             </button>
           </div>
 
@@ -1809,21 +1890,55 @@ export default function SexScenePage({
             )}
             {chatLog.map(msg => (
               <div key={msg.id} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 10,
+                display: 'flex',
+                justifyContent: msg.sender === 'player' ? 'flex-end' : 'flex-start',
               }}>
                 <div style={{
-                  background: 'rgba(255,255,255,0.06)', borderRadius: 12,
-                  borderLeft: `3px solid ${msg.color}`,
+                  background: msg.sender === 'player' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+                  borderRadius: 12,
+                  ...(msg.sender === 'player'
+                    ? { borderRight: '3px solid #ffffff99' }
+                    : { borderLeft: `3px solid ${msg.color}` }),
                   padding: '10px 16px',
                   fontSize: 28, fontWeight: msg.color === '#e94560' ? 'bold' : 'normal',
-                  color: msg.color,
-                  lineHeight: 1.4, maxWidth: '100%',
+                  color: msg.sender === 'player' ? '#ffffffdd' : msg.color,
+                  lineHeight: 1.4, maxWidth: '85%',
                 }}>
                   {msg.text}
                 </div>
               </div>
             ))}
           </div>
+
+          {/* 대화 입력창 */}
+          {!ended && (
+            <div style={{
+              display: 'flex', gap: 8, padding: '10px 14px',
+              borderTop: '1px solid #ffffff18', background: 'rgba(0,0,0,0.3)',
+            }}>
+              <input
+                ref={chatInputRef}
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') sendPlayerChat() }}
+                placeholder="말 걸기..."
+                maxLength={60}
+                style={{
+                  flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
+                  borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 24, outline: 'none',
+                }}
+              />
+              <button
+                onClick={sendPlayerChat}
+                disabled={chatLoading}
+                style={{
+                  background: chatLoading ? '#888' : '#c9a84c', border: 'none', borderRadius: 8,
+                  padding: '8px 16px', color: '#1a1a2e', fontSize: 22, fontWeight: 'bold',
+                  cursor: chatLoading ? 'not-allowed' : 'pointer', minWidth: 64,
+                }}
+              >{chatLoading ? '...' : '전송'}</button>
+            </div>
+          )}
         </div>
 
       </div>{/* flex row 닫기 */}
@@ -1853,6 +1968,8 @@ export default function SexScenePage({
                   onClick={() => {
                     if (isCurrent) return
                     setCurrentPoseKey(p.key)
+                    usedPoseKeys.current.add(p.key)
+                    setPoseChangeCount(prev => prev + 1)
                     setHoveredZone(null)
                     setMaleArousal(prev => Math.max(0, Math.round(prev * 0.7)))
                     setFemaleArousal(prev => Math.max(0, Math.round(prev * 0.5)))
