@@ -991,7 +991,6 @@ export default function SexScenePage({
             // 남성 선호도
             prefErect: femaleChar.prefErect,
             prefSize: femaleChar.prefSize,
-            prefPose: femaleChar.prefPose,
             prefAge: femaleChar.prefAge,
           },
         }),
