@@ -9,6 +9,7 @@ import FemaleCharacterCreatePage from './pages/FemaleCharacterCreatePage'
 import type { FemaleCharacterData } from './pages/FemaleCharacterCreatePage'
 import CreatorDashboardPage from './pages/CreatorDashboardPage'
 import SexScenePage from './pages/SexScenePage'
+import DatePage from './pages/DatePage'
 
 export default function App() {
   const [user, setUser] = useState<any>(null)
@@ -27,6 +28,8 @@ export default function App() {
   const [creatorDashboard, setCreatorDashboard] = useState(false)
   const [editingChar, setEditingChar] = useState<FemaleCharacterData | null>(null)
   const [sexScene, setSexScene] = useState<{ char: FemaleCharacterData; pose: string } | null>(null)
+  const [dateScene, setDateScene] = useState<FemaleCharacterData | null>(null)
+  const [showPoseSelect, setShowPoseSelect] = useState<FemaleCharacterData | null>(null)
   const [femaleChars, setFemaleChars] = useState<FemaleCharacterData[]>(() => {
     try { const s = localStorage.getItem('col_female_chars'); return s ? JSON.parse(s) : [] } catch { return [] }
   })
@@ -71,6 +74,11 @@ export default function App() {
         imageUrl: row.image_url ?? '',
         expressionImages: row.expression_images ?? [],
         poseImages: row.pose_images ?? {},
+        prefErect: row.stats?.prefErect ?? { power: 25, duration: 25, hardness: 25, tech: 25 },
+        prefSize: row.stats?.prefSize ?? { size: 50, girth: 50 },
+        prefPose: row.stats?.prefPose ?? { missionary: 3, doggy: 3, cowgirl: 3, side: 3 },
+        prefPersonality: row.stats?.prefPersonality ?? { intel: 25, humor: 25, virtue: 25, manner: 25 },
+        smTendency: row.stats?.smTendency ?? 0,
         dateCostShare: row.stats?.dateCostShare ?? 0,
         createdAt: row.created_at ?? '',
       }))
@@ -105,6 +113,16 @@ export default function App() {
 
   if (!character) return <CharacterCreatePage onComplete={saveCharacter} initialData={JSON.parse(localStorage.getItem('col_character') ?? 'null')} gold={gold} />
   if (!characterRevealed) return <CharacterRevealPage character={character} onEnter={() => saveRevealed(true)} onBack={goBackToEdit} />
+
+  if (dateScene) return (
+    <DatePage
+      femaleChar={dateScene}
+      maleChar={character}
+      userId={user?.id ?? 'dev-user'}
+      onBack={() => setDateScene(null)}
+      onSexUnlocked={(char) => { setDateScene(null); setShowPoseSelect(char) }}
+    />
+  )
 
   if (sexScene) return (
     <SexScenePage
@@ -151,5 +169,46 @@ export default function App() {
     />
   )
 
-  return <MapPage character={character} onViewCharacter={() => setCharacterRevealed(false)} gold={gold} onCreatorMode={() => setCreatorDashboard(true)} femaleChars={femaleChars} onStartSexScene={(char, pose) => setSexScene({ char, pose })} />
+  const POSES = [
+    { key: 'missionary', label: '정상위', emoji: '🛏️' },
+    { key: 'doggy',      label: '후배위', emoji: '🐾' },
+    { key: 'cowgirl',    label: '여성상위', emoji: '⭐' },
+    { key: 'side',       label: '버터플라이', emoji: '🦋' },
+  ]
+
+  return (
+    <>
+      <MapPage
+        character={character}
+        onViewCharacter={() => setCharacterRevealed(false)}
+        gold={gold}
+        onCreatorMode={() => setCreatorDashboard(true)}
+        femaleChars={femaleChars}
+        onStartDate={(char) => setDateScene(char)}
+        onStartSexScene={(char, pose) => setSexScene({ char, pose })}
+      />
+      {/* SEX 잠금 해제 후 자세 선택 모달 */}
+      {showPoseSelect && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#1a1a2e', border: '1px solid #c9a84c44', borderRadius: 16, padding: 24, width: 280 }}>
+            <div style={{ color: '#c9a84c', fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>❤️‍🔥 SEX 시작</div>
+            <div style={{ color: '#ffffff66', fontSize: 12, marginBottom: 16 }}>{showPoseSelect.nickname}와(과) 어떤 자세로?</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {POSES.map(p => (
+                <button
+                  key={p.key}
+                  onClick={() => { setSexScene({ char: showPoseSelect, pose: p.key }); setShowPoseSelect(null) }}
+                  style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid #c9a84c44', borderRadius: 10, padding: '12px 16px', color: '#fff', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+                >
+                  <span style={{ fontSize: 20 }}>{p.emoji}</span>
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowPoseSelect(null)} style={{ marginTop: 12, width: '100%', background: 'none', border: '1px solid #ffffff22', borderRadius: 8, padding: '8px 0', color: '#ffffff66', cursor: 'pointer', fontSize: 13 }}>취소</button>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }

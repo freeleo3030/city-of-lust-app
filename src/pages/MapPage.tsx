@@ -250,7 +250,7 @@ const LOCATIONS = [
   { id: 22, name: '모텔',     emoji: '🛏️', x: 84, y: 82, color: '#EF9A9A', desc: '저렴하고 은밀한 밤' },   // 블록(5,4) 우하: 88-4, 90-8
 ]
 
-export default function MapPage({ character, onViewCharacter, gold = 500, onCreatorMode, femaleChars = [], onStartSexScene }: { character?: any; onViewCharacter?: () => void; gold?: number; onCreatorMode?: () => void; femaleChars?: FemaleCharacterData[]; onStartSexScene?: (char: FemaleCharacterData, pose: string) => void }) {
+export default function MapPage({ character, onViewCharacter, gold = 500, onCreatorMode, femaleChars = [], onStartDate, onStartSexScene }: { character?: any; onViewCharacter?: () => void; gold?: number; onCreatorMode?: () => void; femaleChars?: FemaleCharacterData[]; onStartDate?: (char: FemaleCharacterData) => void; onStartSexScene?: (char: FemaleCharacterData, pose: string) => void }) {
   const [selected, setSelected] = useState<typeof LOCATIONS[0] | null>(null)
   const [entering, setEntering] = useState<typeof LOCATIONS[0] | null>(null)
   const [mapSize, setMapSize] = useState({ width: 0, height: 0 })
@@ -337,7 +337,7 @@ export default function MapPage({ character, onViewCharacter, gold = 500, onCrea
   // 언마운트 시 타이머 정리
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
-  if (entering) return <LocationPage location={entering} femaleChars={femaleChars} onBack={() => setEntering(null)} onStartSexScene={onStartSexScene} />
+  if (entering) return <LocationPage location={entering} femaleChars={femaleChars} onBack={() => setEntering(null)} onStartDate={onStartDate} onStartSexScene={onStartSexScene} />
 
   return (
     <div style={styles.container}>

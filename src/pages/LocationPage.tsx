@@ -13,6 +13,7 @@ interface Props {
   location: Location
   femaleChars: FemaleCharacterData[]
   onBack: () => void
+  onStartDate?: (char: FemaleCharacterData) => void
   onStartSexScene?: (char: FemaleCharacterData, pose: string) => void
 }
 
@@ -32,7 +33,7 @@ const POSES = [
   { key: 'side',       label: '버터플라이', emoji: '🦋' },
 ]
 
-export default function LocationPage({ location, femaleChars, onBack, onStartSexScene }: Props) {
+export default function LocationPage({ location, femaleChars, onBack, onStartDate, onStartSexScene }: Props) {
   const [selected, setSelected] = useState<FemaleCharacterData | null>(null)
   const [showPoseSelect, setShowPoseSelect] = useState(false)
 
@@ -115,8 +116,8 @@ export default function LocationPage({ location, femaleChars, onBack, onStartSex
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-end' }}>
-            <button style={{ ...S.approachBtn, background: location.color }}>
-              접근하기 →
+            <button style={{ ...S.approachBtn, background: location.color }} onClick={() => onStartDate?.(selected)}>
+              💬 접근하기
             </button>
             {onStartSexScene && (
               <button
