@@ -37,6 +37,7 @@ export default function CharacterRevealPage({
   const [enlarged, setEnlarged] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [finalized, setFinalized] = useState(images.length === 1)
 
   const activeImage = images[selectedIdx]
@@ -209,20 +210,20 @@ export default function CharacterRevealPage({
         </div>
         {onDelete && (
           <div style={{ textAlign: 'center', marginTop: 8 }}>
-            {confirming ? (
+            {confirmDelete ? (
               <div style={{ background: 'rgba(233,69,96,0.08)', border: '1px solid #e9456044', borderRadius: 12, padding: '12px 16px', display: 'inline-block' }}>
                 <div style={{ color: '#e94560', fontSize: 13, marginBottom: 10, lineHeight: 1.6 }}>
                   삭제하면 다시 이 캐릭터를<br/>사용할 수 없습니다.<br/>그래도 삭제하시겠습니까?
                 </div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                   <button onClick={onDelete} style={{ background: '#e94560', border: 'none', borderRadius: 8, color: '#fff', padding: '7px 20px', cursor: 'pointer', fontSize: 13, fontWeight: 'bold' }}>삭제</button>
-                  <button onClick={() => setConfirming(false)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, color: '#fff', padding: '7px 16px', cursor: 'pointer', fontSize: 13 }}>취소</button>
+                  <button onClick={() => setConfirmDelete(false)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, color: '#fff', padding: '7px 16px', cursor: 'pointer', fontSize: 13 }}>취소</button>
                 </div>
               </div>
             ) : (
               <button
                 style={{ background: 'none', border: 'none', color: '#ffffff33', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}
-                onClick={() => setConfirming(true)}
+                onClick={() => setConfirmDelete(true)}
               >
                 🗑️ 캐릭터 삭제
               </button>
