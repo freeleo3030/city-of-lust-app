@@ -45,10 +45,21 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // DB에서 남캐 로드
+  useEffect(() => {
+    supabase.from('male_characters').select('data').eq('id', 'default').single().then(({ data }) => {
+      if (data?.data) {
+        const c = data.data as any
+        localStorage.setItem('col_character', JSON.stringify(c))
+        setCharacter(c)
+      }
+    })
+  }, [])
+
   // DB에서 여캐 목록 로드 (localStorage와 병합)
   useEffect(() => {
     supabase.from('female_characters').select('*').then(({ data, error }) => {
-      console.log('[DB] female_characters:', data, 'error:', error)
+      console.log('[DB] female_characters count:', data?.length, 'error:', error, 'raw:', JSON.stringify(data?.slice(0,1)))
       if (error || !data) return
       const dbChars: FemaleCharacterData[] = data.map((row: any) => ({
         id: row.id,
@@ -70,10 +81,37 @@ export default function App() {
         smSelf: row.sm_self ?? 0,
         smPreferMale: row.sm_prefer_male ?? 0,
         interests: row.interests ?? [],
+        interestTags: row.interests ?? [],
         dislikes: row.dislikes ?? [],
         imageUrl: row.image_url ?? '',
         expressionImages: row.expression_images ?? [],
-        poseImages: row.pose_images ?? {},
+        poseImages: (() => {
+          const p = row.pose_images ?? {}
+          const POSES = ['missionary', 'doggy', 'cowgirl', 'side']
+          const flat: Record<string, string> = {}
+          const isNested = POSES.some(k => p[k] && typeof p[k] === 'object' && !Array.isArray(p[k]))
+          if (isNested) {
+            // nested → flat 변환
+            POSES.forEach(pose => {
+              const d = p[pose]
+              if (!d) return
+              if (d.aroused) flat[`${pose}_aroused`] = d.aroused
+              if (d.climax) flat[`${pose}_climax`] = d.climax;
+              (d.aroused_sprites ?? []).forEach((url: string, i: number) => { flat[`${pose}_aroused_sprite_${i}`] = url })
+              ;(d.climax_sprites ?? []).forEach((url: string, i: number) => { flat[`${pose}_climax_sprite_${i}`] = url })
+            })
+            return flat
+          }
+          // 구형 flat: 'missionary' → 'missionary_aroused' 로 변환
+          const result: Record<string, string> = { ...p }
+          POSES.forEach(pose => {
+            if (result[pose] && typeof result[pose] === 'string' && !result[`${pose}_aroused`]) {
+              result[`${pose}_aroused`] = result[pose]
+              delete result[pose]
+            }
+          })
+          return result
+        })(),
         prefErect: row.stats?.prefErect ?? { power: 25, duration: 25, hardness: 25, tech: 25 },
         prefSize: row.stats?.prefSize ?? { size: 50, girth: 50 },
         prefPose: row.stats?.prefPose ?? { missionary: 3, doggy: 3, cowgirl: 3, side: 3 },
@@ -96,9 +134,10 @@ export default function App() {
   // TODO: 개발 완료 후 로그인 연결
   // if (!user) return <LoginPage />
   if (!ageVerified) return <AgeVerifyPage onVerified={() => setAgeVerified(true)} />
-  const saveCharacter = (c: any) => {
+  const saveCharacter = async (c: any) => {
     localStorage.setItem('col_character', JSON.stringify(c))
     setCharacter(c)
+    await supabase.from('male_characters').upsert({ id: 'default', nickname: c.nickname, data: c })
   }
   const saveRevealed = (v: boolean) => {
     localStorage.setItem('col_revealed', String(v))
@@ -155,12 +194,48 @@ export default function App() {
   if (creatorMode) return (
     <FemaleCharacterCreatePage
       initialData={editingChar ?? undefined}
-      onComplete={(char) => {
+      onComplete={async (char) => {
         const updated = editingChar
           ? femaleChars.map(c => c.id === char.id ? char : c)
           : [...femaleChars, char]
         localStorage.setItem('col_female_chars', JSON.stringify(updated))
         setFemaleChars(updated)
+        // DB upsert
+        await supabase.from('female_characters').upsert({
+          id: char.id,
+          creator_id: null,
+          nickname: char.nickname,
+          age: char.age,
+          married: char.married,
+          job: char.job,
+          location: char.location,
+          body_type: char.bodyType,
+          intro: char.intro ?? '',
+          memo: char.memo ?? '',
+          height_cm: char.heightCm ?? 160,
+          face: char.face,
+          body: char.body,
+          fashion: char.fashion,
+          erogenous: char.erogenous,
+          pref_age: char.prefAge,
+          pref_look: char.prefLook,
+          pref_wealth: char.prefWealth,
+          sm_self: char.smSelf ?? 0,
+          sm_prefer_male: char.smPreferMale ?? 0,
+          interests: char.interests ?? [],
+          dislikes: char.dislikes ?? [],
+          image_url: char.imageUrl ?? '',
+          expression_images: char.expressionImages ?? [],
+          pose_images: char.poseImages ?? {},
+          stats: {
+            prefErect: char.prefErect,
+            prefSize: char.prefSize,
+            prefPose: char.prefPose,
+            prefPersonality: char.prefPersonality,
+            smTendency: char.smTendency ?? 0,
+            dateCostShare: char.dateCostShare ?? 0,
+          },
+        })
         setEditingChar(null)
         setCreatorMode(false)
         setCreatorDashboard(true)
