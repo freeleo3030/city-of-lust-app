@@ -177,10 +177,11 @@ export default function App() {
       chars={femaleChars}
       onAdd={() => { setEditingChar(null); setCreatorDashboard(false); setCreatorMode(true) }}
       onEdit={(char) => { setEditingChar(char); setCreatorDashboard(false); setCreatorMode(true) }}
-      onDelete={(id) => {
+      onDelete={async (id) => {
         const updated = femaleChars.filter(c => c.id !== id)
         localStorage.setItem('col_female_chars', JSON.stringify(updated))
         setFemaleChars(updated)
+        await supabase.from('female_characters').delete().eq('id', id)
       }}
       onUpdateChar={(char) => {
         const updated = femaleChars.map(c => c.id === char.id ? char : c)
