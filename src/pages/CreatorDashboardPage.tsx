@@ -144,10 +144,12 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
 
                   <button style={S.editBtn} onClick={() => onEdit(c)}>✏️ 수정</button>
                   {confirmId === c.id ? (
-                    <div style={S.confirmRow}>
-                      <span style={{ color: '#e94560', fontSize: 12 }}>정말 삭제?</span>
-                      <button style={S.confirmYes} onClick={() => { onDelete(c.id); setConfirmId(null) }}>삭제</button>
-                      <button style={S.confirmNo} onClick={() => setConfirmId(null)}>취소</button>
+                    <div style={{ marginTop: 10, background: 'rgba(233,69,96,0.08)', border: '1px solid #e9456044', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ color: '#e94560', fontSize: 12, marginBottom: 8, lineHeight: 1.5 }}>삭제하면 다시 이 캐릭터를<br/>사용할 수 없습니다.<br/>그래도 삭제하시겠습니까?</div>
+                      <div style={S.confirmRow}>
+                        <button style={S.confirmYes} onClick={() => { onDelete(c.id); setConfirmId(null) }}>삭제</button>
+                        <button style={S.confirmNo} onClick={() => setConfirmId(null)}>취소</button>
+                      </div>
                     </div>
                   ) : (
                     <button style={S.deleteBtn} onClick={() => setConfirmId(c.id)}>🗑 삭제</button>
