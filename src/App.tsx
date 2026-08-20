@@ -47,15 +47,15 @@ export default function App() {
 
   // DB에서 남캐 로드
   useEffect(() => {
-    if (!user) return
-    supabase.from('male_characters').select('data').eq('id', user.id).single().then(({ data }) => {
+    const uid = user?.id ?? 'dev-user'
+    supabase.from('male_characters').select('data').eq('id', uid).single().then(({ data }) => {
       if (data?.data) {
         const c = data.data as any
         localStorage.setItem('col_character', JSON.stringify(c))
         setCharacter(c)
       }
     })
-  }, [user])
+  }, [])
 
   // DB에서 여캐 목록 로드 (localStorage와 병합)
   useEffect(() => {
@@ -132,12 +132,13 @@ export default function App() {
   }, [])
 
   if (loading) return <div style={{ background: '#0d0d1a', minHeight: '100vh' }} />
-  if (!user) return <LoginPage />
+  // TODO: 개발 완료 후 로그인 연결
+  // if (!user) return <LoginPage />
   if (!ageVerified) return <AgeVerifyPage onVerified={() => setAgeVerified(true)} />
   const saveCharacter = async (c: any) => {
     localStorage.setItem('col_character', JSON.stringify(c))
     setCharacter(c)
-    if (user) await supabase.from('male_characters').upsert({ id: user.id, nickname: c.nickname, data: c })
+    await supabase.from('male_characters').upsert({ id: user?.id ?? 'dev-user', nickname: c.nickname, data: c })
   }
   const saveRevealed = (v: boolean) => {
     localStorage.setItem('col_revealed', String(v))
@@ -154,7 +155,7 @@ export default function App() {
     localStorage.removeItem('col_revealed')
     setCharacter(null)
     setCharacterRevealed(false)
-    if (user) await supabase.from('male_characters').delete().eq('id', user.id)
+    await supabase.from('male_characters').delete().eq('id', user?.id ?? 'dev-user')
   }
 
   if (!character) return <CharacterCreatePage onComplete={saveCharacter} initialData={JSON.parse(localStorage.getItem('col_character') ?? 'null')} gold={gold} />
