@@ -250,7 +250,7 @@ const LOCATIONS = [
   { id: 22, name: '모텔',     emoji: '🛏️', x: 84, y: 82, color: '#EF9A9A', desc: '저렴하고 은밀한 밤' },   // 블록(5,4) 우하: 88-4, 90-8
 ]
 
-export default function MapPage({ character, onViewCharacter, gold = 500, onCreatorMode, femaleChars = [], onStartDate, onStartSexScene, onDeleteCharacter }: { character?: any; onViewCharacter?: () => void; gold?: number; onCreatorMode?: () => void; femaleChars?: FemaleCharacterData[]; onStartDate?: (char: FemaleCharacterData) => void; onStartSexScene?: (char: FemaleCharacterData, pose: string) => void; onDeleteCharacter?: () => void }) {
+export default function MapPage({ character, onViewCharacter, gold = 500, onCreatorMode, femaleChars = [], onStartDate, onStartSexScene }: { character?: any; onViewCharacter?: () => void; gold?: number; onCreatorMode?: () => void; femaleChars?: FemaleCharacterData[]; onStartDate?: (char: FemaleCharacterData) => void; onStartSexScene?: (char: FemaleCharacterData, pose: string) => void }) {
   const [selected, setSelected] = useState<typeof LOCATIONS[0] | null>(null)
   const [entering, setEntering] = useState<typeof LOCATIONS[0] | null>(null)
   const [mapSize, setMapSize] = useState({ width: 0, height: 0 })
@@ -351,12 +351,6 @@ export default function MapPage({ character, onViewCharacter, gold = 500, onCrea
           <div style={styles.stat}>골드 <span style={styles.statVal}>💰 {gold.toLocaleString()}G</span></div>
           <button style={styles.logoutBtn} onClick={onViewCharacter}>내 캐릭터</button>
           <button style={styles.creatorBtn} onClick={onCreatorMode}>👑 창조자</button>
-          {onDeleteCharacter && (
-            <button style={{ ...styles.logoutBtn, background: 'rgba(233,69,96,0.15)', color: '#e94560', borderColor: '#e9456044', marginTop: 4 }}
-              onClick={() => { if (confirm('캐릭터를 삭제하고 처음부터 시작할까요?')) onDeleteCharacter() }}>
-              🗑️ 캐릭터 삭제
-            </button>
-          )}
         </div>
       </div>
 

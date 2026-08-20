@@ -22,10 +22,12 @@ export default function CharacterRevealPage({
   character,
   onEnter,
   onBack,
+  onDelete,
 }: {
   character: CharacterData
   onEnter: () => void
   onBack: () => void
+  onDelete?: () => void
 }) {
   const MAX_IMAGES = 5
   const [images, setImages] = useState<string[]>(
@@ -205,6 +207,16 @@ export default function CharacterRevealPage({
           <button style={styles.backBtn} onClick={onBack}>← 수정하기</button>
           <button style={styles.enterBtn} onClick={handleEnter}>루스트 시티 입장 →</button>
         </div>
+        {onDelete && (
+          <div style={{ textAlign: 'center', marginTop: 8 }}>
+            <button
+              style={{ background: 'none', border: 'none', color: '#ffffff33', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}
+              onClick={() => { if (confirm('캐릭터를 삭제하고 처음부터 시작할까요?')) onDelete() }}
+            >
+              🗑️ 캐릭터 삭제
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

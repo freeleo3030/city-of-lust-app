@@ -159,7 +159,7 @@ export default function App() {
   }
 
   if (!character) return <CharacterCreatePage onComplete={saveCharacter} initialData={JSON.parse(localStorage.getItem('col_character') ?? 'null')} gold={gold} />
-  if (!characterRevealed) return <CharacterRevealPage character={character} onEnter={() => saveRevealed(true)} onBack={goBackToEdit} />
+  if (!characterRevealed) return <CharacterRevealPage character={character} onEnter={() => saveRevealed(true)} onBack={goBackToEdit} onDelete={deleteCharacter} />
 
   if (dateScene) return (
     <DatePage
@@ -270,7 +270,6 @@ export default function App() {
         femaleChars={femaleChars}
         onStartDate={(char) => setDateScene(char)}
         onStartSexScene={(char, pose) => setSexScene({ char, pose })}
-        onDeleteCharacter={deleteCharacter}
       />
       {/* SEX 잠금 해제 후 자세 선택 모달 */}
       {showPoseSelect && (
