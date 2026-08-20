@@ -47,14 +47,15 @@ export default function App() {
 
   // DB에서 남캐 로드
   useEffect(() => {
-    supabase.from('male_characters').select('data').eq('id', 'default').single().then(({ data }) => {
+    if (!user) return
+    supabase.from('male_characters').select('data').eq('id', user.id).single().then(({ data }) => {
       if (data?.data) {
         const c = data.data as any
         localStorage.setItem('col_character', JSON.stringify(c))
         setCharacter(c)
       }
     })
-  }, [])
+  }, [user])
 
   // DB에서 여캐 목록 로드 (localStorage와 병합)
   useEffect(() => {
@@ -131,13 +132,12 @@ export default function App() {
   }, [])
 
   if (loading) return <div style={{ background: '#0d0d1a', minHeight: '100vh' }} />
-  // TODO: 개발 완료 후 로그인 연결
-  // if (!user) return <LoginPage />
+  if (!user) return <LoginPage />
   if (!ageVerified) return <AgeVerifyPage onVerified={() => setAgeVerified(true)} />
   const saveCharacter = async (c: any) => {
     localStorage.setItem('col_character', JSON.stringify(c))
     setCharacter(c)
-    await supabase.from('male_characters').upsert({ id: 'default', nickname: c.nickname, data: c })
+    if (user) await supabase.from('male_characters').upsert({ id: user.id, nickname: c.nickname, data: c })
   }
   const saveRevealed = (v: boolean) => {
     localStorage.setItem('col_revealed', String(v))
@@ -147,7 +147,14 @@ export default function App() {
     localStorage.removeItem('col_revealed')
     setCharacterRevealed(false)
     setCharacter(null)
-    // character 데이터는 localStorage에 유지 → CharacterCreatePage가 읽어서 복원
+  }
+
+  const deleteCharacter = async () => {
+    localStorage.removeItem('col_character')
+    localStorage.removeItem('col_revealed')
+    setCharacter(null)
+    setCharacterRevealed(false)
+    if (user) await supabase.from('male_characters').delete().eq('id', user.id)
   }
 
   if (!character) return <CharacterCreatePage onComplete={saveCharacter} initialData={JSON.parse(localStorage.getItem('col_character') ?? 'null')} gold={gold} />
@@ -204,7 +211,7 @@ export default function App() {
         // DB upsert
         await supabase.from('female_characters').upsert({
           id: char.id,
-          creator_id: null,
+          creator_id: user?.id ?? null,
           nickname: char.nickname,
           age: char.age,
           married: char.married,
@@ -262,6 +269,7 @@ export default function App() {
         femaleChars={femaleChars}
         onStartDate={(char) => setDateScene(char)}
         onStartSexScene={(char, pose) => setSexScene({ char, pose })}
+        onDeleteCharacter={deleteCharacter}
       />
       {/* SEX 잠금 해제 후 자세 선택 모달 */}
       {showPoseSelect && (
