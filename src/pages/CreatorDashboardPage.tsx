@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
 import { CONVERSATION_EXPRESSIONS, POSE_EXPRESSIONS, POSES, cleanOrphanImages, generatePoseVideo } from '../lib/generateCharImages'
-
-// viewport-responsive clamp: 0.7× at ≤672px, 1.0× at 960px, 1.3× at ≥1248px
-const cv = (n: number) => `clamp(${(0.7*n).toFixed(1)}px,${(n/9.6).toFixed(2)}vw,${(1.3*n).toFixed(1)}px)` as const
+import { useScale } from '../hooks/useScale'
 
 interface Props {
   chars: FemaleCharacterData[]
@@ -29,56 +27,57 @@ const diffColor = (married: string, age: number) => {
 }
 
 const S: Record<string, React.CSSProperties> = {
-  container: { minHeight: '100vh', background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)', padding: `${cv(29)} ${cv(19)}` },
-  inner: { maxWidth: 'min(1498px,100%)', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: cv(19) },
-  header: { textAlign: 'center', padding: `${cv(8)} 0 ${cv(4)}` },
-  backBtn: { background: 'none', border: '1px solid #ffffff33', borderRadius: cv(8), color: '#ffffff88', padding: `${cv(7)} ${cv(17)}`, cursor: 'pointer', fontSize: cv(16), marginBottom: cv(10) },
-  title: { color: '#c9a84c', fontSize: cv(29), fontWeight: 'bold', margin: '0 0 4px' },
-  subtitle: { color: '#ffffff44', fontSize: cv(16), margin: 0 },
-  toolbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: `${cv(10)} 0` },
-  count: { color: '#ffffff66', fontSize: cv(16) },
-  addBtn: { background: 'linear-gradient(135deg, #c9a84c, #e94560)', border: 'none', borderRadius: cv(10), color: '#fff', padding: `${cv(10)} ${cv(22)}`, cursor: 'pointer', fontSize: cv(17), fontWeight: 'bold' },
-  empty: { padding: `${cv(72)} 0`, display: 'flex', justifyContent: 'center' },
-  grid: { display: 'grid', gridTemplateColumns: `repeat(auto-fit,minmax(${cv(260)},1fr))`, gap: cv(29) },
-  card: { background: 'rgba(255,255,255,0.04)', border: '1px solid #ffffff11', borderRadius: cv(19), overflow: 'hidden', display: 'flex', flexDirection: 'column' },
+  container: { minHeight: '100vh', background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)' },
+  inner: { width: 960, margin: '0 auto', padding: '29px 19px', display: 'flex', flexDirection: 'column', gap: 19 },
+  header: { textAlign: 'center', padding: '8px 0 4px' },
+  backBtn: { background: 'none', border: '1px solid #ffffff33', borderRadius: 8, color: '#ffffff88', padding: '7px 17px', cursor: 'pointer', fontSize: 16, marginBottom: 10 },
+  title: { color: '#c9a84c', fontSize: 29, fontWeight: 'bold', margin: '0 0 4px' },
+  subtitle: { color: '#ffffff44', fontSize: 16, margin: 0 },
+  toolbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' },
+  count: { color: '#ffffff66', fontSize: 16 },
+  addBtn: { background: 'linear-gradient(135deg, #c9a84c, #e94560)', border: 'none', borderRadius: 10, color: '#fff', padding: '10px 22px', cursor: 'pointer', fontSize: 17, fontWeight: 'bold' },
+  empty: { padding: '72px 0', display: 'flex', justifyContent: 'center' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 29 },
+  card: { background: 'rgba(255,255,255,0.04)', border: '1px solid #ffffff11', borderRadius: 19, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
   imgWrap: { position: 'relative', aspectRatio: '3/4', background: '#0d0d1a' },
   img: { width: '100%', height: '100%', objectFit: 'cover' },
-  imgPlaceholder: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cv(108), color: '#ffffff22' },
-  diffBadge: { position: 'absolute', top: cv(12), right: cv(12), borderRadius: cv(17), padding: `${cv(4)} ${cv(17)}`, fontSize: cv(17), fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap' },
-  info: { padding: `${cv(22)} ${cv(24)}`, display: 'flex', flexDirection: 'column', gap: cv(7), flex: 1 },
-  nickname: { fontSize: cv(31), fontWeight: 'bold', color: '#fff' },
-  meta: { fontSize: cv(19), color: '#ffffff66' },
-  intro: { fontSize: cv(19), color: '#ffffff88', margin: `${cv(7)} 0`, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
-  statRow: { display: 'flex', gap: cv(12), marginTop: cv(7) },
-  stat: { flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: cv(10), padding: `${cv(7)} 0`, textAlign: 'center' },
-  statLabel: { display: 'block', fontSize: cv(16), color: '#ffffff44' },
-  statVal: { display: 'block', fontSize: cv(24), fontWeight: 'bold', color: '#c9a84c' },
-  previewBtn: { background: 'rgba(255,255,255,0.06)', border: '1px solid #ffffff22', borderRadius: cv(10), color: '#ffffff88', padding: `${cv(8)} 0`, cursor: 'pointer', fontSize: cv(18), marginTop: cv(5) },
-  date: { fontSize: cv(17), color: '#ffffff33', marginTop: cv(5) },
-  editBtn: { marginTop: cv(7), background: 'none', border: '1px solid #c9a84c55', borderRadius: cv(10), color: '#c9a84c', padding: `${cv(8)} 0`, cursor: 'pointer', fontSize: cv(19) },
-  deleteBtn: { marginTop: cv(7), background: 'none', border: '1px solid #e9456033', borderRadius: cv(10), color: '#e9456088', padding: `${cv(8)} 0`, cursor: 'pointer', fontSize: cv(19) },
-  confirmRow: { display: 'flex', alignItems: 'center', gap: cv(10), marginTop: cv(10) },
-  confirmYes: { background: '#e94560', border: 'none', borderRadius: cv(10), color: '#fff', padding: `${cv(7)} ${cv(17)}`, cursor: 'pointer', fontSize: cv(19) },
-  confirmNo: { background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: cv(6), color: '#fff', padding: `${cv(4)} ${cv(10)}`, cursor: 'pointer', fontSize: cv(12) },
+  imgPlaceholder: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 108, color: '#ffffff22' },
+  diffBadge: { position: 'absolute', top: 12, right: 12, borderRadius: 17, padding: '4px 17px', fontSize: 17, fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap' },
+  info: { padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 },
+  nickname: { fontSize: 31, fontWeight: 'bold', color: '#fff' },
+  meta: { fontSize: 19, color: '#ffffff66' },
+  intro: { fontSize: 19, color: '#ffffff88', margin: '7px 0', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+  statRow: { display: 'flex', gap: 12, marginTop: 7 },
+  stat: { flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '7px 0', textAlign: 'center' },
+  statLabel: { display: 'block', fontSize: 16, color: '#ffffff44' },
+  statVal: { display: 'block', fontSize: 24, fontWeight: 'bold', color: '#c9a84c' },
+  previewBtn: { background: 'rgba(255,255,255,0.06)', border: '1px solid #ffffff22', borderRadius: 10, color: '#ffffff88', padding: '8px 0', cursor: 'pointer', fontSize: 18, marginTop: 5 },
+  date: { fontSize: 17, color: '#ffffff33', marginTop: 5 },
+  editBtn: { marginTop: 7, background: 'none', border: '1px solid #c9a84c55', borderRadius: 10, color: '#c9a84c', padding: '8px 0', cursor: 'pointer', fontSize: 19 },
+  deleteBtn: { marginTop: 7, background: 'none', border: '1px solid #e9456033', borderRadius: 10, color: '#e9456088', padding: '8px 0', cursor: 'pointer', fontSize: 19 },
+  confirmRow: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 },
+  confirmYes: { background: '#e94560', border: 'none', borderRadius: 10, color: '#fff', padding: '7px 17px', cursor: 'pointer', fontSize: 19 },
+  confirmNo: { background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 6, color: '#fff', padding: '4px 10px', cursor: 'pointer', fontSize: 12 },
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
-  modal: { background: '#1a0a2e', border: '1px solid #c9a84c44', borderRadius: cv(16), width: '90vw', maxWidth: cv(760), maxHeight: '90vh', overflow: 'auto', padding: cv(24) },
-  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: cv(16) },
-  modalTitle: { color: '#c9a84c', fontWeight: 'bold', fontSize: cv(18) },
-  modalClose: { background: 'none', border: 'none', color: '#ffffff88', fontSize: cv(20), cursor: 'pointer' },
-  tabs: { display: 'flex', gap: cv(8), marginBottom: cv(16) },
-  tab: { flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid #ffffff22', borderRadius: cv(8), color: '#ffffff66', padding: cv(8), cursor: 'pointer', fontSize: cv(13) },
+  modal: { background: '#1a0a2e', border: '1px solid #c9a84c44', borderRadius: 16, width: '90vw', maxWidth: 760, maxHeight: '90vh', overflow: 'auto', padding: 24 },
+  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { color: '#c9a84c', fontWeight: 'bold', fontSize: 18 },
+  modalClose: { background: 'none', border: 'none', color: '#ffffff88', fontSize: 20, cursor: 'pointer' },
+  tabs: { display: 'flex', gap: 8, marginBottom: 16 },
+  tab: { flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid #ffffff22', borderRadius: 8, color: '#ffffff66', padding: 8, cursor: 'pointer', fontSize: 13 },
   tabActive: { background: 'rgba(201,168,76,0.15)', border: '1px solid #c9a84c66', color: '#c9a84c' },
-  imgGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: cv(10) },
-  thumbWrap: { display: 'flex', flexDirection: 'column', gap: cv(4) },
-  thumb: { width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: cv(8), border: '1px solid #ffffff11' },
-  thumbEmpty: { width: '100%', aspectRatio: '3/4', background: '#0d0d1a', borderRadius: cv(8), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cv(24), color: '#ffffff22' },
-  thumbLabel: { textAlign: 'center', color: '#ffffff66', fontSize: cv(11) },
+  imgGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10 },
+  thumbWrap: { display: 'flex', flexDirection: 'column', gap: 4 },
+  thumb: { width: '100%', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 8, border: '1px solid #ffffff11' },
+  thumbEmpty: { width: '100%', aspectRatio: '3/4', background: '#0d0d1a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#ffffff22' },
+  thumbLabel: { textAlign: 'center', color: '#ffffff66', fontSize: 11 },
   lightboxOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 },
-  lightboxImg: { maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: cv(12), boxShadow: '0 0 60px rgba(0,0,0,0.8)' },
-  lightboxClose: { position: 'fixed', top: cv(24), right: cv(32), background: 'none', border: '1px solid #ffffff44', borderRadius: '50%', color: '#fff', fontSize: cv(20), width: cv(40), height: cv(40), cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  lightboxImg: { maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 12, boxShadow: '0 0 60px rgba(0,0,0,0.8)' },
+  lightboxClose: { position: 'fixed', top: 24, right: 32, background: 'none', border: '1px solid #ffffff44', borderRadius: '50%', color: '#fff', fontSize: 20, width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
 }
 
 export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, onBack, onUpdateChar }: Props) {
+  const scale = useScale(960)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [cleanMsg, setCleanMsg] = useState<string | null>(null)
   const [cleaning, setCleaning] = useState(false)
@@ -129,7 +128,7 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
 
   return (
     <div style={S.container}>
-      <div style={S.inner}>
+      <div style={{ ...S.inner, zoom: scale }}>
         <div style={S.header}>
           <button style={S.backBtn} onClick={onBack}>← 뒤로</button>
           <h1 style={S.title}>👑 창조자 대시보드</h1>
