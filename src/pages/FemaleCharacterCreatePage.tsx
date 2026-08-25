@@ -1609,7 +1609,7 @@ export default function FemaleCharacterCreatePage({
 
   const S: Record<string, React.CSSProperties> = {
     container: { minHeight: '100vh', background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)', display: 'flex', justifyContent: 'center', padding: `${s(24)}px ${s(16)}px` },
-    inner: { width: '100%', maxWidth: s(960), display: 'flex', flexDirection: 'column', gap: s(16) },
+    inner: { width: '100%', maxWidth: s(960), display: 'flex', flexDirection: 'column', gap: s(16), zoom: 0.8 },
     header: { textAlign: 'center', padding: `${s(8)}px 0 ${s(4)}px` },
     backBtn: { background: 'transparent', border: '1px solid #ffffff22', color: '#ffffff66', borderRadius: s(6), padding: `${s(6)}px ${s(14)}px`, cursor: 'pointer', fontSize: s(13), marginBottom: s(12) },
     title: { color: '#c9a84c', fontSize: s(24), fontWeight: 'bold', margin: '0 0 4px' },
