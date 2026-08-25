@@ -207,7 +207,7 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
     },
     card: {
       background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c33',
-      borderRadius: s(16), padding: `${s(40)}px ${s(36)}px`, width: s(960), maxWidth: '100%',
+      borderRadius: s(16), padding: `${s(40)}px ${s(36)}px`, width: s(960), maxWidth: '100%', zoom: 0.8,
     },
     title: { color: '#c9a84c', fontSize: s(26), fontWeight: 'bold', margin: '0 0 6px', textAlign: 'center' },
     subtitle: { color: '#ffffff55', fontSize: s(13), textAlign: 'center', marginBottom: s(20) },
