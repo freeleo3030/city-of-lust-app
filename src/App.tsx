@@ -209,42 +209,7 @@ export default function App() {
           : [...femaleChars, char]
         localStorage.setItem('col_female_chars', JSON.stringify(updated))
         setFemaleChars(updated)
-        // DB upsert
-        await supabase.from('female_characters').upsert({
-          id: char.id,
-          creator_id: user?.id ?? null,
-          nickname: char.nickname,
-          age: char.age,
-          married: char.married,
-          job: char.job,
-          location: char.location,
-          body_type: char.bodyType,
-          intro: char.intro ?? '',
-          memo: char.memo ?? '',
-          height_cm: char.heightCm ?? 160,
-          face: char.face,
-          body: char.body,
-          fashion: char.fashion,
-          erogenous: char.erogenous,
-          pref_age: char.prefAge,
-          pref_look: char.prefLook,
-          pref_wealth: char.prefWealth,
-          sm_self: char.smSelf ?? 0,
-          sm_prefer_male: char.smPreferMale ?? 0,
-          interests: char.interests ?? [],
-          dislikes: char.dislikes ?? [],
-          image_url: char.imageUrl ?? '',
-          expression_images: char.expressionImages ?? [],
-          pose_images: char.poseImages ?? {},
-          stats: {
-            prefErect: char.prefErect,
-            prefSize: char.prefSize,
-            prefPose: char.prefPose,
-            prefPersonality: char.prefPersonality,
-            smTendency: char.smTendency ?? 0,
-            dateCostShare: char.dateCostShare ?? 0,
-          },
-        })
+        // DB upsert는 FemaleCharacterCreatePage에서 직접 처리
         setEditingChar(null)
         setCreatorMode(false)
         setCreatorDashboard(true)
