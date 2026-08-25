@@ -418,22 +418,41 @@ export default function FemaleCharacterCreatePage({
 
   const [memo, setMemo] = useState(d?.memo ?? '')
 
-  // 일반 성감대: 전부 독립 슬라이더 (-3~5)
-  const [genEro, setGenEroState] = useState(d?.erogenous
-    ? { breast: d.erogenous.breast, neckEar: d.erogenous.neckEar, thigh: d.erogenous.thigh, anal: d.erogenous.anal, mouth: d.erogenous.mouth, armpit: d.erogenous.armpit ?? 2 }
-    : { breast: 3, neckEar: 3, thigh: 3, anal: 1, mouth: 3, armpit: 2 })
+  // 일반 성감대: 4개 합계=10, 각 min 1 max 4 (thigh 자동)
+  const GEN_TOTAL = 10; const GEN_MIN = 1; const GEN_MAX = 4
+  const clampGen = (v: number) => Math.min(GEN_MAX, Math.max(GEN_MIN, Math.round(v ?? GEN_MIN)))
+  const [genEro, setGenEroState] = useState(() => {
+    if (d?.erogenous) {
+      const m = clampGen(d.erogenous.mouth); const n = clampGen(d.erogenous.neckEar)
+      const a = clampGen(d.erogenous.armpit); const b = clampGen(d.erogenous.breast)
+      return { mouth: m, neckEar: n, armpit: a, breast: b }
+    }
+    return { mouth: 2, neckEar: 3, armpit: 2, breast: 3 }
+  })
+  const thigh = Math.min(GEN_MAX, Math.max(GEN_MIN, GEN_TOTAL - genEro.mouth - genEro.neckEar - genEro.armpit - genEro.breast))
   const setGenEro = (key: keyof typeof genEro, val: number) => {
-    setGenEroState(prev => ({ ...prev, [key]: Math.min(5, Math.max(-5, val)) }))
+    const clamped = Math.min(GEN_MAX, Math.max(GEN_MIN, val))
+    const others = GEN_TOTAL - GEN_MIN - clamped // max sum of others = GEN_TOTAL - GEN_MIN(thigh) - this
+    setGenEroState(prev => {
+      const rest = Object.entries(prev).filter(([k]) => k !== key).reduce((s, [,v]) => s + (v as number), 0)
+      if (rest > others) {
+        // 빨간 토스트 대신 그냥 거부 (컴포넌트 상단 토스트 없으면 console)
+        return prev
+      }
+      return { ...prev, [key]: clamped }
+    })
   }
-  const breast = genEro.breast
+
+  // 항문: 독립 슬라이더 -5~+5
+  const [anal, setAnal] = useState(Math.min(5, Math.max(-5, d?.erogenous?.anal ?? 0)))
 
   // 핵심 성감대: 클리토리스·질내부 (min 4, 합계 15)
   const CORE_TOTAL = 15
   const CORE_MIN = 4; const CORE_MAX = CORE_TOTAL - CORE_MIN // 11
-  const [clitoris, setClitoris] = useState(Math.min(CORE_TOTAL - CORE_MIN, d?.erogenous?.clitoris ?? 8))
+  const [clitoris, setClitoris] = useState(Math.min(CORE_MAX, Math.max(CORE_MIN, d?.erogenous?.clitoris ?? 8)))
   const vagina = CORE_TOTAL - clitoris
 
-  const erogenous = { ...genEro, breast, clitoris, vagina }
+  const erogenous = { ...genEro, thigh, anal, clitoris, vagina }
 
   // 남성 선호도
   const PREF_TOTAL = 100
@@ -1952,43 +1971,42 @@ export default function FemaleCharacterCreatePage({
         <div style={{ ...S.card, borderColor: '#e9456033' }}>
           <div style={S.cardTitle}>🔞 성감대 설정 <span style={S.hiddenBadge}>플레이어 비공개</span></div>
 
-          {/* 일반 성감대 */}
-          <div style={{ margin: '4px 0' }}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>일반 성감대 · -3=거부 · +5=최고</span>
+          {/* 일반 성감대 — 합계=10, 허벅지 자동 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0' }}>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>일반 성감대 · 각 1~4 · 허벅지 자동 · 합계 10</span>
+            <span style={{ fontSize: 12, fontWeight: 'bold', color: (genEro.mouth+genEro.neckEar+genEro.armpit+genEro.breast+thigh) === GEN_TOTAL ? '#c9a84c' : '#e94560' }}>
+              {genEro.mouth+genEro.neckEar+genEro.armpit+genEro.breast+thigh} / {GEN_TOTAL}pt
+            </span>
           </div>
-          {/* 입·입술, 목·귀, 겨드랑이 */}
-          {(['mouth','neckEar','armpit'] as const).map(key => {
-            const labelMap = { mouth:'입·입술', neckEar:'목·귀', armpit:'겨드랑이' }
+          {(['mouth','neckEar','armpit','breast'] as const).map(key => {
+            const labelMap = { mouth:'입·입술', neckEar:'목·귀', armpit:'겨드랑이', breast:'가슴' }
             const val = genEro[key]; const color = sensColor(val)
             return (
               <div key={key} style={S.erogenousRow}>
-                <span style={S.eroLabel}>{labelMap[key]}</span>
-                <input type="range" min={-5} max={5} step={1} value={val}
+                <span style={{ ...S.eroLabel, color }}>{labelMap[key]}</span>
+                <input type="range" min={GEN_MIN} max={GEN_MAX} step={1} value={val}
                   onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
                 <span style={{ color, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
               </div>
             )
           })}
-          {/* 가슴 — 독립 슬라이더 */}
+          {/* 허벅지 — 자동 */}
           <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: sensColor(breast) }}>가슴</span>
-            <input type="range" min={-5} max={5} step={1} value={breast}
-              onChange={e => setGenEro('breast', Number(e.target.value))} style={S.slider} />
-            <span style={{ color: sensColor(breast), fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{breast}</span>
+            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>엉덩이/허벅지 (자동)</span>
+            <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((thigh - GEN_MIN) / (GEN_MAX - GEN_MIN)) * 100}%`, background: sensColor(thigh) }} /></div>
+            <span style={{ color: sensColor(thigh), fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{thigh}</span>
           </div>
-          {/* 엉덩이/허벅지, 항문 — 가슴 아래 */}
-          {(['thigh','anal'] as const).map(key => {
-            const labelMap = { thigh:'엉덩이/허벅지', anal:'항문' }
-            const val = genEro[key]; const color = sensColor(val)
-            return (
-              <div key={key} style={S.erogenousRow}>
-                <span style={S.eroLabel}>{labelMap[key]}</span>
-                <input type="range" min={-5} max={5} step={1} value={val}
-                  onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
-                <span style={{ color, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
-              </div>
-            )
-          })}
+          {/* 항문 — 독립 슬라이더 */}
+          <div style={{ ...S.eroDivider, marginTop: 8 }}>── 항문 (독립) ──</div>
+          <div style={{ margin: '4px 0' }}>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>합계 미포함 · -5=극혐 · +5=극쾌</span>
+          </div>
+          <div style={S.erogenousRow}>
+            <span style={S.eroLabel}>항문</span>
+            <input type="range" min={-5} max={5} step={1} value={anal}
+              onChange={e => setAnal(Math.min(5, Math.max(-5, Number(e.target.value))))} style={S.slider} />
+            <span style={{ color: sensColor(anal), fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{anal}</span>
+          </div>
 
           {/* 핵심 성감대 */}
           <div style={{ ...S.eroDivider, marginTop: 10 }}>── 핵심 성감대 ──</div>
