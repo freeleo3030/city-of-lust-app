@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { generateMaleProfileImage } from '../lib/generateCharImages'
 import { generateWalkingAnimation } from '../lib/generateWalkingAnimation'
+import { useScale } from '../hooks/useScale'
 
 interface Props {
   onComplete: (character: CharacterData & { generatedImageUrl?: string }) => void
@@ -60,6 +61,8 @@ const isEnglishName = (s: string) =>
 const isRealName = (s: string) => isKoreanName(s) || isEnglishName(s)
 
 export default function CharacterCreatePage({ onComplete, initialData, gold = 0 }: Props) {
+  const scale = useScale(960)
+  const s = (n: number) => n * scale
   const d = initialData
   const [nickname, setNickname] = useState(d?.nickname ?? '')
   const [job, setJob] = useState(d?.job ?? '')
@@ -195,6 +198,140 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
       </div>
     </div>
   )
+
+  const S: Record<string, React.CSSProperties> = {
+    container: {
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: `${s(24)}px`,
+    },
+    card: {
+      background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c33',
+      borderRadius: s(16), padding: `${s(40)}px ${s(36)}px`, width: s(960), maxWidth: '100%',
+    },
+    title: { color: '#c9a84c', fontSize: s(26), fontWeight: 'bold', margin: '0 0 6px', textAlign: 'center' },
+    subtitle: { color: '#ffffff55', fontSize: s(13), textAlign: 'center', marginBottom: s(20) },
+    notice: {
+      background: '#c9a84c11', border: '1px solid #c9a84c33',
+      borderRadius: s(8), padding: `${s(10)}px ${s(14)}px`, color: '#c9a84ccc', fontSize: s(12), marginBottom: s(20),
+    },
+    avatarRow: { display: 'flex', gap: s(8), justifyContent: 'center', marginBottom: s(24) },
+    avatarBtn: { border: '2px solid', borderRadius: s(12), padding: `${s(8)}px ${s(10)}px`, cursor: 'pointer', transition: 'all 0.2s' },
+    section: { marginBottom: s(20) },
+    label: { color: '#ffffff88', fontSize: s(13), display: 'block', marginBottom: s(8) },
+    hint: { color: '#ffffff33', fontSize: s(11) },
+    input: {
+      width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
+      borderRadius: s(8), padding: `${s(12)}px ${s(16)}px`, color: '#fff', fontSize: s(15), outline: 'none', boxSizing: 'border-box',
+    },
+    ageCard: {
+      marginTop: s(10), background: 'rgba(255,255,255,0.05)', border: '1px solid #ffffff11',
+      borderRadius: s(8), padding: `${s(12)}px ${s(14)}px`,
+    },
+    ageRow: { display: 'flex', alignItems: 'center', gap: s(10), marginBottom: s(8) },
+    ageDesc: { color: '#ffffff55', fontSize: s(11) },
+    expRow: { display: 'flex', alignItems: 'center', gap: s(8), marginBottom: s(6) },
+    expLabel: { color: '#ffffff66', fontSize: s(12), minWidth: s(56) },
+    expBarWrap: { flex: 1, height: s(6), background: '#ffffff11', borderRadius: s(3), overflow: 'hidden' },
+    expBar: { height: '100%', borderRadius: s(3), transition: 'width 0.3s' },
+    expTip: { color: '#ffffff44', fontSize: s(11), lineHeight: 1.5 },
+    wealthCard: {
+      marginBottom: s(20), background: '#c9a84c0a', border: '1px solid #c9a84c22',
+      borderRadius: s(8), padding: `${s(12)}px ${s(14)}px`,
+    },
+    wealthTitle: { color: '#c9a84c', fontSize: s(13), fontWeight: 'bold', marginBottom: s(10) },
+    wealthScoreRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: s(10) },
+    wealthScoreBig: { display: 'flex', alignItems: 'baseline', gap: s(2) },
+    wealthTierBadge: { display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end' },
+    tierBadge: {
+      fontSize: s(12), fontWeight: 'bold', border: '1px solid',
+      borderRadius: s(6), padding: `${s(2)}px ${s(10)}px`,
+    },
+    wealthBarWrap: { height: s(6), background: '#ffffff11', borderRadius: s(3), overflow: 'hidden', marginBottom: s(10) },
+    wealthBar: { height: '100%', borderRadius: s(3), transition: 'width 0.4s' },
+    wealthTiers: { display: 'flex', gap: s(4), marginBottom: s(8) },
+    wealthTier: {
+      flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
+      border: '1px solid', borderRadius: s(6), padding: `${s(4)}px ${s(2)}px`, gap: s(2),
+    },
+    wealthNext: { color: '#ffffff44', fontSize: s(11), marginBottom: s(6) },
+    wealthBody: { color: '#ffffff44', fontSize: s(11), lineHeight: 1.5 },
+    pointsRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: s(12) },
+    stageTag: {
+      fontSize: s(10), color: '#4FC3F7', background: '#4FC3F711',
+      border: '1px solid #4FC3F733', borderRadius: s(4), padding: `${s(1)}px ${s(5)}px`, marginLeft: s(6),
+    },
+    fixedTag: {
+      fontSize: s(10), color: '#e94560', background: '#e9456011',
+      border: '1px solid #e9456033', borderRadius: s(4), padding: `${s(1)}px ${s(5)}px`, marginLeft: s(6),
+    },
+    total: { color: '#ffffff66', fontSize: s(12) },
+    statRow: { marginBottom: s(14) },
+    statInfo: { display: 'flex', justifyContent: 'space-between', marginBottom: s(6) },
+    statLabel: { fontSize: s(14), fontWeight: 'bold' },
+    statDesc: { color: '#ffffff44', fontSize: s(11) },
+    sliderWrap: { display: 'flex', alignItems: 'center', gap: s(12) },
+    slider: { flex: 1 },
+    statVal: { fontSize: s(16), fontWeight: 'bold', minWidth: s(24), textAlign: 'right' as const },
+    fixedNote: {
+      marginTop: s(8), color: '#e9456088', fontSize: s(11),
+      background: '#e9456011', borderRadius: s(6), padding: `${s(6)}px ${s(10)}px`,
+    },
+    infoCard: {
+      marginTop: s(12), background: 'rgba(100,181,246,0.05)', border: '1px solid #64B5F622',
+      borderRadius: s(8), padding: `${s(10)}px ${s(12)}px`,
+    },
+    growthCard: {
+      background: 'rgba(201,168,76,0.05)', border: '1px solid #c9a84c22',
+      borderRadius: s(8), padding: `${s(12)}px ${s(14)}px`,
+    },
+    growthRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: s(6) },
+    previewBox: {
+      background: 'rgba(201,168,76,0.06)', border: '1px solid #c9a84c33',
+      borderRadius: s(12), padding: `${s(20)}px`, marginBottom: s(16),
+      display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
+    },
+    animBtn: {
+      background: 'linear-gradient(90deg, #1a1a3e, #2a1a5e)',
+      border: '1px solid #c9a84c',
+      color: '#c9a84c', borderRadius: s(8), padding: `${s(10)}px ${s(24)}px`,
+      fontSize: s(14), fontWeight: 'bold', cursor: 'pointer',
+    },
+    error: { color: '#e94560', fontSize: s(13), margin: '0 0 12px' },
+    btn: {
+      width: '100%', background: 'linear-gradient(90deg, #c9a84c, #e94560)',
+      color: '#fff', border: 'none', borderRadius: s(8), padding: `${s(14)}px`,
+      fontSize: s(16), fontWeight: 'bold', cursor: 'pointer', marginTop: s(8),
+    },
+    autoIntroBox: {
+      background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c33',
+      borderRadius: s(8), padding: `${s(12)}px ${s(16)}px`, color: '#c9a84c', fontSize: s(14),
+      minHeight: s(44), lineHeight: 1.5,
+    },
+    appearanceBox: {
+      background: 'rgba(79,195,247,0.05)', border: '1px solid #4FC3F733',
+      borderRadius: s(12), padding: `${s(16)}px`, marginTop: s(20),
+      display: 'flex', flexDirection: 'column' as const, gap: s(8),
+    },
+    appearanceInput: {
+      width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
+      borderRadius: s(8), padding: `${s(12)}px ${s(16)}px`, color: '#fff', fontSize: s(14),
+      outline: 'none', resize: 'none' as const, fontFamily: 'inherit', boxSizing: 'border-box' as const,
+    },
+    smRow: { display: 'flex', alignItems: 'center', gap: s(10), marginBottom: s(8) },
+    smDesc: { color: '#ffffff66', fontSize: s(11), marginBottom: s(6), paddingLeft: s(2) },
+    smCompatNote: {
+      background: 'rgba(255,255,255,0.04)', border: '1px solid #ffffff11',
+      borderRadius: s(6), padding: `${s(6)}px ${s(10)}px`, color: '#ffffff55', fontSize: s(11),
+    },
+    statColumns: { display: 'flex', gap: s(24), alignItems: 'flex-start' },
+    statCol: { flex: 1, minWidth: 0 },
+    colHeader: {
+      color: '#c9a84c', fontSize: s(13), fontWeight: 'bold',
+      textAlign: 'center' as const, padding: `${s(8)}px 0`, marginBottom: s(12),
+      borderBottom: '1px solid #c9a84c44',
+    },
+  }
 
   return (
     <div style={S.container}>
@@ -533,141 +670,3 @@ export default function CharacterCreatePage({ onComplete, initialData, gold = 0 
   )
 }
 
-const S: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
-  },
-  card: {
-    background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c33',
-    borderRadius: 16, padding: '40px 36px', width: 960, maxWidth: '100%',
-  },
-  title: { color: '#c9a84c', fontSize: 26, fontWeight: 'bold', margin: '0 0 6px', textAlign: 'center' },
-  subtitle: { color: '#ffffff55', fontSize: 13, textAlign: 'center', marginBottom: 20 },
-  notice: {
-    background: '#c9a84c11', border: '1px solid #c9a84c33',
-    borderRadius: 8, padding: '10px 14px', color: '#c9a84ccc', fontSize: 12, marginBottom: 20,
-  },
-  avatarRow: { display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 24 },
-  avatarBtn: { border: '2px solid', borderRadius: 12, padding: '8px 10px', cursor: 'pointer', transition: 'all 0.2s' },
-  section: { marginBottom: 20 },
-  label: { color: '#ffffff88', fontSize: 13, display: 'block', marginBottom: 8 },
-  hint: { color: '#ffffff33', fontSize: 11 },
-  input: {
-    width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
-    borderRadius: 8, padding: '12px 16px', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box',
-  },
-  // 나이 카드
-  ageCard: {
-    marginTop: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid #ffffff11',
-    borderRadius: 8, padding: '12px 14px',
-  },
-  ageRow: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 },
-  ageDesc: { color: '#ffffff55', fontSize: 11 },
-  expRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 },
-  expLabel: { color: '#ffffff66', fontSize: 12, minWidth: 56 },
-  expBarWrap: { flex: 1, height: 6, background: '#ffffff11', borderRadius: 3, overflow: 'hidden' },
-  expBar: { height: '100%', borderRadius: 3, transition: 'width 0.3s' },
-  expTip: { color: '#ffffff44', fontSize: 11, lineHeight: 1.5 },
-  // 재력 카드
-  wealthCard: {
-    marginBottom: 20, background: '#c9a84c0a', border: '1px solid #c9a84c22',
-    borderRadius: 8, padding: '12px 14px',
-  },
-  wealthTitle: { color: '#c9a84c', fontSize: 13, fontWeight: 'bold', marginBottom: 10 },
-  wealthScoreRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  wealthScoreBig: { display: 'flex', alignItems: 'baseline', gap: 2 },
-  wealthTierBadge: { display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end' },
-  tierBadge: {
-    fontSize: 12, fontWeight: 'bold', border: '1px solid',
-    borderRadius: 6, padding: '2px 10px',
-  },
-  wealthBarWrap: { height: 6, background: '#ffffff11', borderRadius: 3, overflow: 'hidden', marginBottom: 10 },
-  wealthBar: { height: '100%', borderRadius: 3, transition: 'width 0.4s' },
-  wealthTiers: { display: 'flex', gap: 4, marginBottom: 8 },
-  wealthTier: {
-    flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
-    border: '1px solid', borderRadius: 6, padding: '4px 2px', gap: 2,
-  },
-  wealthNext: { color: '#ffffff44', fontSize: 11, marginBottom: 6 },
-  wealthBody: { color: '#ffffff44', fontSize: 11, lineHeight: 1.5 },
-  // 스탯
-  pointsRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  stageTag: {
-    fontSize: 10, color: '#4FC3F7', background: '#4FC3F711',
-    border: '1px solid #4FC3F733', borderRadius: 4, padding: '1px 5px', marginLeft: 6,
-  },
-  fixedTag: {
-    fontSize: 10, color: '#e94560', background: '#e9456011',
-    border: '1px solid #e9456033', borderRadius: 4, padding: '1px 5px', marginLeft: 6,
-  },
-  total: { color: '#ffffff66', fontSize: 12 },
-  statRow: { marginBottom: 14 },
-  statInfo: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
-  statLabel: { fontSize: 14, fontWeight: 'bold' },
-  statDesc: { color: '#ffffff44', fontSize: 11 },
-  sliderWrap: { display: 'flex', alignItems: 'center', gap: 12 },
-  slider: { flex: 1 },
-  statVal: { fontSize: 16, fontWeight: 'bold', minWidth: 24, textAlign: 'right' as const },
-  fixedNote: {
-    marginTop: 8, color: '#e9456088', fontSize: 11,
-    background: '#e9456011', borderRadius: 6, padding: '6px 10px',
-  },
-  // S3 안내
-  infoCard: {
-    marginTop: 12, background: 'rgba(100,181,246,0.05)', border: '1px solid #64B5F622',
-    borderRadius: 8, padding: '10px 12px',
-  },
-  growthCard: {
-    background: 'rgba(201,168,76,0.05)', border: '1px solid #c9a84c22',
-    borderRadius: 8, padding: '12px 14px',
-  },
-  growthRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  // 공통
-  previewBox: {
-    background: 'rgba(201,168,76,0.06)', border: '1px solid #c9a84c33',
-    borderRadius: 12, padding: '20px', marginBottom: 16,
-    display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
-  },
-  animBtn: {
-    background: 'linear-gradient(90deg, #1a1a3e, #2a1a5e)',
-    border: '1px solid #c9a84c',
-    color: '#c9a84c', borderRadius: 8, padding: '10px 24px',
-    fontSize: 14, fontWeight: 'bold', cursor: 'pointer',
-  },
-  error: { color: '#e94560', fontSize: 13, margin: '0 0 12px' },
-  btn: {
-    width: '100%', background: 'linear-gradient(90deg, #c9a84c, #e94560)',
-    color: '#fff', border: 'none', borderRadius: 8, padding: '14px',
-    fontSize: 16, fontWeight: 'bold', cursor: 'pointer', marginTop: 8,
-  },
-  autoIntroBox: {
-    background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c33',
-    borderRadius: 8, padding: '12px 16px', color: '#c9a84c', fontSize: 14,
-    minHeight: 44, lineHeight: 1.5,
-  },
-  appearanceBox: {
-    background: 'rgba(79,195,247,0.05)', border: '1px solid #4FC3F733',
-    borderRadius: 12, padding: '16px', marginTop: 20,
-    display: 'flex', flexDirection: 'column' as const, gap: 8,
-  },
-  appearanceInput: {
-    width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
-    borderRadius: 8, padding: '12px 16px', color: '#fff', fontSize: 14,
-    outline: 'none', resize: 'none' as const, fontFamily: 'inherit', boxSizing: 'border-box' as const,
-  },
-  smRow: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 },
-  smDesc: { color: '#ffffff66', fontSize: 11, marginBottom: 6, paddingLeft: 2 },
-  smCompatNote: {
-    background: 'rgba(255,255,255,0.04)', border: '1px solid #ffffff11',
-    borderRadius: 6, padding: '6px 10px', color: '#ffffff55', fontSize: 11,
-  },
-  statColumns: { display: 'flex', gap: 24, alignItems: 'flex-start' },
-  statCol: { flex: 1, minWidth: 0 },
-  colHeader: {
-    color: '#c9a84c', fontSize: 13, fontWeight: 'bold',
-    textAlign: 'center' as const, padding: '8px 0', marginBottom: 12,
-    borderBottom: '1px solid #c9a84c44',
-  },
-}

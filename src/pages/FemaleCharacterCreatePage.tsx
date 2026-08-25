@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
+import { useScale } from '../hooks/useScale'
 import { generateProfileImage, generateExpressionImages, generatePoseImages, generatePoseVariants, generatePoseSprite, deleteImageFromStorage, CONVERSATION_EXPRESSIONS, POSES, POSE_EXPRESSIONS, POSE_BACKGROUNDS, POSE_HOTSPOTS } from '../lib/generateCharImages'
 import type { HotspotZone } from '../lib/generateCharImages'
 import { supabase } from '../lib/supabase'
@@ -7,74 +8,75 @@ export interface FemaleCharacterData {
   id: string
   nickname: string
   age: number
-  married: '미혼' | '기혼' | '돌싱'
+  married: '誘명샎' | '湲고샎' | '?뚯떛'
   job: string
   location: string
-  bodyType: '글래머' | '베이글' | '슬랜더' | '머슬'
+  bodyType: '湲?섎㉧' | '踰좎씠湲' | '?щ옖?? | '癒몄뒳'
   intro: string
-  // 외모
+  // ?몃え
   heightCm: number
   face: number
   body: number
   fashion: number
-  // 관심사
+  // 愿?ъ궗
   interestTags: string[]
   interestCustom: string
   dislikeTags: string[]
   dislikeCustom: string
-  // 성격 슬라이더 (1~5)
+  // ?깃꺽 ?щ씪?대뜑 (1~5)
   personality: { introvert: number; indirect: number; friendly: number }
-  // 메모
+  // 硫붾え
   memo: string
-  // 성감대 (숨김 스탯, 일반: -3~+5 / 핵심: 4~16)
+  // ?깃컧? (?④? ?ㅽ꺈, ?쇰컲: 1~4쨌??0 / ?듭떖: 4~10쨌??8)
   erogenous: {
     breast: number; neckEar: number; thigh: number; clitoris: number
     vagina: number; anal: number; mouth: number; armpit: number
   }
-  // 남성 선호도 (숨김 스탯)
-  prefAge: { age20: number; age30: number; age40: number }         // 합계=100, age40 자동
-  prefLook: { face: number; height: number; body: number; fashion: number }  // 합계=100, fashion 자동
-  prefWealth: number  // 재력선호 20~100 (S1/S2 별도)
-  prefPersonality: { intel: number; humor: number; virtue: number; manner: number } // 합계=100, manner 자동
-  prefErect: { power: number; duration: number; hardness: number; tech: number }    // 합계=100, tech 자동
+  // ?⑥꽦 ?좏샇??(?④? ?ㅽ꺈)
+  prefAge: { age20: number; age30: number; age40: number }         // ?⑷퀎=100, age40 ?먮룞
+  prefLook: { face: number; height: number; body: number; fashion: number }  // ?⑷퀎=100, fashion ?먮룞
+  prefWealth: number  // ?щ젰?좏샇 20~100 (S1/S2 蹂꾨룄)
+  prefPersonality: { intel: number; humor: number; virtue: number; manner: number } // ?⑷퀎=100, manner ?먮룞
+  prefErect: { power: number; duration: number; hardness: number; tech: number }    // ?⑷퀎=100, tech ?먮룞
+  prefSize: { size: number; girth: number }   // ?깃린 ?ш린 ?좏샇 媛?0~100
   prefPose: { missionary: number; doggy: number; cowgirl: number; side: number }
-  smTendency: number     // 여캐 자신의 S/M 성향: -10(완전 M) ~ +10(완전 S)
-  dateCostShare: number  // 데이트 비용 부담율 0~100%
-  // 외모 설명 (이미지 생성용)
+  smTendency: number     // ?ъ틦 ?먯떊??S/M ?깊뼢: -10(?꾩쟾 M) ~ +10(?꾩쟾 S)
+  dateCostShare: number  // ?곗씠??鍮꾩슜 遺?댁쑉 0~100%
+  // ?몃え ?ㅻ챸 (?대?吏 ?앹꽦??
   appearanceDesc?: string
   hairColor?: string
   hairLength?: string
   glasses?: boolean
-  // 이미지
+  // ?대?吏
   imageUrl?: string
-  expressionImages?: string[]          // 5장: 평상시~절정 (대화 화면용)
-  poseImages?: Record<string, string>  // 4자세 × 3표정 = 12장 (sex 씬용)
+  expressionImages?: string[]          // 5?? ?됱긽???덉젙 (????붾㈃??
+  poseImages?: Record<string, string>  // 4?먯꽭 횞 3?쒖젙 = 12??(sex ?ъ슜)
   createdAt: string
 }
 
 const LOCATIONS = [
-  '대학교','도서관','병원','약국','공공기관','경찰서','헬스장','카페',
-  '쇼핑몰','공원','노래방','해변','비행장','회사','레스토랑','고급레스토랑',
-  '바','클럽','호텔',
+  '??숆탳','?꾩꽌愿','蹂묒썝','?쎄뎅','怨듦났湲곌?','寃쎌같??,'?ъ뒪??,'移댄럹',
+  '?쇳븨紐?,'怨듭썝','?몃옒諛?,'?대?','鍮꾪뻾??,'?뚯궗','?덉뒪?좊옉','怨좉툒?덉뒪?좊옉',
+  '諛?,'?대읇','?명뀛',
 ]
-const INTEREST_TAGS = ['음식/술','여행','패션','운동','독서','영화','음악','요리','쇼핑','반려동물','미술','게임','야외활동','자기계발','연애','정치/사회']
-const DISLIKE_TAGS = ['흡연','음주','무례한 말','과한 스킨십','돈 자랑','우유부단','리드 못함','지각','전 얘기','거짓말','위생 불량','대화 중 폰만 봄','질투/통제','정치 얘기','운동 강요']
-const BODY_TYPES = ['글래머','베이글','슬랜더','머슬'] as const
-const MARRIED_TYPES = ['미혼','기혼','돌싱'] as const
+const INTEREST_TAGS = ['?뚯떇/??,'?ы뻾','?⑥뀡','?대룞','?낆꽌','?곹솕','?뚯븙','?붾━','?쇳븨','諛섎젮?숇Ъ','誘몄닠','寃뚯엫','?쇱쇅?쒕룞','?먭린怨꾨컻','?곗븷','?뺤튂/?ы쉶']
+const DISLIKE_TAGS = ['?≪뿰','?뚯＜','臾대???留?,'怨쇳븳 ?ㅽ궓??,'???먮옉','?곗쑀遺??,'由щ뱶 紐삵븿','吏媛?,'???섍린','嫄곗쭞留?,'?꾩깮 遺덈웾','???以??곕쭔 遊?,'吏덊닾/?듭젣','?뺤튂 ?섍린','?대룞 媛뺤슂']
+const BODY_TYPES = ['湲?섎㉧','踰좎씠湲','?щ옖??,'癒몄뒳'] as const
+const MARRIED_TYPES = ['誘명샎','湲고샎','?뚯떛'] as const
 
 const EROGENOUS_ZONES = [
-  { key: 'breast',   label: '가슴',    note: '글래머/베이글은 3+ 권장' },
-  { key: 'neckEar',  label: '목·귀',   note: '도도형은 낮게 설정' },
-  { key: 'thigh',    label: '엉덩이/허벅지',  note: '애무 선행 부위' },
-  { key: 'clitoris', label: '클리토리스', note: '핵심 성감대 — 낮게 설정 비권장' },
-  { key: 'vagina',   label: '질 내부', note: 'G스팟 반응은 4+ 권장' },
-  { key: 'anal',     label: '항문',    note: '0=거부 반응' },
-  { key: 'mouth',    label: '입·입술', note: '구강 선호도' },
+  { key: 'breast',   label: '媛??,    note: '湲?섎㉧/踰좎씠湲? 3+ 沅뚯옣' },
+  { key: 'neckEar',  label: '紐㈑룰?',   note: '?꾨룄?뺤? ??쾶 ?ㅼ젙' },
+  { key: 'thigh',    label: '?됰뜦???덈쾮吏',  note: '?좊Т ?좏뻾 遺?? },
+  { key: 'clitoris', label: '?대━?좊━??, note: '?듭떖 ?깃컧? ????쾶 ?ㅼ젙 鍮꾧텒?? },
+  { key: 'vagina',   label: '吏?, note: 'G?ㅽ뙚 諛섏쓳? 4+ 沅뚯옣' },
+  { key: 'anal',     label: '??Ц',    note: '0=嫄곕? 諛섏쓳' },
+  { key: 'mouth',    label: '?끒룹엯??, note: '援ш컯 ?좏샇?? },
 ] as const
 
 function buildFemalePrompt(c: Partial<FemaleCharacterData>): string {
   const ageLabel = (c.age ?? 25) < 30 ? 'mid-20s' : (c.age ?? 25) < 40 ? 'early 30s' : 'early 40s'
-  const bodyDesc = c.bodyType === '글래머' ? 'voluptuous curvy body' : c.bodyType === '베이글' ? 'slim waist with curves' : c.bodyType === '머슬' ? 'athletic toned body' : 'slender slim body'
+  const bodyDesc = c.bodyType === '湲?섎㉧' ? 'voluptuous curvy body' : c.bodyType === '踰좎씠湲' ? 'slim waist with curves' : c.bodyType === '癒몄뒳' ? 'athletic toned body' : 'slender slim body'
   const faceScore = c.face ?? 60
   const faceDesc = faceScore >= 80 ? 'very beautiful face' : faceScore >= 60 ? 'pretty face' : 'attractive face'
   const fashionScore = c.fashion ?? 50
@@ -89,24 +91,24 @@ function buildFemalePrompt(c: Partial<FemaleCharacterData>): string {
   )
 }
 
-// ─── 전체 성감대 옵션 목록 ────────────────────────────────────────────────────
+// ??? ?꾩껜 ?깃컧? ?듭뀡 紐⑸줉 ????????????????????????????????????????????????????
 const ALL_ZONE_OPTIONS: HotspotZone[] = [
-  { key: 'mouth',    label: '입',         cx: 50, cy: 15, rx: 5,   ry: 2.5, color: '#ff6b9d' },
-  { key: 'neck',     label: '목',         cx: 50, cy: 24, rx: 7,   ry: 3,   color: '#c77dff' },
-  { key: 'ear',      label: '귀L',        cx: 36, cy: 15, rx: 4,   ry: 5,   color: '#a855f7' },
-  { key: 'ear',      label: '귀R',        cx: 64, cy: 15, rx: 4,   ry: 5,   color: '#a855f7' },
-  { key: 'breast',   label: '가슴L',      cx: 37, cy: 41, rx: 13,  ry: 11,  color: '#ff6b9d' },
-  { key: 'breast',   label: '가슴R',      cx: 63, cy: 41, rx: 13,  ry: 11,  color: '#ff6b9d' },
-  { key: 'thigh',    label: '엉덩이/허벅지L',    cx: 22, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
-  { key: 'thigh',    label: '엉덩이/허벅지R',    cx: 78, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
-  { key: 'clitoris', label: '클리토리스', cx: 50, cy: 80, rx: 4,   ry: 2,   color: '#e94560' },
-  { key: 'vagina',   label: '질',         cx: 50, cy: 85, rx: 3.5, ry: 2,   color: '#e94560' },
-  { key: 'anal',     label: '항문',       cx: 50, cy: 91, rx: 6,   ry: 4,   color: '#c9a84c' },
-  { key: 'armpit',   label: '겨드랑이L',  cx: 22, cy: 38, rx: 8,   ry: 5,   color: '#06b6d4' },
-  { key: 'armpit',   label: '겨드랑이R',  cx: 78, cy: 38, rx: 8,   ry: 5,   color: '#06b6d4' },
+  { key: 'mouth',    label: '??,         cx: 50, cy: 15, rx: 5,   ry: 2.5, color: '#ff6b9d' },
+  { key: 'neck',     label: '紐?,         cx: 50, cy: 24, rx: 7,   ry: 3,   color: '#c77dff' },
+  { key: 'ear',      label: '洹L',        cx: 36, cy: 15, rx: 4,   ry: 5,   color: '#a855f7' },
+  { key: 'ear',      label: '洹R',        cx: 64, cy: 15, rx: 4,   ry: 5,   color: '#a855f7' },
+  { key: 'breast',   label: '媛?퀽',      cx: 37, cy: 41, rx: 13,  ry: 11,  color: '#ff6b9d' },
+  { key: 'breast',   label: '媛?큃',      cx: 63, cy: 41, rx: 13,  ry: 11,  color: '#ff6b9d' },
+  { key: 'thigh',    label: '?됰뜦???덈쾮吏L',    cx: 22, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
+  { key: 'thigh',    label: '?됰뜦???덈쾮吏R',    cx: 78, cy: 72, rx: 16,  ry: 13,  color: '#f77f00' },
+  { key: 'clitoris', label: '?대━?좊━??, cx: 50, cy: 80, rx: 4,   ry: 2,   color: '#e94560' },
+  { key: 'vagina',   label: '吏?,         cx: 50, cy: 85, rx: 3.5, ry: 2,   color: '#e94560' },
+  { key: 'anal',     label: '??Ц',       cx: 50, cy: 91, rx: 6,   ry: 4,   color: '#c9a84c' },
+  { key: 'armpit',   label: '寃⑤뱶?묒씠L',  cx: 22, cy: 38, rx: 8,   ry: 5,   color: '#06b6d4' },
+  { key: 'armpit',   label: '寃⑤뱶?묒씠R',  cx: 78, cy: 38, rx: 8,   ry: 5,   color: '#06b6d4' },
 ]
 
-// ─── 핫스팟 드래그 에디터 ────────────────────────────────────────────────────
+// ??? ?レ뒪???쒕옒洹??먮뵒??????????????????????????????????????????????????????
 function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
   imageUrl: string
   poseKey: string
@@ -204,12 +206,12 @@ function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ background: '#1a1a2e', borderRadius: 12, padding: 20, maxWidth: 700, width: '95%', border: '1px solid #c9a84c55' }}>
         <div style={{ color: '#c9a84c', fontWeight: 'bold', fontSize: 15, marginBottom: 4 }}>
-          📍 성감대 위치 조정 — {poseKey}
+          ?뱧 ?깃컧? ?꾩튂 議곗젙 ??{poseKey}
         </div>
-        <div style={{ color: '#ffffff55', fontSize: 11, marginBottom: 12 }}>원 드래그 = 위치 이동 · 원 클릭 = 선택 · Delete = 삭제 · 우클릭 = 비활성화</div>
+        <div style={{ color: '#ffffff55', fontSize: 11, marginBottom: 12 }}>???쒕옒洹?= ?꾩튂 ?대룞 쨌 ???대┃ = ?좏깮 쨌 Delete = ??젣 쨌 ?고겢由?= 鍮꾪솢?깊솕</div>
 
         <div style={{ display: 'flex', gap: 14 }}>
-          {/* 왼쪽: 이미지 + SVG */}
+          {/* ?쇱そ: ?대?吏 + SVG */}
           <div style={{ flex: 1, position: 'relative' }}>
             <img src={imageUrl} style={{ width: '100%', display: 'block', borderRadius: 8, userSelect: 'none', pointerEvents: 'none' }} draggable={false} />
             <svg
@@ -239,7 +241,7 @@ function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
                       style={{ pointerEvents: 'none', userSelect: 'none' }}>
                       {z.label}
                     </text>
-                    {/* 회전 핸들 */}
+                    {/* ?뚯쟾 ?몃뱾 */}
                     <line x1={z.cx} y1={z.cy - z.ry} x2={z.cx} y2={z.cy - handleDist}
                       stroke={z.color} strokeWidth={0.4} style={{ pointerEvents: 'none' }} />
                     <circle cx={z.cx} cy={z.cy - handleDist} r={1.8}
@@ -253,9 +255,9 @@ function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
             </svg>
           </div>
 
-          {/* 오른쪽: 옵션 토글 + 크기 조절 */}
+          {/* ?ㅻⅨ履? ?듭뀡 ?좉? + ?ш린 議곗젅 */}
           <div style={{ width: 150, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ color: '#ffffff66', fontSize: 11, marginBottom: 2 }}>성감대 선택</div>
+            <div style={{ color: '#ffffff66', fontSize: 11, marginBottom: 2 }}>?깃컧? ?좏깮</div>
             {ALL_ZONE_OPTIONS.map((opt, i) => {
               const active = isActive(opt)
               return (
@@ -274,15 +276,15 @@ function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
               )
             })}
 
-            {/* 선택된 원 크기 조절 */}
+            {/* ?좏깮?????ш린 議곗젅 */}
             {selectedZone && selected !== null && (
               <div style={{ marginTop: 8, borderTop: '1px solid #ffffff11', paddingTop: 8 }}>
                 <div style={{ color: selectedZone.color, fontSize: 11, fontWeight: 'bold', marginBottom: 6 }}>
-                  ✏️ {selectedZone.label}
+                  ?륅툘 {selectedZone.label}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div>
-                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>각도 °</div>
+                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>媛곷룄 째</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <input type="range" min={-180} max={180} step={1} value={Math.round(((selectedZone.rotation ?? 0) + 180) % 360 - 180)}
                         onMouseDown={() => pushHistory(zones)}
@@ -294,7 +296,7 @@ function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>가로 rx</div>
+                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>媛濡?rx</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <input type="range" min={1} max={30} step={0.5} value={selectedZone.rx}
                         onMouseDown={() => pushHistory(zones)}
@@ -306,7 +308,7 @@ function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>세로 ry</div>
+                    <div style={{ color: '#ffffff55', fontSize: 10, marginBottom: 2 }}>?몃줈 ry</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <input type="range" min={1} max={20} step={0.5} value={selectedZone.ry}
                         onMouseDown={() => pushHistory(zones)}
@@ -326,15 +328,14 @@ function HotspotEditor({ imageUrl, poseKey, initialZones, onSave, onClose }: {
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
           <button onClick={() => onSave(zones)}
             style={{ flex: 2, background: '#c9a84c', border: 'none', color: '#000', borderRadius: 8, padding: '8px 0', fontWeight: 'bold', fontSize: 13, cursor: 'pointer' }}>
-            💾 저장
-          </button>
+            ?뮶 ???          </button>
           <button onClick={undo} disabled={history.length === 0}
             style={{ flex: 1, background: 'none', border: '1px solid #ffffff33', color: history.length > 0 ? '#fff' : '#ffffff33', borderRadius: 8, padding: '8px 0', fontSize: 13, cursor: history.length > 0 ? 'pointer' : 'default' }}>
-            ↩ 되돌리기
+            ???섎룎由ш린
           </button>
           <button onClick={onClose}
             style={{ flex: 1, background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 8, padding: '8px 0', fontSize: 13, cursor: 'pointer' }}>
-            취소
+            痍⑥냼
           </button>
         </div>
       </div>
@@ -354,7 +355,7 @@ function SpriteAnimation({ urls, fps = 4, style }: { urls: string[]; fps?: numbe
 }
 
 function smLabel(v: number) {
-  return v <= -7 ? '극 M' : v < -3 ? 'M 성향' : v >= 7 ? '극 S' : v > 3 ? 'S 성향' : '중립'
+  return v <= -7 ? '洹?M' : v < -3 ? 'M ?깊뼢' : v >= 7 ? '洹?S' : v > 3 ? 'S ?깊뼢' : '以묐┰'
 }
 function SmSlider(val: number, set: (v: number) => void) {
   const color = val < -3 ? '#e94560' : val > 3 ? '#c9a84c' : '#ffffff66'
@@ -363,7 +364,7 @@ function SmSlider(val: number, set: (v: number) => void) {
       <span style={{ fontWeight: 'bold', fontSize: 13, minWidth: 52, color }}>{smLabel(val)}</span>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#ffffff33' }}>
-          <span>M −10</span><span>0</span><span>S +10</span>
+          <span>M ??0</span><span>0</span><span>S +10</span>
         </div>
         <input type="range" min={-10} max={10} step={1} value={val}
           onChange={e => set(Number(e.target.value))}
@@ -385,13 +386,15 @@ export default function FemaleCharacterCreatePage({
   onBack: () => void
   initialData?: FemaleCharacterData
 }) {
+  const scale = useScale(960)
+  const s = (n: number) => n * scale
   const d = initialData
   const [nickname, setNickname] = useState(d?.nickname ?? '')
   const [age, setAge] = useState(d ? String(d.age) : '25')
-  const [married, setMarried] = useState<'미혼'|'기혼'|'돌싱'>(d?.married ?? '미혼')
+  const [married, setMarried] = useState<'誘명샎'|'湲고샎'|'?뚯떛'>(d?.married ?? '誘명샎')
   const [job, setJob] = useState(d?.job ?? '')
   const [location, setLocation] = useState(d?.location ?? LOCATIONS[0])
-  const [bodyType, setBodyType] = useState<'글래머'|'베이글'|'슬랜더'|'머슬'>(d?.bodyType ?? '글래머')
+  const [bodyType, setBodyType] = useState<'湲?섎㉧'|'踰좎씠湲'|'?щ옖??|'癒몄뒳'>(d?.bodyType ?? '湲?섎㉧')
   const [intro, setIntro] = useState(d?.intro ?? '')
 
   const [heightCm, setHeightCm] = useState(d?.heightCm ?? 160)
@@ -415,26 +418,43 @@ export default function FemaleCharacterCreatePage({
 
   const [memo, setMemo] = useState(d?.memo ?? '')
 
-  // 일반 성감대: 전부 독립 슬라이더 (-3~5)
+  // ?쇰컲 ?깃컧?: ?⑷퀎=10, min=1, max=4, thigh ?먮룞
+  const GEN_TOTAL = 10; const GEN_MIN = 1; const GEN_MAX = 4
+  const clampGen = (v: number | undefined) => Math.min(GEN_MAX, Math.max(GEN_MIN, v ?? 2))
   const [genEro, setGenEroState] = useState(d?.erogenous
-    ? { breast: d.erogenous.breast, neckEar: d.erogenous.neckEar, thigh: d.erogenous.thigh, anal: d.erogenous.anal, mouth: d.erogenous.mouth, armpit: d.erogenous.armpit ?? 2 }
-    : { breast: 3, neckEar: 3, thigh: 3, anal: 1, mouth: 3, armpit: 2 })
-  const setGenEro = (key: keyof typeof genEro, val: number) => {
-    setGenEroState(prev => ({ ...prev, [key]: Math.min(5, Math.max(-5, val)) }))
+    ? { breast: clampGen(d.erogenous.breast), neckEar: clampGen(d.erogenous.neckEar), armpit: clampGen(d.erogenous.armpit), mouth: clampGen(d.erogenous.mouth), thigh: clampGen(d.erogenous.thigh) }
+    : { breast: 2, neckEar: 2, armpit: 2, mouth: 2, thigh: 2 })
+  const [genEroToast, setGenEroToast] = useState<string | null>(null)
+  const showGenEroToast = (msg: string) => {
+    setGenEroToast(msg)
+    setTimeout(() => setGenEroToast(null), 2500)
   }
-  const breast = genEro.breast
+  const setGenEro = (key: 'breast'|'neckEar'|'armpit'|'mouth', val: number) => {
+    const clamped = Math.max(GEN_MIN, Math.min(val, GEN_MAX))
+    setGenEroState(prev => {
+      const next = { ...prev, [key]: clamped }
+      const othersSum = next.breast + next.neckEar + next.armpit + next.mouth
+      if (othersSum > GEN_TOTAL - GEN_MIN) {
+        showGenEroToast(`珥앺빀??${GEN_TOTAL}??珥덇낵?⑸땲?? ?ㅻⅨ ??ぉ??癒쇱? ??떠二쇱꽭??`)
+        return prev
+      }
+      return next
+    })
+  }
+  const genThighAuto = Math.min(GEN_MAX, Math.max(GEN_MIN, GEN_TOTAL - genEro.breast - genEro.neckEar - genEro.armpit - genEro.mouth))
 
-  // 핵심 성감대: 클리토리스·질내부 (min 4, 합계 15)
+  // ?듭떖 ?깃컧?: ?대━?좊━???щ씪?대뜑, 吏??먮룞 (min 4, ?⑷퀎 15) / ??Ц ?낅┰ ?щ씪?대뜑
   const CORE_TOTAL = 15
   const CORE_MIN = 4; const CORE_MAX = CORE_TOTAL - CORE_MIN // 11
-  const [clitoris, setClitoris] = useState(Math.min(CORE_TOTAL - CORE_MIN, d?.erogenous?.clitoris ?? 8))
+  const [clitoris, setClitoris] = useState(Math.min(CORE_MAX, Math.max(CORE_MIN, d?.erogenous?.clitoris ?? 8)))
   const vagina = CORE_TOTAL - clitoris
+  const ANAL_MIN = -5; const ANAL_MAX = 5
+  const [anal, setAnal] = useState(Math.min(ANAL_MAX, Math.max(ANAL_MIN, d?.erogenous?.anal ?? 1)))
 
-  const erogenous = { ...genEro, breast, clitoris, vagina }
+  const erogenous = { ...genEro, thigh: genThighAuto, clitoris, vagina, anal }
 
-  // 남성 선호도
-  const PREF_TOTAL = 100
-  // 나이 선호 (40대 자동)
+  // ?⑥꽦 ?좏샇??  const PREF_TOTAL = 100
+  // ?섏씠 ?좏샇 (40? ?먮룞)
   const AGE_MIN = 10
   const [prefAge20, setPrefAge20] = useState(d?.prefAge?.age20 ?? 35)
   const [prefAge30, setPrefAge30] = useState(d?.prefAge?.age30 ?? 35)
@@ -447,7 +467,7 @@ export default function FemaleCharacterCreatePage({
     if (key === 'age20') setPrefAge20(Math.max(AGE_MIN, clamped))
     else setPrefAge30(Math.max(AGE_MIN, clamped))
   }
-  // S1 외모 선호 (패션 자동)
+  // S1 ?몃え ?좏샇 (?⑥뀡 ?먮룞)
   const LOOK_PREF_MIN = 10; const LOOK_PREF_MAX = 50
   const [prefFace, setPrefFace] = useState(d?.prefLook?.face ?? 25)
   const [prefHeight, setPrefHeight] = useState(d?.prefLook?.height ?? 25)
@@ -461,7 +481,7 @@ export default function FemaleCharacterCreatePage({
     else setPrefBodyLook(Math.max(LOOK_PREF_MIN,clamped))
   }
   const [prefWealth, setPrefWealth] = useState(d?.prefWealth ?? 30)
-  // S2 성격 선호 (매너 자동)
+  // S2 ?깃꺽 ?좏샇 (留ㅻ꼫 ?먮룞)
   const PERS_PREF_MIN = 10; const PERS_PREF_MAX = 50
   const [prefIntel, setPrefIntel] = useState(d?.prefPersonality?.intel ?? 25)
   const [prefHumor, setPrefHumor] = useState(d?.prefPersonality?.humor ?? 25)
@@ -474,7 +494,7 @@ export default function FemaleCharacterCreatePage({
     else if (key==='humor') setPrefHumor(Math.max(PERS_PREF_MIN,clamped))
     else setPrefVirtue(Math.max(PERS_PREF_MIN,clamped))
   }
-  // S3 발기 선호 (테크닉 자동)
+  // S3 諛쒓린 ?좏샇 (?뚰겕???먮룞)
   const ERECT_PREF_MIN = 10; const ERECT_PREF_MAX = 50
   const [prefPower, setPrefPower] = useState(d?.prefErect?.power ?? 25)
   const [prefDuration, setPrefDuration] = useState(d?.prefErect?.duration ?? 25)
@@ -487,15 +507,29 @@ export default function FemaleCharacterCreatePage({
     else if (key==='duration') setPrefDuration(Math.max(ERECT_PREF_MIN,clamped))
     else setPrefHardness(Math.max(ERECT_PREF_MIN,clamped))
   }
-  // 선호 자세 (0~5)
-  const [prefPose, setPrefPose] = useState(d?.prefPose ?? { missionary:3, doggy:3, cowgirl:3, side:3 })
+  // ?깃린 ?ш린 ?좏샇 (?⑷퀎=100, 理쒖냼 20??
+  const SIZE_PREF_MIN = 20
+  const [prefSize, setPrefSize] = useState(d?.prefSize ?? { size: 50, girth: 50 })
+  const setPrefSizeStat = (key: 'size'|'girth', val: number) => {
+    const clamped = Math.max(SIZE_PREF_MIN, Math.min(val, 100 - SIZE_PREF_MIN))
+    const other = key === 'size' ? 'girth' : 'size'
+    setPrefSize({ [key]: clamped, [other]: Math.max(SIZE_PREF_MIN, 100 - clamped) } as typeof prefSize)
+  }
+  // ?좏샇 ?먯꽭 (?⑷퀎=10, 理쒖냼 1?? side ?먮룞)
+  const POSE_TOTAL = 10; const POSE_MIN = 1
+  const [prefPose, setPrefPose] = useState(d?.prefPose ?? { missionary:3, doggy:3, cowgirl:2, side:2 })
+  const POSE_MAX = 5
+  const poseSideAuto = Math.min(POSE_MAX, Math.max(POSE_MIN, POSE_TOTAL - prefPose.missionary - prefPose.doggy - prefPose.cowgirl))
   const [smTendency, setSmTendency] = useState(d?.smTendency ?? 0)
   const [dateCostShare, setDateCostShare] = useState(d?.dateCostShare ?? 0)
   const [appearanceDesc, setAppearanceDesc] = useState(d?.appearanceDesc ?? '')
   const [hairColor, setHairColor] = useState<string>(d?.hairColor ?? '')
   const [hairLength, setHairLength] = useState<string>(d?.hairLength ?? '')
   const [glasses, setGlasses] = useState<boolean>(d?.glasses ?? false)
-  const setPose = (key: keyof typeof prefPose, val: number) => setPrefPose({ ...prefPose, [key]: Math.min(5, Math.max(1, val)) })
+  const setPose = (key: 'missionary'|'doggy'|'cowgirl', val: number) => {
+    const clamped = Math.max(POSE_MIN, Math.min(val, POSE_MAX))
+    setPrefPose(prev => ({ ...prev, [key]: clamped }))
+  }
 
   const buildAppearanceDesc = () => {
     const parts: string[] = []
@@ -507,33 +541,31 @@ export default function FemaleCharacterCreatePage({
     return parts.join(', ') || undefined
   }
 
-  // 자기소개 자동 생성
+  // ?먭린?뚭컻 ?먮룞 ?앹꽦
   const autoIntro = (() => {
     const ageNum = parseInt(age)
     if (!job.trim() || isNaN(ageNum)) return ''
 
-    const ageLabel = ageNum < 30 ? '20대' : ageNum < 40 ? '30대' : '40대'
-    const marriedLabel = married === '미혼' ? '미혼' : married === '기혼' ? '기혼' : '돌싱'
+    const ageLabel = ageNum < 30 ? '20?' : ageNum < 40 ? '30?' : '40?'
+    const marriedLabel = married === '誘명샎' ? '誘명샎' : married === '湲고샎' ? '湲고샎' : '?뚯떛'
 
-    // 외모 top 1
-    const topLook = face >= body && face >= fashion ? '외모' : body >= fashion ? '몸매' : '스타일'
-    const bodyLabel = bodyType === '글래머' ? '글래머러스한' : bodyType === '베이글' ? '균형 잡힌' : bodyType === '슬랜더' ? '슬림한' : '탄탄한'
+    // ?몃え top 1
+    const topLook = face >= body && face >= fashion ? '?몃え' : body >= fashion ? '紐몃ℓ' : '?ㅽ???
+    const bodyLabel = bodyType === '湲?섎㉧' ? '湲?섎㉧?ъ뒪?? : bodyType === '踰좎씠湲' ? '洹좏삎 ?≫엺' : bodyType === '?щ옖?? ? '?щ┝?? : '?꾪깂??
 
-    // 관심사 1~2개
-    const interests = [...interestTags, ...(interestCustom.trim() ? [interestCustom.trim()] : [])].slice(0, 2)
-    const interestStr = interests.length > 0 ? `${interests.join(', ')} 좋아해. ` : ''
+    // 愿?ъ궗 1~2媛?    const interests = [...interestTags, ...(interestCustom.trim() ? [interestCustom.trim()] : [])].slice(0, 2)
+    const interestStr = interests.length > 0 ? `${interests.join(', ')} 醫뗭븘?? ` : ''
 
-    // 싫어하는 것 1개
-    const dislikes = [...dislikeTags, ...(dislikeCustom.trim() ? [dislikeCustom.trim()] : [])].slice(0, 1)
-    const dislikeStr = dislikes.length > 0 ? `${dislikes[0]}은 질색. ` : ''
+    // ?レ뼱?섎뒗 寃?1媛?    const dislikes = [...dislikeTags, ...(dislikeCustom.trim() ? [dislikeCustom.trim()] : [])].slice(0, 1)
+    const dislikeStr = dislikes.length > 0 ? `${dislikes[0]}? 吏덉깋. ` : ''
 
-    // 선호 남성 (sex 제외, 간접 표현)
-    const lookPref = { 얼굴: prefFace, 키: prefHeight, 체격: prefBodyLook, 패션: prefFashion }
-    const persPref = { 지적인: prefIntel, 유머있는: prefHumor, 다정한: prefVirtue, 매너있는: prefManner }
+    // ?좏샇 ?⑥꽦 (sex ?쒖쇅, 媛꾩젒 ?쒗쁽)
+    const lookPref = { ?쇨뎬: prefFace, ?? prefHeight, 泥닿꺽: prefBodyLook, ?⑥뀡: prefFashion }
+    const persPref = { 吏?곸씤: prefIntel, ?좊㉧?덈뒗: prefHumor, ?ㅼ젙?? prefVirtue, 留ㅻ꼫?덈뒗: prefManner }
     const topLookPref = Object.entries(lookPref).sort((a,b)=>b[1]-a[1])[0][0]
     const topPersPref = Object.entries(persPref).sort((a,b)=>b[1]-a[1])[0][0]
-    const wealthStr = prefWealth >= 60 ? ', 경제적으로 안정적인' : ''
-    const prefStr = `${topLookPref} 좋고${wealthStr} ${topPersPref} 남자에게 끌려.`
+    const wealthStr = prefWealth >= 60 ? ', 寃쎌젣?곸쑝濡??덉젙?곸씤' : ''
+    const prefStr = `${topLookPref} 醫뗪퀬${wealthStr} ${topPersPref} ?⑥옄?먭쾶 ?뚮젮.`
 
     return `${marriedLabel} ${ageLabel} ${job.trim()}. ${bodyLabel} ${topLook}. ${interestStr}${dislikeStr}${prefStr}`
   })()
@@ -556,8 +588,7 @@ export default function FemaleCharacterCreatePage({
     d?.poseImages && Object.values(d.poseImages).some(Boolean) ? [d.poseImages] : []
   )
   const [selectedPoseSet, setSelectedPoseSet] = useState(0)
-  // 새 자세 선택 시스템
-  const [poseVariants, setPoseVariants] = useState<Record<string, Record<string, string[]>>>({})
+  // ???먯꽭 ?좏깮 ?쒖뒪??  const [poseVariants, setPoseVariants] = useState<Record<string, Record<string, string[]>>>({})
   // poseVariants[poseKey][exprKey] = [url, ...]
   const [selectedPoseImages, setSelectedPoseImages] = useState<Record<string, string>>(() => {
     const base = d?.poseImages ?? {}
@@ -621,7 +652,7 @@ export default function FemaleCharacterCreatePage({
   const [enlargedProfile, setEnlargedProfile] = useState(false)
   const [enlargedExpr, setEnlargedExpr] = useState(false)
 
-  // Storage에서 기존 스프라이트 복원
+  // Storage?먯꽌 湲곗〈 ?ㅽ봽?쇱씠??蹂듭썝
   useEffect(() => {
     if (!charId) return
     supabase.storage.from('char-images').list(charId).then(({ data: files }) => {
@@ -640,7 +671,7 @@ export default function FemaleCharacterCreatePage({
     })
   }, [charId])
 
-  // non-passive wheel: 메인 액자
+  // non-passive wheel: 硫붿씤 ?≪옄
   useEffect(() => {
     const el = profileImgWrapRef.current
     if (!el) return
@@ -652,7 +683,7 @@ export default function FemaleCharacterCreatePage({
     return () => el.removeEventListener('wheel', onWheel)
   }, [])
 
-  // non-passive wheel: enlarged 모달
+  // non-passive wheel: enlarged 紐⑤떖
   useEffect(() => {
     const el = profileEnlargedWrapRef.current
     if (!el) return
@@ -678,14 +709,14 @@ export default function FemaleCharacterCreatePage({
     } as Parameters<typeof generateProfileImage>[0]
   }
 
-  // 프로필 생성 취소
+  // ?꾨줈???앹꽦 痍⑥냼
   const handleCancelProfile = async () => {
     profileAbortController.current?.abort()
   }
 
-  // 프로필 이미지 5장 생성 (공통)
+  // ?꾨줈???대?吏 5???앹꽦 (怨듯넻)
   const generateProfileSet = async (prevImages: string[] = []) => {
-    // 이전 이미지 전부 삭제
+    // ?댁쟾 ?대?吏 ?꾨? ??젣
     prevImages.forEach(url => { if (url) deleteImageFromStorage(url) })
 
     const controller = new AbortController()
@@ -709,7 +740,7 @@ export default function FemaleCharacterCreatePage({
           setGenProgress(`${count} / ${MAX_PROFILE_IMGS}`)
           setProfileImages([...results].filter(Boolean))
         } catch (e: any) {
-          if (e?.name !== 'AbortError') console.error(`프로필 ${i+1} 생성 실패:`, e)
+          if (e?.name !== 'AbortError') console.error(`?꾨줈??${i+1} ?앹꽦 ?ㅽ뙣:`, e)
         }
       })
     )
@@ -719,28 +750,26 @@ export default function FemaleCharacterCreatePage({
     profileAbortController.current = null
   }
 
-  // 1단계: 폼 완료 → 5장 생성
+  // 1?④퀎: ???꾨즺 ??5???앹꽦
   const handleComplete = async () => {
-    if (!nickname.trim()) { setError('닉네임을 입력해주세요.'); return }
-    if (!job.trim()) { setError('직업을 입력해주세요.'); return }
+    if (!nickname.trim()) { setError('?됰꽕?꾩쓣 ?낅젰?댁＜?몄슂.'); return }
+    if (!job.trim()) { setError('吏곸뾽???낅젰?댁＜?몄슂.'); return }
     const ageNum = parseInt(age)
-    if (isNaN(ageNum) || ageNum < 20 || ageNum > 49) { setError('나이를 올바르게 입력해주세요. (20~49)'); return }
+    if (isNaN(ageNum) || ageNum < 20 || ageNum > 49) { setError('?섏씠瑜??щ컮瑜닿쾶 ?낅젰?댁＜?몄슂. (20~49)'); return }
     setError('')
     if (isEdit) { setPhase('image_studio'); return }
     setPhase('profile_review')
     await generateProfileSet(profileImages)
   }
 
-  // 재생성: 현재 5장 전부 삭제 후 새로 5장
-  const handleRegenProfile = async () => {
+  // ?ъ깮?? ?꾩옱 5???꾨? ??젣 ???덈줈 5??  const handleRegenProfile = async () => {
     await generateProfileSet(profileImages)
   }
 
-  // 프로필 확정 → image_studio 단계로
-  const handleFinalizeProfile = () => {
+  // ?꾨줈???뺤젙 ??image_studio ?④퀎濡?  const handleFinalizeProfile = () => {
     const imageUrl = profileImages[selectedProfileIdx]
 
-    // 선택 안 된 프로필 이미지 Storage에서 삭제
+    // ?좏깮 ?????꾨줈???대?吏 Storage?먯꽌 ??젣
     console.log('[FinalizeProfile] total images:', profileImages.length, 'selected idx:', selectedProfileIdx, 'selected url:', imageUrl)
     profileImages.forEach((url, i) => {
       if (i !== selectedProfileIdx && url) {
@@ -754,14 +783,14 @@ export default function FemaleCharacterCreatePage({
     setProfileFinalized(true)
     setConfirmingProfile(false)
 
-    // 기존 표정 이미지 삭제
+    // 湲곗〈 ?쒖젙 ?대?吏 ??젣
     expressionSets.forEach(set => {
       set.forEach(url => { if (url) deleteImageFromStorage(url) })
     })
     setExpressionSets([])
     setSelectedExprSet(0)
 
-    // 기존 자세 이미지 삭제 (variants + selected)
+    // 湲곗〈 ?먯꽭 ?대?吏 ??젣 (variants + selected)
     Object.values(poseVariants).forEach(exprMap => {
       Object.values(exprMap).forEach(urls => {
         urls.forEach(url => { if (url) deleteImageFromStorage(url) })
@@ -777,13 +806,13 @@ export default function FemaleCharacterCreatePage({
 
   const MAX_SETS = 5
 
-  // 표정 5장 생성 — 최대 MAX_SETS 세트까지 append, 초과 시 가장 오래된 세트 삭제
+  // ?쒖젙 5???앹꽦 ??理쒕? MAX_SETS ?명듃源뚯? append, 珥덇낵 ??媛???ㅻ옒???명듃 ??젣
   const handleGenExpressions = async () => {
     setGeneratingExpr(true)
     try {
       const result = await generateExpressionImages(
         buildPartialChar() as any,
-        (done, total, label) => setGenProgress(`표정 생성 중... ${label} (${done + 1}/${total})`),
+        (done, total, label) => setGenProgress(`?쒖젙 ?앹꽦 以?.. ${label} (${done + 1}/${total})`),
         { randomSeed: true, profileImageUrl: profileImages[selectedProfileIdx] }
       )
       setExpressionSets(prev => {
@@ -796,20 +825,20 @@ export default function FemaleCharacterCreatePage({
         setSelectedExprSet(next.length - 1)
         return next
       })
-    } catch (e) { console.error('표정 생성 실패:', e) }
+    } catch (e) { console.error('?쒖젙 ?앹꽦 ?ㅽ뙣:', e) }
     setGenProgress('')
     setGeneratingExpr(false)
   }
 
-  // 자세 8장 생성 (최대 5세트) - 기존 방식 유지
+  // ?먯꽭 8???앹꽦 (理쒕? 5?명듃) - 湲곗〈 諛⑹떇 ?좎?
   const handleGenPoses = async () => {
-    if (expressionSets.length === 0) { alert('표정 이미지를 먼저 생성해주세요.\n표정 이미지 생성 후 자세 이미지를 만들 수 있습니다.'); return }
+    if (expressionSets.length === 0) { alert('?쒖젙 ?대?吏瑜?癒쇱? ?앹꽦?댁＜?몄슂.\n?쒖젙 ?대?吏 ?앹꽦 ???먯꽭 ?대?吏瑜?留뚮뱾 ???덉뒿?덈떎.'); return }
     if (poseSets.length >= MAX_SETS) return
     setGeneratingPose(true)
     try {
       const result = await generatePoseImages(
         buildPartialChar() as any,
-        (done, total, label) => setGenProgress(`자세 생성 중... ${label} (${done + 1}/${total})`),
+        (done, total, label) => setGenProgress(`?먯꽭 ?앹꽦 以?.. ${label} (${done + 1}/${total})`),
         { randomSeed: poseSets.length > 0, profileImageUrl: profileImages[selectedProfileIdx] ?? profileImages[0] }
       )
       setPoseSets(prev => {
@@ -817,18 +846,18 @@ export default function FemaleCharacterCreatePage({
         setSelectedPoseSet(next.length - 1)
         return next
       })
-    } catch (e) { console.error('자세 생성 실패:', e) }
+    } catch (e) { console.error('?먯꽭 ?앹꽦 ?ㅽ뙣:', e) }
     setGenProgress('')
     setGeneratingPose(false)
   }
 
-  // 새 방식: 자세별 표정 5장씩 생성
+  // ??諛⑹떇: ?먯꽭蹂??쒖젙 5?μ뵫 ?앹꽦
   const handleCancelVariants = () => {
     variantAbortController.current?.abort()
   }
 
   const handleGenVariants = async (poseKey: string, exprKey: 'aroused' | 'climax') => {
-    if (expressionSets.length === 0) { alert('표정 이미지를 먼저 생성해주세요.\n표정 이미지 생성 후 자세 이미지를 만들 수 있습니다.'); return }
+    if (expressionSets.length === 0) { alert('?쒖젙 ?대?吏瑜?癒쇱? ?앹꽦?댁＜?몄슂.\n?쒖젙 ?대?吏 ?앹꽦 ???먯꽭 ?대?吏瑜?留뚮뱾 ???덉뒿?덈떎.'); return }
     const controller = new AbortController()
     variantAbortController.current = controller
     setActivePoseKey(poseKey)
@@ -841,13 +870,13 @@ export default function FemaleCharacterCreatePage({
         poseKey, exprKey,
         buildPartialChar() as any,
         5,
-        (done, total) => setVariantProgress(`${poseLabel} · ${exprLabel} ${done}/${total}`),
+        (done, total) => setVariantProgress(`${poseLabel} 쨌 ${exprLabel} ${done}/${total}`),
         { profileImageUrl: profileImages[selectedProfileIdx], signal: controller.signal, bgKey: selectedBgKey }
       )
       if (!controller.signal.aborted) {
         const validUrls = urls.filter(Boolean)
         setPoseVariants(prev => {
-          // 이전 variants 삭제 (선택된 이미지 제외)
+          // ?댁쟾 variants ??젣 (?좏깮???대?吏 ?쒖쇅)
           const prevUrls = prev[poseKey]?.[exprKey] ?? []
           const chosen = selectedPoseImages[`${poseKey}_${exprKey}`]
           prevUrls.forEach(u => {
@@ -861,7 +890,7 @@ export default function FemaleCharacterCreatePage({
             [poseKey]: { ...(prev[poseKey] ?? {}), [exprKey]: urls }
           }
         })
-        // 생성 완료 즉시 오버레이 열기 → 선택 전까지 다른 버튼 비활성화
+        // ?앹꽦 ?꾨즺 利됱떆 ?ㅻ쾭?덉씠 ?닿린 ???좏깮 ?꾧퉴吏 ?ㅻⅨ 踰꾪듉 鍮꾪솢?깊솕
         if (validUrls.length > 0) {
           setVariantOverlay({ poseKey, exprKey, urls: validUrls })
           setVariantZoom(validUrls[0])
@@ -871,7 +900,7 @@ export default function FemaleCharacterCreatePage({
         }
       }
     } catch (e: any) {
-      if (e?.name !== 'AbortError') console.error('variant 생성 실패:', e)
+      if (e?.name !== 'AbortError') console.error('variant ?앹꽦 ?ㅽ뙣:', e)
     }
     setVariantProgress('')
     setGeneratingVariants(false)
@@ -901,11 +930,11 @@ export default function FemaleCharacterCreatePage({
 
   }
 
-  // 최종 저장 및 완료
+  // 理쒖쥌 ???諛??꾨즺
   const handleSaveAndComplete = async () => {
     const imageUrl = profileImages[0]
     setGenerating(true)
-    setGenProgress('데이터 저장 중...')
+    setGenProgress('?곗씠?????以?..')
 
     const char: FemaleCharacterData = {
       id: charId,
@@ -919,7 +948,8 @@ export default function FemaleCharacterCreatePage({
       prefWealth,
       prefPersonality: { intel: prefIntel, humor: prefHumor, virtue: prefVirtue, manner: prefManner },
       prefErect: { power: prefPower, duration: prefDuration, hardness: prefHardness, tech: prefTech },
-      prefPose, smTendency, dateCostShare,
+      prefSize,
+      prefPose: { ...prefPose, side: poseSideAuto }, smTendency, dateCostShare,
       appearanceDesc: buildAppearanceDesc(),
       hairColor: hairColor || undefined,
       hairLength: hairLength || undefined,
@@ -937,13 +967,13 @@ export default function FemaleCharacterCreatePage({
       createdAt: new Date().toISOString(),
     }
 
-    // 선택 안 된 표정/자세 세트 Storage에서 삭제
+    // ?좏깮 ?????쒖젙/?먯꽭 ?명듃 Storage?먯꽌 ??젣
     const urlToPath = (url: string) => decodeURIComponent(url.split('/char-images/')[1]?.split('?')[0] ?? '')
     const toDelete: string[] = []
     expressionSets.forEach((set, i) => {
       if (i !== selectedExprSet) set.forEach(url => { if (url) toDelete.push(urlToPath(url)) })
     })
-    // 선택 안 된 포즈 variant 삭제
+    // ?좏깮 ?????ъ쫰 variant ??젣
     Object.entries(poseVariants).forEach(([poseKey, exprMap]) => {
       Object.entries(exprMap).forEach(([exprKey, urls]) => {
         const chosen = selectedPoseImages[`${poseKey}_${exprKey}`]
@@ -968,7 +998,8 @@ export default function FemaleCharacterCreatePage({
           personality, memo, erogenous,
           prefAge: char.prefAge, prefLook: char.prefLook, prefWealth,
           prefPersonality: char.prefPersonality, prefErect: char.prefErect,
-          prefPose, smTendency, dateCostShare,
+          prefSize: char.prefSize,
+          prefPose: { ...prefPose, side: poseSideAuto }, smTendency, dateCostShare,
           appearanceDesc: buildAppearanceDesc(),
           hairColor: hairColor || undefined,
           hairLength: hairLength || undefined,
@@ -985,7 +1016,7 @@ export default function FemaleCharacterCreatePage({
           ),
         } : null,
       })
-    } catch (e) { console.error('DB 저장 실패:', e) }
+    } catch (e) { console.error('DB ????ㅽ뙣:', e) }
 
     setGenerating(false)
     setGenProgress('')
@@ -995,7 +1026,7 @@ export default function FemaleCharacterCreatePage({
   const sensColor = (v: number) => v < 0 ? '#e94560' : v === 0 ? '#ffffff44' : v >= 4 ? '#c9a84c' : v >= 2 ? '#66BB6A' : '#ffffff88'
   const sensColor10 = (v: number) => v === 0 ? '#e94560' : v >= 7 ? '#c9a84c' : v >= 5 ? '#66BB6A' : '#ffffff66'
 
-  // 3단계: 표정·자세 생성 스튜디오
+  // 3?④퀎: ?쒖젙쨌?먯꽭 ?앹꽦 ?ㅽ뒠?붿삤
   if (phase === 'image_studio') {
     const busy = generatingExpr || generatingPose || generating || generatingVariants || variantOverlay !== null
     const bodyZoom = parseFloat(getComputedStyle(document.body).zoom) || 1
@@ -1003,10 +1034,10 @@ export default function FemaleCharacterCreatePage({
     return (
       <div style={S.container}>
 
-        {/* ── 모달들: S.container 직속 (position:fixed 보장) ── */}
+        {/* ?? 紐⑤떖?? S.container 吏곸냽 (position:fixed 蹂댁옣) ?? */}
         {enlargedSprite && (() => {
           const { urls, poseKey: sPoseKey, exprKey: sExprKey } = enlargedSprite
-          // 애니 전용 sprite_hotspots → 없으면 사진 hotspots(default)
+          // ?좊땲 ?꾩슜 sprite_hotspots ???놁쑝硫??ъ쭊 hotspots(default)
           const spriteKey = `${sPoseKey}_${sExprKey}_sprite_hotspots`
           const photoKey = `${sPoseKey}_${sExprKey}_hotspots`
           const photoFallback = `${sPoseKey}_aroused_hotspots`
@@ -1036,7 +1067,7 @@ export default function FemaleCharacterCreatePage({
                     ))}
                   </svg>
                 )}
-                {/* 📍 위치조정 — 애니 전용 sprite_hotspots 키로 저장 (사진과 독립) */}
+                {/* ?뱧 ?꾩튂議곗젙 ???좊땲 ?꾩슜 sprite_hotspots ?ㅻ줈 ???(?ъ쭊怨??낅┰) */}
                 <button
                   style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(201,168,76,0.85)', border: 'none', color: '#000', borderRadius: 6, padding: '4px 8px', fontSize: 12, fontWeight: 'bold', cursor: 'pointer', zIndex: 10 }}
                   onClick={e => {
@@ -1048,16 +1079,15 @@ export default function FemaleCharacterCreatePage({
                     )
                     setHotspotEditorInfo({ poseKey: sPoseKey, exprKey: sExprKey, imageUrl: urls[0], savedZones, isSpriteEdit: true })
                   }}>
-                  📍 위치조정 (애니)
+                  ?뱧 ?꾩튂議곗젙 (?좊땲)
                 </button>
                 {sHotspots.length === 0 && (
                   <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', color: '#e9456088', fontSize: 11 }}>
-                    📍 성감대 미설정
-                  </div>
+                    ?뱧 ?깃컧? 誘몄꽕??                  </div>
                 )}
               </div>
               <button style={{ position: 'fixed', top: 16, right: 20, background: 'none', border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 3001 }}
-                onClick={() => setEnlargedSprite(null)}>✕</button>
+                onClick={() => setEnlargedSprite(null)}>??/button>
             </div>
           )
         })()}
@@ -1077,10 +1107,10 @@ export default function FemaleCharacterCreatePage({
                 window.addEventListener('mouseup', onUp)
               }}
             >
-              <img src={profileImages[0]} alt="대표 확대" draggable={false}
+              <img src={profileImages[0]} alt="????뺣?" draggable={false}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10, transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
             </div>
-            <div style={{ color: '#ffffff44', fontSize: 12, marginTop: 12 }}>휠: 확대/축소 · 드래그: 이동 · 바깥 클릭으로 닫기</div>
+            <div style={{ color: '#ffffff44', fontSize: 12, marginTop: 12 }}>?? ?뺣?/異뺤냼 쨌 ?쒕옒洹? ?대룞 쨌 諛붽묑 ?대┃?쇰줈 ?リ린</div>
           </div>
         )}
 
@@ -1102,25 +1132,25 @@ export default function FemaleCharacterCreatePage({
                       window.addEventListener('mouseup', onUp)
                     }}
                   >
-                    <img src={(expressionSets[selectedExprSet] ?? [])[enlargedExprIdx]} alt="확대" draggable={false}
+                    <img src={(expressionSets[selectedExprSet] ?? [])[enlargedExprIdx]} alt="?뺣?" draggable={false}
                       style={{ width: Math.min(672, window.innerWidth - 40), height: Math.min(864, window.innerHeight - 160), objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c55', transform: `translate(${exprPan.x}px, ${exprPan.y}px) scale(${exprZoomScale})`, transformOrigin: 'center', transition: exprDragRef.current ? 'none' : 'transform 0.05s' }} />
                   </div>
                   <span style={{ color: '#c9a84c', fontSize: 18, fontWeight: 'bold' }}>{CONVERSATION_EXPRESSIONS[enlargedExprIdx]?.label}</span>
-                  <div style={{ color: '#ffffff55', fontSize: 12 }}>휠: 확대/축소 · 드래그: 이동 · 클릭으로 목록</div>
+                  <div style={{ color: '#ffffff55', fontSize: 12 }}>?? ?뺣?/異뺤냼 쨌 ?쒕옒洹? ?대룞 쨌 ?대┃?쇰줈 紐⑸줉</div>
                 </>
               ) : (
                 <>
                   {expressionSets.length > 1 && (
                     <div style={IS.setTabs}>
                       {expressionSets.map((_, i) => (
-                        <button key={i} style={{ ...IS.setTab, ...(i === selectedExprSet ? IS.setTabActive : {}) }} onClick={() => { setSelectedExprSet(i); setEnlargedExprIdx(null) }}>세트 {i + 1}</button>
+                        <button key={i} style={{ ...IS.setTab, ...(i === selectedExprSet ? IS.setTabActive : {}) }} onClick={() => { setSelectedExprSet(i); setEnlargedExprIdx(null) }}>?명듃 {i + 1}</button>
                       ))}
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, justifyContent: 'center' }}>
                     {(expressionSets[selectedExprSet] ?? []).map((url, i) => url ? (
                       <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                        <img src={url} alt={`표정${i+1}`} style={{ ...IS.enlargedImg, cursor: 'zoom-in' }}
+                        <img src={url} alt={`?쒖젙${i+1}`} style={{ ...IS.enlargedImg, cursor: 'zoom-in' }}
                           onClick={() => setEnlargedExprIdx(i)} />
                         <span style={{ color: '#c9a84c', fontSize: 13, fontWeight: 'bold' }}>{CONVERSATION_EXPRESSIONS[i]?.label}</span>
                       </div>
@@ -1130,16 +1160,16 @@ export default function FemaleCharacterCreatePage({
                     <button
                       style={{ background: 'linear-gradient(90deg,#c9a84c,#e94560)', border: 'none', color: '#fff', borderRadius: 10, padding: '10px 28px', fontSize: 14, fontWeight: 'bold', cursor: 'pointer', marginTop: 4 }}
                       onClick={() => { handleSelectExprSet(selectedExprSet); setEnlargedExpr(false); setEnlargedExprIdx(null) }}
-                    >✅ 세트 {selectedExprSet + 1} 선택</button>
+                    >???명듃 {selectedExprSet + 1} ?좏깮</button>
                   )}
-                  <div style={{ color: '#ffffff44', fontSize: 12 }}>사진 클릭으로 2배 확대 · 세트 탭으로 전환 · 바깥 클릭으로 닫기</div>
+                  <div style={{ color: '#ffffff44', fontSize: 12 }}>?ъ쭊 ?대┃?쇰줈 2諛??뺣? 쨌 ?명듃 ??쑝濡??꾪솚 쨌 諛붽묑 ?대┃?쇰줈 ?リ린</div>
                 </>
               )}
             </div>
           </div>
         )}
 
-        {/* 5장 선택 오버레이 */}
+        {/* 5???좏깮 ?ㅻ쾭?덉씠 */}
         {variantOverlay && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '8px 20px 12px' }}
             onClick={() => {
@@ -1152,19 +1182,19 @@ export default function FemaleCharacterCreatePage({
               }
             }}>
             <div onClick={e => { e.stopPropagation(); if (variantZoom && !variantWasDragging.current) { setVariantZoom(null); setVariantZoomScale(1); setVariantPan({ x: 0, y: 0 }); if (variantZoomFromSelected.current) setVariantOverlay(null) } }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: '100%', maxWidth: window.innerWidth - 40 }}>
-              {/* 헤더 */}
+              {/* ?ㅻ뜑 */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                 <span style={{ color: '#c9a84c', fontWeight: 'bold', fontSize: 16 }}>
-                  {POSES.find(p => p.key === variantOverlay.poseKey)?.label} · {POSE_EXPRESSIONS.find(e => e.key === variantOverlay.exprKey)?.label} — 1장 선택
+                  {POSES.find(p => p.key === variantOverlay.poseKey)?.label} 쨌 {POSE_EXPRESSIONS.find(e => e.key === variantOverlay.exprKey)?.label} ??1???좏깮
                 </span>
               </div>
 
-              {/* 줌 상태: 1장 크게 + 스크롤 확대 + 드래그 이동 */}
+              {/* 以??곹깭: 1???ш쾶 + ?ㅽ겕濡??뺣? + ?쒕옒洹??대룞 */}
               {variantZoom ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: '100%', maxHeight: '100vh', overflow: 'hidden' }}>
                   <div style={{ position: 'relative', display: 'inline-flex' }}>
                     <button onClick={() => { setVariantZoom(null); setVariantZoomScale(1); setVariantPan({ x: 0, y: 0 }); setVariantOverlay(null) }}
-                      style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'rgba(0,0,0,0.6)', border: '1px solid #ffffff55', color: '#fff', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                      style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'rgba(0,0,0,0.6)', border: '1px solid #ffffff55', color: '#fff', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>??/button>
                   <div
                     style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: variantDrag.current ? 'grabbing' : 'grab', userSelect: 'none' }}
                     onWheel={e => {
@@ -1193,22 +1223,22 @@ export default function FemaleCharacterCreatePage({
                     }}
                     onClick={e => e.stopPropagation()}
                   >
-                    <img src={variantZoom} alt="확대" draggable={false}
+                    <img src={variantZoom} alt="?뺣?" draggable={false}
                       style={{ height: fitH(0.85), width: 'auto', maxWidth: '90vw', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c', transform: `translate(${variantPan.x}px, ${variantPan.y}px) scale(${variantZoomScale})`, transformOrigin: 'center', transition: variantDrag.current ? 'none' : 'transform 0.05s' }} />
                   </div>
                   </div>{/* position:relative wrapper */}
-                  <div style={{ color: '#ffffff44', fontSize: 11 }}>휠: 확대/축소 · 드래그: 이동</div>
+                  <div style={{ color: '#ffffff44', fontSize: 11 }}>?? ?뺣?/異뺤냼 쨌 ?쒕옒洹? ?대룞</div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => { setVariantZoom(null); setVariantZoomScale(1); setVariantPan({ x: 0, y: 0 }) }}
-                      style={{ background: 'none', border: '1px solid #ffffff44', color: '#ffffff88', borderRadius: 8, padding: '8px 20px', fontSize: 13, cursor: 'pointer' }}>← 목록으로</button>
+                      style={{ background: 'none', border: '1px solid #ffffff44', color: '#ffffff88', borderRadius: 8, padding: '8px 20px', fontSize: 13, cursor: 'pointer' }}>??紐⑸줉?쇰줈</button>
                     <button onClick={() => {
                       handleSelectVariant(variantOverlay.poseKey, variantOverlay.exprKey, variantZoom)
                       setVariantZoom(null); setVariantZoomScale(1); setVariantPan({ x: 0, y: 0 }); setVariantOverlay(null)
-                    }} style={{ background: 'linear-gradient(90deg,#c9a84c,#e94560)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 28px', fontSize: 14, fontWeight: 'bold', cursor: 'pointer' }}>✅ 이 사진 선택</button>
+                    }} style={{ background: 'linear-gradient(90deg,#c9a84c,#e94560)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 28px', fontSize: 14, fontWeight: 'bold', cursor: 'pointer' }}>?????ъ쭊 ?좏깮</button>
                   </div>
                 </div>
               ) : (
-                /* 5장 목록 — 가로 일렬 스크롤 */
+                /* 5??紐⑸줉 ??媛濡??쇰젹 ?ㅽ겕濡?*/
                 <div style={{ display: 'flex', flexDirection: 'row', gap: 8, overflowX: 'auto', width: '100%', paddingBottom: 8, justifyContent: 'center' }}>
                   {variantOverlay.urls.map((url, i) => {
                     const imgH = Math.min(Math.round(window.innerHeight * 0.65), 520)
@@ -1218,7 +1248,7 @@ export default function FemaleCharacterCreatePage({
                         <img src={url} alt={`${i+1}`} onClick={e => { e.stopPropagation(); variantZoomFromSelected.current = false; setVariantZoom(url); setVariantZoomScale(1); setVariantPan({ x: 0, y: 0 }) }}
                           style={{ width: imgW, height: imgH, objectFit: 'contain', borderRadius: 8, border: '1px solid #ffffff22', cursor: 'zoom-in' }} />
                         <button onClick={() => { handleSelectVariant(variantOverlay.poseKey, variantOverlay.exprKey, url); setVariantOverlay(null) }}
-                          style={{ background: 'linear-gradient(90deg,#c9a84c,#e94560)', border: 'none', color: '#fff', borderRadius: 6, padding: '6px 0', width: imgW, fontSize: 12, fontWeight: 'bold', cursor: 'pointer' }}>✅ 선택</button>
+                          style={{ background: 'linear-gradient(90deg,#c9a84c,#e94560)', border: 'none', color: '#fff', borderRadius: 6, padding: '6px 0', width: imgW, fontSize: 12, fontWeight: 'bold', cursor: 'pointer' }}>???좏깮</button>
                       </div>
                     )
                   })}
@@ -1240,9 +1270,9 @@ export default function FemaleCharacterCreatePage({
                 const exprLabel = POSE_EXPRESSIONS.find(e => e.key === exprKey)?.label ?? exprKey
                 return (
                   <>
-                    <img src={url} alt="확대" style={{ width: 672, height: 864, objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c55' }} />
+                    <img src={url} alt="?뺣?" style={{ width: 672, height: 864, objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c55' }} />
                     <span style={{ color: '#c9a84c', fontSize: 18, fontWeight: 'bold' }}>{poseLabel} / {exprLabel}</span>
-                    <div style={{ color: '#ffffff55', fontSize: 12 }}>클릭하면 목록으로 돌아갑니다</div>
+                    <div style={{ color: '#ffffff55', fontSize: 12 }}>?대┃?섎㈃ 紐⑸줉?쇰줈 ?뚯븘媛묐땲??/div>
                   </>
                 )
               })() : (
@@ -1254,14 +1284,14 @@ export default function FemaleCharacterCreatePage({
                       const exprLabel = POSE_EXPRESSIONS.find(e => e.key === exprKey)?.label ?? exprKey
                       return url ? (
                         <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                          <img src={url} alt={`자세${i+1}`} style={{ ...IS.enlargedImg, cursor: 'zoom-in' }}
+                          <img src={url} alt={`?먯꽭${i+1}`} style={{ ...IS.enlargedImg, cursor: 'zoom-in' }}
                             onClick={() => setEnlargedPoseIdx(i)} />
                           <span style={{ color: '#c9a84c', fontSize: 13, fontWeight: 'bold', textAlign: 'center' }}>{poseLabel} / {exprLabel}</span>
                         </div>
                       ) : null
                     })}
                   </div>
-                  <div style={{ color: '#ffffff44', fontSize: 12 }}>사진 클릭으로 2배 확대 · 바깥 클릭으로 닫기</div>
+                  <div style={{ color: '#ffffff44', fontSize: 12 }}>?ъ쭊 ?대┃?쇰줈 2諛??뺣? 쨌 諛붽묑 ?대┃?쇰줈 ?リ린</div>
                 </>
               )}
             </div>
@@ -1269,29 +1299,29 @@ export default function FemaleCharacterCreatePage({
         )}
 
         <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c44', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 800, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          <p style={PR.subtitle}>이미지 스튜디오</p>
+          <p style={PR.subtitle}>?대?吏 ?ㅽ뒠?붿삤</p>
           <h2 style={PR.name}>{nickname}</h2>
           {isEdit && (
-            <button style={{ background: 'transparent', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer', alignSelf: 'flex-start' }} onClick={() => setPhase('form')}>← 기본 정보 수정</button>
+            <button style={{ background: 'transparent', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer', alignSelf: 'flex-start' }} onClick={() => setPhase('form')}>??湲곕낯 ?뺣낫 ?섏젙</button>
           )}
           <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'stretch', width: '100%' }}>
-            {/* 대표이미지 왼쪽 - 표정이미지 높이에 맞춤 */}
+            {/* ??쒖씠誘몄? ?쇱そ - ?쒖젙?대?吏 ?믪씠??留욎땄 */}
             <div style={{ flex: '0 0 70%', minWidth: 0 }}>
               {profileImages[0] ? (
-                <img src={profileImages[0]} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c44', cursor: 'zoom-in', display: 'block' }} alt="대표" onClick={() => setEnlargedProfile(true)} />
+                <img src={profileImages[0]} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c44', cursor: 'zoom-in', display: 'block' }} alt="??? onClick={() => setEnlargedProfile(true)} />
               ) : (
                 <div style={{ width: '100%', height: '100%', background: '#ffffff05', borderRadius: 12, border: '1px dashed #ffffff22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ color: '#ffffff22', fontSize: 13 }}>대표이미지</span>
+                  <span style={{ color: '#ffffff22', fontSize: 13 }}>??쒖씠誘몄?</span>
                 </div>
               )}
             </div>
 
-            {/* 표정 5장 오른쪽 */}
+            {/* ?쒖젙 5???ㅻⅨ履?*/}
           <div ref={exprSectionRef} style={{ ...IS.section, flex: 1, minWidth: 0, marginBottom: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={IS.sectionTitle}>😊 표정 이미지 (5장)</div>
+              <div style={IS.sectionTitle}>?삃 ?쒖젙 ?대?吏 (5??</div>
               {expressionSets.length > 1 && (
-                <span style={{ color: '#c9a84c', fontSize: 12 }}>세트 {selectedExprSet + 1} 선택됨</span>
+                <span style={{ color: '#c9a84c', fontSize: 12 }}>?명듃 {selectedExprSet + 1} ?좏깮??/span>
               )}
             </div>
             {expressionSets.length > 0 ? (
@@ -1300,7 +1330,7 @@ export default function FemaleCharacterCreatePage({
                   <div style={IS.setTabs}>
                     {expressionSets.map((_, i) => (
                       <button key={i} style={{ ...IS.setTab, ...(i === selectedExprSet ? IS.setTabActive : {}) }}
-                        onClick={() => setSelectedExprSet(i)}>세트 {i + 1}</button>
+                        onClick={() => setSelectedExprSet(i)}>?명듃 {i + 1}</button>
                     ))}
                   </div>
                 )}
@@ -1321,7 +1351,7 @@ export default function FemaleCharacterCreatePage({
                       </div>
                     )
                   })}
-                  {/* 마지막 1개 - 절반 너비 */}
+                  {/* 留덉?留?1媛?- ?덈컲 ?덈퉬 */}
                   {(() => {
                     const url = (expressionSets[selectedExprSet] ?? [])[4]
                     return (
@@ -1339,29 +1369,29 @@ export default function FemaleCharacterCreatePage({
                   <button
                     style={{ background: 'linear-gradient(90deg,#c9a84c,#e94560)', border: 'none', color: '#fff', borderRadius: 10, padding: '8px 24px', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', marginTop: 4 }}
                     onClick={() => handleSelectExprSet(selectedExprSet)}
-                  >✅ 세트 {selectedExprSet + 1} 확정</button>
+                  >???명듃 {selectedExprSet + 1} ?뺤젙</button>
                 )}
               </>
             ) : (
-              <p style={IS.hint}>대화 화면에서 사용되는 표정 5종입니다.</p>
+              <p style={IS.hint}>????붾㈃?먯꽌 ?ъ슜?섎뒗 ?쒖젙 5醫낆엯?덈떎.</p>
             )}
             <button
               style={{ ...IS.genBtn, opacity: (busy || generatingVariants) ? 0.5 : 1 }}
               disabled={busy || generatingVariants}
               onClick={handleGenExpressions}
             >
-              {generatingExpr ? `⏳ ${genProgress}` : expressionSets.length > 0 ? '🔄 표정 재생성' : '🎭 표정 5장 생성'}
+              {generatingExpr ? `??${genProgress}` : expressionSets.length > 0 ? '?봽 ?쒖젙 ?ъ깮?? : '?렚 ?쒖젙 5???앹꽦'}
             </button>
           </div>
           </div>
 
-          {/* 자세 이미지 — 포즈별 선택 방식 */}
+          {/* ?먯꽭 ?대?吏 ???ъ쫰蹂??좏깮 諛⑹떇 */}
           <div style={IS.section}>
-            <div style={IS.sectionTitle}>🔥 자세 이미지 (4자세 × 2표정)</div>
-            <p style={IS.hint}>자세를 눌러 흥분 5장 → 1장 선택 → 절정 5장 → 1장 선택하세요.</p>
+            <div style={IS.sectionTitle}>?뵦 ?먯꽭 ?대?吏 (4?먯꽭 횞 2?쒖젙)</div>
+            <p style={IS.hint}>?먯꽭瑜??뚮윭 ?λ텇 5????1???좏깮 ???덉젙 5????1???좏깮?섏꽭??</p>
 
 
-            {/* 4개 자세 카드 */}
+            {/* 4媛??먯꽭 移대뱶 */}
             {POSES.map(({ key: poseKey, label: poseLabel }) => {
               const aroused = selectedPoseImages[`${poseKey}_aroused`]
               const climax = selectedPoseImages[`${poseKey}_climax`]
@@ -1374,7 +1404,7 @@ export default function FemaleCharacterCreatePage({
               const colStyle: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, borderRight: '1px solid #ffffff11', paddingRight: 8 }
               const colStyleR: React.CSSProperties = { ...colStyle, borderRight: 'none', paddingRight: 0, paddingLeft: 8 }
 
-              // 각 표정별 버튼 렌더
+              // 媛??쒖젙蹂?踰꾪듉 ?뚮뜑
               const renderCol = (exprKey: 'aroused' | 'climax', label: string, selectedUrl: string | undefined, variantUrls: string[], colSt: React.CSSProperties) => {
                 const isGeneratingThis = generatingVariants && activePoseKey === poseKey && activeExprStep === exprKey
                 const canGenClimax = false
@@ -1405,45 +1435,45 @@ export default function FemaleCharacterCreatePage({
                             setSelectedPoseImages(prev => { const n = { ...prev }; delete n[`${poseKey}_${exprKey}`]; return n })
                             setActivePoseKey(poseKey); setActiveExprStep(exprKey)
                             handleGenVariants(poseKey, exprKey)
-                          }}>🔄 다시</button>
+                          }}>?봽 ?ㅼ떆</button>
                         <button
                           style={{ background: 'rgba(201,168,76,0.15)', border: '1px solid #c9a84c66', color: '#c9a84c', borderRadius: 6, padding: '4px 6px', fontSize: 11, cursor: 'pointer' }}
-                          title="성감대 위치 조정"
+                          title="?깃컧? ?꾩튂 議곗젙"
                           onClick={() => {
                             const savedKey = `${poseKey}_${exprKey}_hotspots`
                             const fallbackKey = `${poseKey}_aroused_hotspots`
                             const savedZones = (selectedPoseImages[savedKey] ?? selectedPoseImages[fallbackKey]) as any
                             setHotspotEditorInfo({ poseKey, exprKey, imageUrl: selectedUrl, savedZones })
                           }}>
-                          📍
+                          ?뱧
                         </button>
                       </div>
                     ) : isGeneratingThis ? (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', padding: '8px 0' }}>
                         <style>{`@keyframes col-spin2{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
                         <div style={{ width: 36, height: 36, border: '3px solid #ffffff22', borderTop: '3px solid #c9a84c', borderRadius: '50%', animation: 'col-spin2 0.8s linear infinite' }} />
-                        <span style={{ fontSize: 11, color: '#ffffff88', textAlign: 'center' }}>{variantProgress || '배경 생성 중...'}</span>
+                        <span style={{ fontSize: 11, color: '#ffffff88', textAlign: 'center' }}>{variantProgress || '諛곌꼍 ?앹꽦 以?..'}</span>
                         <button style={{ background: '#e9455688', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 12px', fontSize: 11, cursor: 'pointer', width: '100%' }}
-                          onClick={handleCancelVariants}>✕ 취소</button>
+                          onClick={handleCancelVariants}>??痍⑥냼</button>
                       </div>
                     ) : variantUrls.filter(Boolean).length > 0 ? (
                       <button style={{ background: 'none', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.4 : 1 }}
                         disabled={busy}
-                        onClick={() => handleGenVariants(poseKey, exprKey)}>🔄 다시 생성</button>
+                        onClick={() => handleGenVariants(poseKey, exprKey)}>?봽 ?ㅼ떆 ?앹꽦</button>
                     ) : canGenClimax ? (
-                      <span style={{ color: '#ffffff33', fontSize: 10 }}>흥분 선택 후</span>
+                      <span style={{ color: '#ffffff33', fontSize: 10 }}>?λ텇 ?좏깮 ??/span>
                     ) : (
                       <button style={{ ...IS.genBtn, margin: 0, width: '100%', fontSize: 11, padding: '4px 0', opacity: (busy || (exprKey === 'climax' && !aroused)) ? 0.35 : 1, cursor: (busy || (exprKey === 'climax' && !aroused)) ? 'not-allowed' : 'pointer' }}
                         disabled={busy || (exprKey === 'climax' && !aroused)}
                         onClick={() => handleGenVariants(poseKey, exprKey)}>
-                        🔥 생성
+                        ?뵦 ?앹꽦
                       </button>
                     )}
                   </div>
                 )
               }
 
-              // 스프라이트 애니메이션 컬럼 렌더 (흥분+절정 각각)
+              // ?ㅽ봽?쇱씠???좊땲硫붿씠??而щ읆 ?뚮뜑 (?λ텇+?덉젙 媛곴컖)
               const renderVideoCol = (exprKey: 'aroused' | 'climax', label: string, colSt: React.CSSProperties) => {
                 const spriteKey = `${poseKey}_${exprKey}`
                 const spriteUrls = poseSprites[spriteKey]
@@ -1452,7 +1482,7 @@ export default function FemaleCharacterCreatePage({
                 const done = !!spriteUrls?.length
                 return (
                   <div style={colSt}>
-                    <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>{label} 애니</span>
+                    <span style={{ color: '#ffffff66', fontSize: 11, fontWeight: 'bold' }}>{label} ?좊땲</span>
                     {done ? (
                       <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 6, border: '1px solid #e9456066', overflow: 'hidden', cursor: 'zoom-in' }}
                         onClick={() => setEnlargedSprite({ urls: spriteUrls, poseKey, exprKey })}>
@@ -1460,12 +1490,12 @@ export default function FemaleCharacterCreatePage({
                       </div>
                     ) : (
                       <div style={{ width: '100%', aspectRatio: '3/4', background: '#ffffff05', borderRadius: 6, border: '1px dashed #ffffff11', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 22, color: '#ffffff15' }}>🎞️</span>
+                        <span style={{ fontSize: 22, color: '#ffffff15' }}>?렄截?/span>
                       </div>
                     )}
                     {isGen ? (
                       <button style={{ border: '1px solid #e9456055', borderRadius: 6, padding: '4px 0', width: '100%', fontSize: 11, cursor: 'not-allowed', background: 'none', color: '#e94560' }}>
-                        ⏳ 생성 중...
+                        ???앹꽦 以?..
                       </button>
                     ) : (
                       <button
@@ -1480,18 +1510,18 @@ export default function FemaleCharacterCreatePage({
                             const merged = { ...(row?.pose_images ?? {}), ...Object.fromEntries(urls.map((u, i) => [`${spriteKey}_sprite_${i}`, u])) }
                             await supabase.from('female_characters').update({ pose_images: merged }).eq('id', charId)
                           } catch (e: any) {
-                            alert(`애니메이션 생성 실패: ${e.message}`)
+                            alert(`?좊땲硫붿씠???앹꽦 ?ㅽ뙣: ${e.message}`)
                           } finally {
                             setSpriteGenerating(prev => ({ ...prev, [spriteKey]: false }))
                           }
                         }}
-                      >{done ? '🔄 재생성' : '▶ 애니 생성'}</button>
+                      >{done ? '?봽 ?ъ깮?? : '???좊땲 ?앹꽦'}</button>
                     )}
                     {srcUrl && (() => {
                       const hasHotspot = !!(selectedPoseImages[`${poseKey}_${exprKey}_hotspots`] ?? selectedPoseImages[`${poseKey}_aroused_hotspots`])
                       return (
                         <div style={{ fontSize: 10, textAlign: 'center', padding: '3px 0', color: hasHotspot ? '#66BB6A' : '#e9456088' }}>
-                          {hasHotspot ? '📍 성감대 적용됨' : '📍 성감대 미설정'}
+                          {hasHotspot ? '?뱧 ?깃컧? ?곸슜?? : '?뱧 ?깃컧? 誘몄꽕??}
                         </div>
                       )
                     })()}
@@ -1501,47 +1531,47 @@ export default function FemaleCharacterCreatePage({
 
               return (
                 <div key={poseKey} style={{ background: '#ffffff08', borderRadius: 10, padding: '10px 12px', marginBottom: 10, border: done ? '1px solid #c9a84c55' : '1px solid #ffffff11' }}>
-                  {/* 헤더 */}
+                  {/* ?ㅻ뜑 */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <span style={{ color: done ? '#c9a84c' : '#ffffff', fontWeight: 'bold', fontSize: 14 }}>
-                      {done ? '✅' : '⬜'} {poseLabel}
+                      {done ? '?? : '燧?} {poseLabel}
                     </span>
                   </div>
 
-                  {/* 흥분 / 절정 / 흥분영상 / 절정영상 — 4열 동일 크기 */}
+                  {/* ?λ텇 / ?덉젙 / ?λ텇?곸긽 / ?덉젙?곸긽 ??4???숈씪 ?ш린 */}
                   <div style={{ display: 'flex', gap: 0 }}>
-                    {renderCol('aroused', '흥분', aroused, arousedVariants, colStyle)}
-                    {renderCol('climax', '절정', climax, climaxVariants, colStyle)}
-                    {renderVideoCol('aroused', '흥분', colStyle)}
-                    {renderVideoCol('climax', '절정', { ...colStyle, borderRight: 'none', paddingRight: 0 })}
+                    {renderCol('aroused', '?λ텇', aroused, arousedVariants, colStyle)}
+                    {renderCol('climax', '?덉젙', climax, climaxVariants, colStyle)}
+                    {renderVideoCol('aroused', '?λ텇', colStyle)}
+                    {renderVideoCol('climax', '?덉젙', { ...colStyle, borderRight: 'none', paddingRight: 0 })}
                   </div>
                 </div>
               )
             })}
           </div>
 
-          {/* 핫스팟 드래그 에디터 모달 */}
+          {/* ?レ뒪???쒕옒洹??먮뵒??紐⑤떖 */}
           {hotspotEditorInfo && (
             <HotspotEditor
               imageUrl={hotspotEditorInfo.imageUrl}
               poseKey={hotspotEditorInfo.poseKey}
               initialZones={hotspotEditorInfo.savedZones}
               onSave={async (zones) => {
-                // 애니 편집이면 sprite_hotspots, 사진 편집이면 hotspots — 서로 독립
+                // ?좊땲 ?몄쭛?대㈃ sprite_hotspots, ?ъ쭊 ?몄쭛?대㈃ hotspots ???쒕줈 ?낅┰
                 const key = hotspotEditorInfo.isSpriteEdit
                   ? `${hotspotEditorInfo.poseKey}_${hotspotEditorInfo.exprKey}_sprite_hotspots`
                   : `${hotspotEditorInfo.poseKey}_${hotspotEditorInfo.exprKey}_hotspots`
                 setSelectedPoseImages(prev => ({ ...prev, [key]: zones as any }))
                 setHotspotEditorInfo(null)
 
-                // localStorage 백업 (DB 실패해도 새로고침 후 복원)
+                // localStorage 諛깆뾽 (DB ?ㅽ뙣?대룄 ?덈줈怨좎묠 ??蹂듭썝)
                 try {
                   const lsKey = `hotspots_${charId}`
                   const existing = JSON.parse(localStorage.getItem(lsKey) ?? '{}')
                   localStorage.setItem(lsKey, JSON.stringify({ ...existing, [key]: zones }))
                 } catch {}
 
-                // DB update (row가 없으면 아무것도 안 함 — 완료 저장 시 포함됨)
+                // DB update (row媛 ?놁쑝硫??꾨Т寃껊룄 ???????꾨즺 ??????ы븿??
                 try {
                   const { data: row, error: selErr } = await supabase
                     .from('female_characters').select('pose_images').eq('id', charId).maybeSingle()
@@ -1554,32 +1584,150 @@ export default function FemaleCharacterCreatePage({
                     if (upErr) throw upErr
                   }
                 } catch (e: any) {
-                  console.error('핫스팟 DB 저장 실패:', e)
-                  alert(`⚠️ DB 저장 실패: ${e?.message ?? e}\n새로고침해도 이번 세션에선 유지됩니다.`)
+                  console.error('?レ뒪??DB ????ㅽ뙣:', e)
+                  alert(`?좑툘 DB ????ㅽ뙣: ${e?.message ?? e}\n?덈줈怨좎묠?대룄 ?대쾲 ?몄뀡?먯꽑 ?좎??⑸땲??`)
                   return
                 }
-                const label = hotspotEditorInfo.isSpriteEdit ? '애니' : '사진'
-                alert(`✅ ${hotspotEditorInfo.poseKey} ${hotspotEditorInfo.exprKey === 'aroused' ? '흥분' : '절정'} ${label} 성감대 저장 완료`)
+                const label = hotspotEditorInfo.isSpriteEdit ? '?좊땲' : '?ъ쭊'
+                alert(`??${hotspotEditorInfo.poseKey} ${hotspotEditorInfo.exprKey === 'aroused' ? '?λ텇' : '?덉젙'} ${label} ?깃컧? ????꾨즺`)
               }}
               onClose={() => setHotspotEditorInfo(null)}
             />
           )}
 
-          {/* 완료 버튼 */}
+          {/* ?꾨즺 踰꾪듉 */}
           <button
             style={{ ...PR.finalBtn, opacity: busy ? 0.5 : 1, width: '100%' }}
             disabled={busy}
             onClick={handleSaveAndComplete}
           >
-            {generating ? `⏳ ${genProgress}` : '💾 저장하고 완료'}
+            {generating ? `??${genProgress}` : '?뮶 ??ν븯怨??꾨즺'}
           </button>
-          <p style={{ color: '#ffffff33', fontSize: 11 }}>표정·자세 없이도 저장 가능. 나중에 추가할 수 있습니다.</p>
+          <p style={{ color: '#ffffff33', fontSize: 11 }}>?쒖젙쨌?먯꽭 ?놁씠?????媛?? ?섏쨷??異붽??????덉뒿?덈떎.</p>
         </div>
       </div>
     )
   }
 
-  // 2단계: 프로필 이미지 선택 화면
+  const PR: Record<string, React.CSSProperties> = {
+    overlay: { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    enlargeOverlay: { position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.93)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' },
+    enlargedImg: { maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: s(12), border: '2px solid #c9a84c55' },
+    confirmBox: { background: '#1a1a2e', border: '1px solid #c9a84c55', borderRadius: s(16), padding: `${s(28)}px ${s(24)}px`, width: s(300), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: s(12) },
+    confirmTitle: { color: '#c9a84c', fontSize: s(15), fontWeight: 'bold', margin: 0, textAlign: 'center' as const },
+    confirmPreview: { width: s(140), height: s(182), objectFit: 'cover', borderRadius: s(10), border: '2px solid #c9a84c44' },
+    confirmSub: { color: '#ffffff66', fontSize: s(12), margin: 0, textAlign: 'center' as const },
+    confirmBtns: { display: 'flex', gap: s(10), width: '100%' },
+    cancelBtn: { flex: 1, background: 'transparent', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: s(8), padding: `${s(10)}px`, fontSize: s(13), cursor: 'pointer' },
+    okBtn: { flex: 1, background: 'linear-gradient(90deg, #c9a84c, #e94560)', color: '#fff', border: 'none', borderRadius: s(8), padding: `${s(10)}px`, fontSize: s(13), fontWeight: 'bold', cursor: 'pointer' },
+    card: { minHeight: '100vh', background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: `${s(32)}px ${s(24)}px ${s(80)}px`, gap: s(16) },
+    subtitle: { color: '#ffffff55', fontSize: s(13), margin: 0 },
+    name: { color: '#c9a84c', fontSize: s(26), fontWeight: 'bold', margin: 0 },
+    meta: { color: '#ffffff66', fontSize: s(13), margin: 0 },
+    imgWrap: { background: 'rgba(0,0,0,0.3)', border: '1px solid #ffffff11', borderRadius: s(16), padding: s(12) },
+    mainImg: { width: s(220), height: s(286), objectFit: 'cover', borderRadius: s(12), border: '2px solid #c9a84c44', display: 'block' },
+    imgPlaceholder: { width: s(220), height: s(286), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff33', fontSize: s(13) },
+    thumbRow: { display: 'flex', gap: s(8) },
+    thumb: { width: s(60), height: s(78), objectFit: 'cover', borderRadius: s(8), cursor: 'pointer' },
+    regenBtn: { background: 'rgba(201,168,76,0.15)', border: '1px solid #c9a84c55', color: '#c9a84c', borderRadius: s(8), padding: `${s(8)}px ${s(20)}px`, fontSize: s(13), cursor: 'pointer' },
+    finalBtn: { background: 'linear-gradient(90deg, #c9a84c, #e94560)', color: '#fff', border: 'none', borderRadius: s(10), padding: `${s(14)}px ${s(28)}px`, fontSize: s(15), fontWeight: 'bold', cursor: 'pointer' },
+    backBtn: { background: 'transparent', border: '1px solid #ffffff22', color: '#ffffff55', borderRadius: s(8), padding: `${s(8)}px ${s(16)}px`, fontSize: s(13), cursor: 'pointer' },
+  }
+
+  const S: Record<string, React.CSSProperties> = {
+    container: {
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)',
+      display: 'flex', justifyContent: 'center', padding: `${s(24)}px ${s(16)}px`,
+    },
+    inner: { width: '100%', maxWidth: s(960), display: 'flex', flexDirection: 'column', gap: s(16) },
+    header: { textAlign: 'center', padding: `${s(8)}px 0 ${s(4)}px` },
+    backBtn: {
+      background: 'transparent', border: '1px solid #ffffff22', color: '#ffffff66',
+      borderRadius: s(6), padding: `${s(6)}px ${s(14)}px`, cursor: 'pointer', fontSize: s(13), marginBottom: s(12),
+    },
+    title: { color: '#c9a84c', fontSize: s(24), fontWeight: 'bold', margin: '0 0 4px' },
+    subtitle: { color: '#ffffff44', fontSize: s(12), margin: 0 },
+    card: {
+      background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c22',
+      borderRadius: s(16), padding: `${s(20)}px`, display: 'flex', flexDirection: 'column', gap: s(12),
+    },
+    cardTitle: { color: '#c9a84c', fontWeight: 'bold', fontSize: s(15), marginBottom: s(4) },
+    row: { display: 'flex', alignItems: 'center', gap: s(10), flexWrap: 'wrap' },
+    label: { color: '#ffffff88', fontSize: s(13), minWidth: s(72), flexShrink: 0 },
+    hint: { color: '#ffffff44', fontSize: s(12) },
+    input: {
+      background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
+      borderRadius: s(8), padding: `${s(8)}px ${s(12)}px`, color: '#fff', fontSize: s(14),
+      outline: 'none', flex: 1, minWidth: 0,
+    },
+    textarea: {
+      background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
+      borderRadius: s(8), padding: `${s(8)}px ${s(12)}px`, color: '#fff', fontSize: s(13),
+      outline: 'none', flex: 1, resize: 'none', fontFamily: 'inherit',
+    },
+    select: {
+      background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
+      borderRadius: s(8), padding: `${s(8)}px ${s(12)}px`, color: '#fff', fontSize: s(14),
+      outline: 'none', flex: 1,
+    },
+    chips: { display: 'flex', gap: s(8), flexWrap: 'wrap' },
+    chip: {
+      background: 'rgba(255,255,255,0.06)', border: '1px solid #ffffff22',
+      borderRadius: s(20), padding: `${s(5)}px ${s(14)}px`, color: '#ffffff66', fontSize: s(13), cursor: 'pointer',
+    },
+    chipActive: { background: 'rgba(201,168,76,0.2)', border: '1px solid #c9a84c', color: '#c9a84c' },
+    sliderRow: { display: 'flex', alignItems: 'center', gap: s(10) },
+    sliderLabel: { fontWeight: 'bold', fontSize: s(13), minWidth: s(36) },
+    slider: { flex: 1, accentColor: '#c9a84c' },
+    sliderVal: { fontWeight: 'bold', fontSize: s(14), minWidth: s(28), textAlign: 'right' },
+    tagSection: { display: 'flex', flexDirection: 'column', gap: s(6) },
+    tagLabel: { color: '#ffffff88', fontSize: s(13) },
+    tagLimit: { color: '#ffffff44', fontSize: s(11) },
+    tagGrid: { display: 'flex', flexWrap: 'wrap', gap: s(6) },
+    tag: {
+      background: 'rgba(255,255,255,0.06)', border: '1px solid #ffffff22',
+      borderRadius: s(20), padding: `${s(4)}px ${s(12)}px`, color: '#ffffff66', fontSize: s(12), cursor: 'pointer',
+    },
+    tagActive: { background: 'rgba(201,168,76,0.2)', border: '1px solid #c9a84c', color: '#c9a84c' },
+    tagActiveRed: { background: 'rgba(233,69,96,0.2)', border: '1px solid #e94560', color: '#e94560' },
+    personalityRow: { display: 'flex', alignItems: 'center', gap: s(8) },
+    persLabel: { fontWeight: 'bold', fontSize: s(12), minWidth: s(28) },
+    persEdge: { color: '#ffffff44', fontSize: s(11), minWidth: s(36), textAlign: 'center' },
+    hiddenBadge: {
+      background: 'rgba(233,69,96,0.2)', border: '1px solid #e9456055',
+      borderRadius: s(20), padding: `${s(2)}px ${s(10)}px`, color: '#e94560', fontSize: s(11), marginLeft: s(8),
+    },
+    poolNote: { color: '#ffffff33', fontSize: s(11), marginBottom: s(4) },
+    autoBar: { flex: 1, height: s(6), background: 'rgba(255,255,255,0.08)', borderRadius: s(3), overflow: 'hidden' },
+    autoFill: { height: '100%', borderRadius: s(3), transition: 'width 0.2s' },
+    erogenousNote: { color: '#ffffff44', fontSize: s(11), margin: '0 0 4px' },
+    erogenousRow: { display: 'flex', alignItems: 'center', gap: s(8), marginBottom: s(4) },
+    erogenousLabel: { fontWeight: 'bold', fontSize: s(13), minWidth: s(72) },
+    erogenousNote2: { color: '#ffffff33', fontSize: s(10), minWidth: 0 },
+    eroLabel: { fontWeight: 'bold', fontSize: s(11), width: s(72), flexShrink: 0, color: '#ffffffcc' },
+    eroDivider: { textAlign: 'center' as const, color: '#c9a84c88', fontSize: s(11), margin: `${s(8)}px 0 ${s(4)}px` },
+    segments: { display: 'flex', gap: s(3), flex: 1 },
+    segment: { flex: 1, height: s(20), borderRadius: s(3), cursor: 'pointer', transition: 'all 0.15s' },
+    erogenousBarWrap: { flex: 1, height: s(6), background: 'rgba(255,255,255,0.08)', borderRadius: s(3), overflow: 'hidden' },
+    erogenousBarFill: { height: '100%', borderRadius: s(4), transition: 'width 0.15s' },
+    twoCol: { display: 'flex', gap: s(16), alignItems: 'flex-start' },
+    leftCol: { flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column' as const, gap: s(16) },
+    rightCol: { width: s(320), flexShrink: 0, display: 'flex', flexDirection: 'column' as const, gap: s(16) },
+    prefSectionLabel: { fontSize: s(11), color: '#ffffff88', margin: '2px 0 2px', display: 'flex', justifyContent: 'space-between' as const },
+    prefTotal: { fontWeight: 'bold', color: '#c9a84c', fontSize: s(12) },
+    prefVal: { fontWeight: 'bold', fontSize: s(13), width: s(24), textAlign: 'center' as const, flexShrink: 0, color: '#ffffffcc' },
+    error: { color: '#e94560', fontSize: s(13), textAlign: 'center', margin: 0 },
+    completeBtn: {
+      background: 'linear-gradient(135deg, #c9a84c, #e94560)',
+      border: 'none', borderRadius: s(12), padding: `${s(16)}px`,
+      color: '#fff', fontWeight: 'bold', fontSize: s(16), cursor: 'pointer', marginTop: s(8),
+    },
+    setTab: { background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22', color: '#ffffff88', borderRadius: s(6), padding: `${s(5)}px ${s(12)}px`, fontSize: s(12), cursor: 'pointer' },
+    setTabActive: { background: 'rgba(201,168,76,0.25)', border: '1px solid #c9a84c', color: '#c9a84c' },
+  }
+
+  // 2?④퀎: ?꾨줈???대?吏 ?좏깮 ?붾㈃
   if (phase === 'profile_review') {
     const activeImg = profileImages[selectedProfileIdx]
     const mainImgH = Math.min(Math.round(window.innerHeight * 0.55), 520)
@@ -1588,27 +1736,27 @@ export default function FemaleCharacterCreatePage({
     const thumbW = Math.round(thumbH * 3 / 4)
     return (
       <div style={S.container}>
-        {/* 확정 확인 모달 */}
+        {/* ?뺤젙 ?뺤씤 紐⑤떖 */}
         {confirmingProfile && (
           <div style={PR.overlay} onClick={() => setConfirmingProfile(false)}>
             <div style={PR.confirmBox} onClick={e => e.stopPropagation()}>
-              <p style={PR.confirmTitle}>이 이미지로 확정할까요?</p>
-              <img src={activeImg} style={PR.confirmPreview} alt="선택" />
-              <p style={PR.confirmSub}>확정 후 이 얼굴 기반으로 표정·자세 이미지가 생성됩니다.</p>
+              <p style={PR.confirmTitle}>???대?吏濡??뺤젙?좉퉴??</p>
+              <img src={activeImg} style={PR.confirmPreview} alt="?좏깮" />
+              <p style={PR.confirmSub}>?뺤젙 ?????쇨뎬 湲곕컲?쇰줈 ?쒖젙쨌?먯꽭 ?대?吏媛 ?앹꽦?⑸땲??</p>
               <div style={PR.confirmBtns}>
-                <button style={PR.cancelBtn} onClick={() => setConfirmingProfile(false)}>취소</button>
-                <button style={PR.okBtn} onClick={handleFinalizeProfile}>✅ 이걸로 확정</button>
+                <button style={PR.cancelBtn} onClick={() => setConfirmingProfile(false)}>痍⑥냼</button>
+                <button style={PR.okBtn} onClick={handleFinalizeProfile}>???닿구濡??뺤젙</button>
               </div>
             </div>
           </div>
         )}
 
         <div style={PR.card}>
-          <p style={PR.subtitle}>{generating ? `대표 이미지 생성 중... (${genProgress})` : '마음에 드는 이미지를 선택해주세요'}</p>
+          <p style={PR.subtitle}>{generating ? `????대?吏 ?앹꽦 以?.. (${genProgress})` : '留덉쓬???쒕뒗 ?대?吏瑜??좏깮?댁＜?몄슂'}</p>
           <h2 style={PR.name}>{nickname}</h2>
-          <p style={PR.meta}>{age}세 · {married} · {job} · {location}</p>
+          <p style={PR.meta}>{age}??쨌 {married} 쨌 {job} 쨌 {location}</p>
 
-          {/* 메인 이미지 — 인-플레이스 휠줌 + 드래그 */}
+          {/* 硫붿씤 ?대?吏 ?????뚮젅?댁뒪 ?좎쨲 + ?쒕옒洹?*/}
           <div
             ref={profileImgWrapRef}
             style={{ ...PR.imgWrap, padding: 0, width: mainImgW, height: mainImgH, overflow: 'hidden', borderRadius: 12, cursor: profileWasDragging.current ? 'grabbing' : profileZoomScale > 1 ? 'grab' : 'zoom-in', userSelect: 'none' }}
@@ -1635,13 +1783,13 @@ export default function FemaleCharacterCreatePage({
             onClick={() => { if (!profileWasDragging.current) setEnlargedProfile(true) }}
           >
             {activeImg
-              ? <img src={activeImg} alt="프로필" draggable={false}
+              ? <img src={activeImg} alt="?꾨줈?? draggable={false}
                   style={{ ...PR.mainImg, width: mainImgW, height: mainImgH, transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s', cursor: 'inherit' }} />
-              : <div style={{ ...PR.imgPlaceholder, width: mainImgW, height: mainImgH }}>생성 중...</div>
+              : <div style={{ ...PR.imgPlaceholder, width: mainImgW, height: mainImgH }}>?앹꽦 以?..</div>
             }
           </div>
 
-          {/* 전체화면 모달 */}
+          {/* ?꾩껜?붾㈃ 紐⑤떖 */}
           {enlargedProfile && activeImg && (
             <div style={PR.enlargeOverlay} onClick={() => { setEnlargedProfile(false); setProfileZoomScale(1); setProfilePan({ x: 0, y: 0 }) }}>
               <div
@@ -1660,13 +1808,13 @@ export default function FemaleCharacterCreatePage({
                   window.addEventListener('mouseup', onUp)
                 }}
               >
-                <img src={activeImg} alt="확대" draggable={false} style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c55', transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
+                <img src={activeImg} alt="?뺣?" draggable={false} style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c55', transform: `translate(${profilePan.x}px, ${profilePan.y}px) scale(${profileZoomScale})`, transformOrigin: 'center', transition: profileDragRef.current ? 'none' : 'transform 0.05s' }} />
               </div>
-              <div style={{ color: '#ffffff44', fontSize: 12, marginTop: 12 }}>휠: 확대/축소 · 드래그: 이동 · 바깥 클릭으로 닫기</div>
+              <div style={{ color: '#ffffff44', fontSize: 12, marginTop: 12 }}>?? ?뺣?/異뺤냼 쨌 ?쒕옒洹? ?대룞 쨌 諛붽묑 ?대┃?쇰줈 ?リ린</div>
             </div>
           )}
 
-          {/* 썸네일 (2장 이상) */}
+          {/* ?몃꽕??(2???댁긽) */}
           {profileImages.length > 1 && (
             <div style={PR.thumbRow}>
               {profileImages.map((url, i) => (
@@ -1678,31 +1826,31 @@ export default function FemaleCharacterCreatePage({
             </div>
           )}
 
-          {/* 재생성 / 취소 */}
+          {/* ?ъ깮??/ 痍⑥냼 */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', maxWidth: 280 }}>
             <button
               style={{ ...PR.regenBtn, opacity: generating ? 0.5 : 1, width: '100%' }}
               disabled={generating}
               onClick={handleRegenProfile}
             >
-              {generating ? `⏳ 생성 중 ${genProgress}` : '🔄 5장 재생성'}
+              {generating ? `???앹꽦 以?${genProgress}` : '?봽 5???ъ깮??}
             </button>
             {generating && (
               <button
                 style={{ background: '#e9455688', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 20px', fontSize: 12, cursor: 'pointer', width: '100%' }}
                 onClick={handleCancelProfile}
-              >✕ 취소</button>
+              >??痍⑥냼</button>
             )}
           </div>
 
-          {/* 확정 버튼 */}
+          {/* ?뺤젙 踰꾪듉 */}
           {activeImg && !generating && (
             <button style={{ ...PR.finalBtn, width: '100%', maxWidth: 280 }} onClick={() => setConfirmingProfile(true)}>
-              ✅ 이 이미지로 확정 → 표정·자세 생성
+              ?????대?吏濡??뺤젙 ???쒖젙쨌?먯꽭 ?앹꽦
             </button>
           )}
 
-          <button style={PR.backBtn} onClick={() => setPhase('form')}>← 폼으로 돌아가기</button>
+          <button style={PR.backBtn} onClick={() => setPhase('form')}>???쇱쑝濡??뚯븘媛湲?/button>
         </div>
       </div>
     )
@@ -1711,30 +1859,30 @@ export default function FemaleCharacterCreatePage({
   return (
     <div style={S.container}>
       <div style={S.inner}>
-        {/* 헤더 */}
+        {/* ?ㅻ뜑 */}
         <div style={S.header}>
-          <button style={S.backBtn} onClick={onBack}>← 뒤로</button>
-          <h1 style={S.title}>👑 여성 캐릭터 생성</h1>
-          <p style={S.subtitle}>창조자 전용 — 플레이어에게 공개됩니다</p>
+          <button style={S.backBtn} onClick={onBack}>???ㅻ줈</button>
+          <h1 style={S.title}>?몣 ?ъ꽦 罹먮┃???앹꽦</h1>
+          <p style={S.subtitle}>李쎌“???꾩슜 ???뚮젅?댁뼱?먭쾶 怨듦컻?⑸땲??/p>
         </div>
 
         <div style={S.twoCol}>
-        {/* 왼쪽 — 캐릭터 정보 */}
+        {/* ?쇱そ ??罹먮┃???뺣낫 */}
         <div style={S.leftCol}>
-        {/* 기본 정보 */}
+        {/* 湲곕낯 ?뺣낫 */}
         <div style={S.card}>
-          <div style={S.cardTitle}>📋 기본 정보</div>
+          <div style={S.cardTitle}>?뱥 湲곕낯 ?뺣낫</div>
           <div style={S.row}>
-            <label style={S.label}>닉네임</label>
-            <input style={S.input} value={nickname} onChange={e => setNickname(e.target.value)} placeholder="10자 이내, 실명 불가" maxLength={10} />
+            <label style={S.label}>?됰꽕??/label>
+            <input style={S.input} value={nickname} onChange={e => setNickname(e.target.value)} placeholder="10???대궡, ?ㅻ챸 遺덇?" maxLength={10} />
           </div>
           <div style={S.row}>
-            <label style={S.label}>나이</label>
+            <label style={S.label}>?섏씠</label>
             <input style={{ ...S.input, width: 80 }} type="number" value={age} onChange={e => setAge(e.target.value)} min={20} max={49} />
-            <span style={S.hint}>{parseInt(age) < 30 ? '20대' : parseInt(age) < 40 ? '30대' : '40대'}</span>
+            <span style={S.hint}>{parseInt(age) < 30 ? '20?' : parseInt(age) < 40 ? '30?' : '40?'}</span>
           </div>
           <div style={S.row}>
-            <label style={S.label}>결혼여부</label>
+            <label style={S.label}>寃고샎?щ?</label>
             <div style={S.chips}>
               {MARRIED_TYPES.map(m => (
                 <button key={m} style={{ ...S.chip, ...(married === m ? S.chipActive : {}) }} onClick={() => setMarried(m)}>{m}</button>
@@ -1742,17 +1890,17 @@ export default function FemaleCharacterCreatePage({
             </div>
           </div>
           <div style={S.row}>
-            <label style={S.label}>직업</label>
-            <input style={S.input} value={job} onChange={e => setJob(e.target.value)} placeholder="예) 간호사, 바리스타" />
+            <label style={S.label}>吏곸뾽</label>
+            <input style={S.input} value={job} onChange={e => setJob(e.target.value)} placeholder="?? 媛꾪샇?? 諛붾━?ㅽ?" />
           </div>
           <div style={S.row}>
-            <label style={S.label}>배치 장소</label>
+            <label style={S.label}>諛곗튂 ?μ냼</label>
             <select style={S.select} value={location} onChange={e => setLocation(e.target.value)}>
               {LOCATIONS.map(l => <option key={l} value={l} style={{ background: '#1a0a2e', color: '#fff' }}>{l}</option>)}
             </select>
           </div>
           <div style={S.row}>
-            <label style={S.label}>체형</label>
+            <label style={S.label}>泥댄삎</label>
             <div style={S.chips}>
               {BODY_TYPES.map(b => (
                 <button key={b} style={{ ...S.chip, ...(bodyType === b ? S.chipActive : {}) }} onClick={() => setBodyType(b)}>{b}</button>
@@ -1760,29 +1908,29 @@ export default function FemaleCharacterCreatePage({
             </div>
           </div>
           <div style={S.row}>
-            <label style={S.label}>자기소개 <span style={{ color: '#ffffff33', fontSize: 11 }}>자동생성</span></label>
+            <label style={S.label}>?먭린?뚭컻 <span style={{ color: '#ffffff33', fontSize: 11 }}>?먮룞?앹꽦</span></label>
             <div style={{ ...S.textarea, minHeight: 48, color: autoIntro ? '#ffffffcc' : '#ffffff33', fontSize: 13, padding: '10px 12px', display: 'flex', alignItems: 'center' }}>
-              {autoIntro || '기본 정보와 관심사를 입력하면 자동으로 생성됩니다.'}
+              {autoIntro || '湲곕낯 ?뺣낫? 愿?ъ궗瑜??낅젰?섎㈃ ?먮룞?쇰줈 ?앹꽦?⑸땲??'}
             </div>
           </div>
         </div>
 
-        {/* 외모 스탯 */}
+        {/* ?몃え ?ㅽ꺈 */}
         <div style={S.card}>
-          <div style={S.cardTitle}>💄 외모 스탯</div>
-          {/* 키 — 별도 cm 값 */}
+          <div style={S.cardTitle}>?뭵 ?몃え ?ㅽ꺈</div>
+          {/* ????蹂꾨룄 cm 媛?*/}
           <div style={S.sliderRow}>
-            <span style={{ ...S.sliderLabel, color: '#4FC3F7' }}>키</span>
+            <span style={{ ...S.sliderLabel, color: '#4FC3F7' }}>??/span>
             <input type="range" min={140} max={185} step={5} value={heightCm}
               onChange={e => setHeightCm(Number(e.target.value))} style={S.slider} />
             <span style={{ ...S.sliderVal, color: '#4FC3F7', minWidth: 52 }}>{heightCm}cm</span>
           </div>
-          {/* 얼굴/몸매/패션 — 합계 180 고정, 패션 자동 */}
-          <div style={S.poolNote}>얼굴 + 몸매 + 패션 합계 {LOOK_TOTAL}pt 고정 · 패션 자동조정</div>
+          {/* ?쇨뎬/紐몃ℓ/?⑥뀡 ???⑷퀎 180 怨좎젙, ?⑥뀡 ?먮룞 */}
+          <div style={S.poolNote}>?쇨뎬 + 紐몃ℓ + ?⑥뀡 ?⑷퀎 {LOOK_TOTAL}pt 怨좎젙 쨌 ?⑥뀡 ?먮룞議곗젙</div>
           {[
-            { label: '얼굴', value: face, key: 'face' as const, color: '#FF6B9D' },
-            { label: '몸매', value: body, key: 'body' as const, color: '#FF5722' },
-            { label: '패션', value: fashion, key: 'auto' as const, color: '#c9a84c' },
+            { label: '?쇨뎬', value: face, key: 'face' as const, color: '#FF6B9D' },
+            { label: '紐몃ℓ', value: body, key: 'body' as const, color: '#FF5722' },
+            { label: '?⑥뀡', value: fashion, key: 'auto' as const, color: '#c9a84c' },
           ].map(({ label, value, key, color }) => (
             <div key={label} style={S.sliderRow}>
               <span style={{ ...S.sliderLabel, color }}>{label}</span>
@@ -1799,38 +1947,38 @@ export default function FemaleCharacterCreatePage({
           ))}
         </div>
 
-        {/* 관심사 */}
+        {/* 愿?ъ궗 */}
         <div style={S.card}>
-          <div style={S.cardTitle}>💬 관심사 설정</div>
+          <div style={S.cardTitle}>?뮠 愿?ъ궗 ?ㅼ젙</div>
           <div style={S.tagSection}>
-            <div style={S.tagLabel}>관심사 태그 <span style={S.tagLimit}>(최대 5개)</span></div>
+            <div style={S.tagLabel}>愿?ъ궗 ?쒓렇 <span style={S.tagLimit}>(理쒕? 5媛?</span></div>
             <div style={S.tagGrid}>
               {INTEREST_TAGS.map(t => (
                 <button key={t} style={{ ...S.tag, ...(interestTags.includes(t) ? S.tagActive : {}) }}
                   onClick={() => toggleTag(t, interestTags, setInterestTags, 5)}>{t}</button>
               ))}
             </div>
-            <input style={{ ...S.input, marginTop: 8 }} value={interestCustom} onChange={e => setInterestCustom(e.target.value)} placeholder="직접입력 (최대 2개, 쉼표 구분)" />
+            <input style={{ ...S.input, marginTop: 8 }} value={interestCustom} onChange={e => setInterestCustom(e.target.value)} placeholder="吏곸젒?낅젰 (理쒕? 2媛? ?쇳몴 援щ텇)" />
           </div>
           <div style={S.tagSection}>
-            <div style={S.tagLabel}>싫어하는 것 <span style={S.tagLimit}>(최대 5개)</span></div>
+            <div style={S.tagLabel}>?レ뼱?섎뒗 寃?<span style={S.tagLimit}>(理쒕? 5媛?</span></div>
             <div style={S.tagGrid}>
               {DISLIKE_TAGS.map(t => (
                 <button key={t} style={{ ...S.tag, ...(dislikeTags.includes(t) ? S.tagActiveRed : {}) }}
                   onClick={() => toggleTag(t, dislikeTags, setDislikeTags, 5)}>{t}</button>
               ))}
             </div>
-            <input style={{ ...S.input, marginTop: 8 }} value={dislikeCustom} onChange={e => setDislikeCustom(e.target.value)} placeholder="직접입력 (최대 1개)" />
+            <input style={{ ...S.input, marginTop: 8 }} value={dislikeCustom} onChange={e => setDislikeCustom(e.target.value)} placeholder="吏곸젒?낅젰 (理쒕? 1媛?" />
           </div>
         </div>
 
-        {/* 성격 슬라이더 */}
+        {/* ?깃꺽 ?щ씪?대뜑 */}
         <div style={S.card}>
-          <div style={S.cardTitle}>🧠 성격 설정</div>
+          <div style={S.cardTitle}>?쭬 ?깃꺽 ?ㅼ젙</div>
           {[
-            { key: 'introvert' as const, label: '내성', left: '내성적', right: '외향적', color: '#4FC3F7' },
-            { key: 'indirect' as const, label: '화법', left: '우회적', right: '직설적', color: '#66BB6A' },
-            { key: 'friendly' as const, label: '태도', left: '친근함', right: '도도함', color: '#FF9800' },
+            { key: 'introvert' as const, label: '?댁꽦', left: '?댁꽦??, right: '?명뼢??, color: '#4FC3F7' },
+            { key: 'indirect' as const, label: '?붾쾿', left: '?고쉶??, right: '吏곸꽕??, color: '#66BB6A' },
+            { key: 'friendly' as const, label: '?쒕룄', left: '移쒓렐??, right: '?꾨룄??, color: '#FF9800' },
           ].map(({ key, label, left, right, color }) => (
             <div key={key} style={S.personalityRow}>
               <span style={{ ...S.persLabel, color }}>{label}</span>
@@ -1842,9 +1990,9 @@ export default function FemaleCharacterCreatePage({
               <span style={{ ...S.sliderVal, color }}>{personality[key]}</span>
             </div>
           ))}
-          {/* 데이트 비용 부담율 */}
+          {/* ?곗씠??鍮꾩슜 遺?댁쑉 */}
           <div style={{ ...S.personalityRow, marginTop: 8 }}>
-            <span style={{ ...S.persLabel, color: '#c9a84c' }}>비용</span>
+            <span style={{ ...S.persLabel, color: '#c9a84c' }}>鍮꾩슜</span>
             <span style={S.persEdge}>0%</span>
             <input type="range" min={0} max={100} step={5} value={dateCostShare}
               onChange={e => setDateCostShare(Number(e.target.value))}
@@ -1853,96 +2001,100 @@ export default function FemaleCharacterCreatePage({
             <span style={{ ...S.sliderVal, color: '#c9a84c', minWidth: 32 }}>{dateCostShare}%</span>
           </div>
           <div style={{ color: '#ffffff44', fontSize: 10, marginBottom: 4, paddingLeft: 2 }}>
-            💳 데이트 비용 부담율 — 0%: 남성 전액 / 50%: 더치페이 / 100%: 여성 전액
+            ?뮩 ?곗씠??鍮꾩슜 遺?댁쑉 ??0%: ?⑥꽦 ?꾩븸 / 50%: ?붿튂?섏씠 / 100%: ?ъ꽦 ?꾩븸
           </div>
 
           <div style={S.row}>
-            <label style={S.label}>창조자 메모 <span style={S.hint}>(선택)</span></label>
-            <textarea style={S.textarea} value={memo} onChange={e => setMemo(e.target.value)} placeholder="AI 대화에 직접 주입되는 메모 (100자 이내)" maxLength={100} rows={2} />
+            <label style={S.label}>李쎌“??硫붾え <span style={S.hint}>(?좏깮)</span></label>
+            <textarea style={S.textarea} value={memo} onChange={e => setMemo(e.target.value)} placeholder="AI ??붿뿉 吏곸젒 二쇱엯?섎뒗 硫붾え (100???대궡)" maxLength={100} rows={2} />
           </div>
         </div>
 
-        {/* 성감대 — 숨김 스탯 */}
+        {/* ?깃컧? ???④? ?ㅽ꺈 */}
         <div style={{ ...S.card, borderColor: '#e9456033' }}>
-          <div style={S.cardTitle}>🔞 성감대 설정 <span style={S.hiddenBadge}>플레이어 비공개</span></div>
+          <div style={S.cardTitle}>?뵞 ?깃컧? ?ㅼ젙 <span style={S.hiddenBadge}>?뚮젅?댁뼱 鍮꾧났媛?/span></div>
 
-          {/* 일반 성감대 */}
-          <div style={{ margin: '4px 0' }}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>일반 성감대 · -3=거부 · +5=최고</span>
-          </div>
-          {/* 입·입술, 목·귀, 겨드랑이 */}
-          {(['mouth','neckEar','armpit'] as const).map(key => {
-            const labelMap = { mouth:'입·입술', neckEar:'목·귀', armpit:'겨드랑이' }
-            const val = genEro[key]; const color = sensColor(val)
-            return (
-              <div key={key} style={S.erogenousRow}>
-                <span style={S.eroLabel}>{labelMap[key]}</span>
-                <input type="range" min={-5} max={5} step={1} value={val}
-                  onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
-                <span style={{ color, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
-              </div>
-            )
-          })}
-          {/* 가슴 — 독립 슬라이더 */}
-          <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: sensColor(breast) }}>가슴</span>
-            <input type="range" min={-5} max={5} step={1} value={breast}
-              onChange={e => setGenEro('breast', Number(e.target.value))} style={S.slider} />
-            <span style={{ color: sensColor(breast), fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{breast}</span>
-          </div>
-          {/* 엉덩이/허벅지, 항문 — 가슴 아래 */}
-          {(['thigh','anal'] as const).map(key => {
-            const labelMap = { thigh:'엉덩이/허벅지', anal:'항문' }
-            const val = genEro[key]; const color = sensColor(val)
-            return (
-              <div key={key} style={S.erogenousRow}>
-                <span style={S.eroLabel}>{labelMap[key]}</span>
-                <input type="range" min={-5} max={5} step={1} value={val}
-                  onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
-                <span style={{ color, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
-              </div>
-            )
-          })}
-
-          {/* 핵심 성감대 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 핵심 성감대 ──</div>
+          {/* ?쇰컲 ?깃컧? */}
+          {genEroToast && (
+            <div style={{ background: '#e94560', color: '#fff', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 'bold', marginBottom: 6, textAlign: 'center' }}>
+              ?좑툘 {genEroToast}
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0' }}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>각 min 4 · 범위 4~11 · 질내부 자동</span>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>?쇰컲 ?깃컧? 쨌 min 1 쨌 max 4 쨌 ?됰뜦???먮룞</span>
+            <span style={{ fontSize: 12, fontWeight: 'bold', color: (genEro.breast + genEro.neckEar + genEro.armpit + genEro.mouth + genThighAuto) === GEN_TOTAL ? '#c9a84c' : '#e94560' }}>
+              {genEro.breast + genEro.neckEar + genEro.armpit + genEro.mouth + genThighAuto} / {GEN_TOTAL}pt
+            </span>
+          </div>
+          {(['mouth','neckEar','armpit','breast'] as const).map(key => {
+            const labelMap = { mouth:'?끒룹엯??, neckEar:'紐㈑룰?', armpit:'寃⑤뱶?묒씠', breast:'媛?? }
+            const val = genEro[key]
+            const pct = ((val - GEN_MIN) / (GEN_MAX - GEN_MIN)) * 100
+            const col = `hsl(${Math.round(30 + pct * 3)}, 80%, 60%)`
+            return (
+              <div key={key} style={S.erogenousRow}>
+                <span style={{ ...S.eroLabel, color: col }}>{labelMap[key]}</span>
+                <input type="range" min={GEN_MIN} max={GEN_MAX} step={1} value={val}
+                  onChange={e => setGenEro(key, Number(e.target.value))} style={S.slider} />
+                <span style={{ color: col, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
+              </div>
+            )
+          })}
+          {/* ?됰뜦???덈쾮吏 ???먮룞 */}
+          <div style={S.erogenousRow}>
+            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>?됰뜦???덈쾮吏 (?먮룞)</span>
+            <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((genThighAuto - GEN_MIN) / (GEN_MAX - GEN_MIN)) * 100}%`, background: '#f77f00' }} /></div>
+            <span style={{ color: '#f77f00', fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{genThighAuto}</span>
+          </div>
+
+          {/* ?듭떖 ?깃컧? */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>?? ?듭떖 ?깃컧? ??</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0' }}>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>?대━?좊━??min 4 쨌 吏??먮룞</span>
             <span style={{ fontSize: 12, fontWeight: 'bold', color: (clitoris + vagina) === CORE_TOTAL ? '#c9a84c' : '#e94560' }}>
               {clitoris + vagina} / {CORE_TOTAL}pt
             </span>
           </div>
-          {/* 클리토리스 */}
+          {/* ?대━?좊━??*/}
           <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: sensColor10(clitoris) }}>클리토리스</span>
+            <span style={{ ...S.eroLabel, color: sensColor10(clitoris) }}>?대━?좊━??/span>
             <input type="range" min={CORE_MIN} max={CORE_MAX} step={1} value={clitoris}
               onChange={e => setClitoris(Math.min(CORE_MAX, Math.max(CORE_MIN, Number(e.target.value))))} style={S.slider} />
             <span style={{ color: sensColor10(clitoris), fontWeight: 'bold', fontSize: 13, width: 24, textAlign: 'center', flexShrink: 0 }}>{clitoris}</span>
           </div>
-          {/* 질내부 — 자동 */}
+          {/* 吏????먮룞 */}
           <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: sensColor10(vagina) }}>질 내부 (자동)</span>
+            <span style={{ ...S.eroLabel, color: sensColor10(vagina) }}>吏?(?먮룞)</span>
             <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((vagina - CORE_MIN) / (CORE_MAX - CORE_MIN)) * 100}%`, background: sensColor10(vagina) }} /></div>
             <span style={{ color: sensColor10(vagina), fontWeight: 'bold', fontSize: 13, width: 24, textAlign: 'center', flexShrink: 0 }}>{vagina}</span>
           </div>
+          {/* ??Ц ???낅┰ ?щ씪?대뜑 */}
+          <div style={{ ...S.eroDivider, marginTop: 8 }}>?? ??Ц ??</div>
+          <div style={{ color: '#ffffff88', fontSize: 11, marginBottom: 4 }}>?듭떖 ?깃컧? 쨌 ?낅┰ (-5~+5)</div>
+          <div style={S.erogenousRow}>
+            <span style={{ ...S.eroLabel, color: sensColor(anal) }}>??Ц</span>
+            <input type="range" min={ANAL_MIN} max={ANAL_MAX} step={1} value={anal}
+              onChange={e => setAnal(Math.min(ANAL_MAX, Math.max(ANAL_MIN, Number(e.target.value))))} style={S.slider} />
+            <span style={{ color: sensColor(anal), fontWeight: 'bold', fontSize: 13, width: 24, textAlign: 'center', flexShrink: 0 }}>{anal}</span>
+          </div>
 
-          {/* 여캐 자신의 S/M 성향 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 나의 S/M 성향 ──</div>
-          <div style={{ color: '#ffffff44', fontSize: 11, marginBottom: 6 }}>← M (복종·수동적) &nbsp;|&nbsp; S (지배·주도적) →</div>
+          {/* ?ъ틦 ?먯떊??S/M ?깊뼢 */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>?? ?섏쓽 S/M ?깊뼢 ??</div>
+          <div style={{ color: '#ffffff44', fontSize: 11, marginBottom: 6 }}>??M (蹂듭쥌쨌?섎룞?? &nbsp;|&nbsp; S (吏諛걔룹＜?꾩쟻) ??/div>
           {SmSlider(smTendency, setSmTendency)}
         </div>
 
         </div>{/* /leftCol */}
 
-        {/* 오른쪽 — 남성 선호도 */}
+        {/* ?ㅻⅨ履????⑥꽦 ?좏샇??*/}
         <div style={S.rightCol}>
-        {/* 남성 선호도 — 숨김 스탯 */}
+        {/* ?⑥꽦 ?좏샇?????④? ?ㅽ꺈 */}
         <div style={{ ...S.card, borderColor: '#c9a84c33' }}>
-          <div style={S.cardTitle}>💛 선호하는 남성 <span style={S.hiddenBadge}>플레이어 비공개</span></div>
+          <div style={S.cardTitle}>?뮎 ?좏샇?섎뒗 ?⑥꽦 <span style={S.hiddenBadge}>?뚮젅?댁뼱 鍮꾧났媛?/span></div>
 
-          {/* 나이 선호 */}
-          <div style={S.prefSectionLabel}>나이 선호 <span style={S.prefTotal}>{prefAge20+prefAge30+prefAge40} / 100</span></div>
-          {([['20대', prefAge20, 'age20'], ['30대', prefAge30, 'age30']] as const).map(([label, val, key]) => (
+          {/* ?섏씠 ?좏샇 */}
+          <div style={S.prefSectionLabel}>?섏씠 ?좏샇 <span style={S.prefTotal}>{prefAge20+prefAge30+prefAge40} / 100</span></div>
+          {([['20?', prefAge20, 'age20'], ['30?', prefAge30, 'age30']] as const).map(([label, val, key]) => (
             <div key={key} style={S.erogenousRow}>
               <span style={S.eroLabel}>{label}</span>
               <input type="range" min={AGE_MIN} max={PREF_TOTAL - AGE_MIN * 2} step={5} value={val}
@@ -1951,24 +2103,24 @@ export default function FemaleCharacterCreatePage({
             </div>
           ))}
           <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>40대 (자동)</span>
+            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>40? (?먮룞)</span>
             <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${prefAge40}%`, background: '#c9a84c' }} /></div>
             <span style={S.prefVal}>{prefAge40}</span>
           </div>
 
-          {/* 재력 선호 — 독립 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 재력 선호 ──</div>
+          {/* ?щ젰 ?좏샇 ???낅┰ */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>?? ?щ젰 ?좏샇 ??</div>
           <div style={S.erogenousRow}>
-            <span style={S.eroLabel}>재력선호</span>
+            <span style={S.eroLabel}>?щ젰?좏샇</span>
             <input type="range" min={20} max={100} step={5} value={prefWealth}
               onChange={e => setPrefWealth(Number(e.target.value))} style={S.slider} />
             <span style={S.prefVal}>{prefWealth}</span>
           </div>
 
-          {/* S1 외모 선호 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── S1 외모 선호 ──</div>
-          <div style={S.prefSectionLabel}>합계 <span style={S.prefTotal}>{prefFace+prefHeight+prefBodyLook+prefFashion} / 100</span></div>
-          {([['얼굴', prefFace, 'face'], ['키', prefHeight, 'height'], ['몸매', prefBodyLook, 'bodyLook']] as [string,number,'face'|'height'|'bodyLook'][]).map(([label, val, key]) => (
+          {/* S1 ?몃え ?좏샇 */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>?? S1 ?몃え ?좏샇 ??</div>
+          <div style={S.prefSectionLabel}>?⑷퀎 <span style={S.prefTotal}>{prefFace+prefHeight+prefBodyLook+prefFashion} / 100</span></div>
+          {([['?쇨뎬', prefFace, 'face'], ['??, prefHeight, 'height'], ['紐몃ℓ', prefBodyLook, 'bodyLook']] as [string,number,'face'|'height'|'bodyLook'][]).map(([label, val, key]) => (
             <div key={key} style={S.erogenousRow}>
               <span style={S.eroLabel}>{label}</span>
               <input type="range" min={LOOK_PREF_MIN} max={LOOK_PREF_MAX} step={5} value={val}
@@ -1977,15 +2129,15 @@ export default function FemaleCharacterCreatePage({
             </div>
           ))}
           <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>패션 (자동)</span>
+            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>?⑥뀡 (?먮룞)</span>
             <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((prefFashion - LOOK_PREF_MIN) / (LOOK_PREF_MAX - LOOK_PREF_MIN)) * 100}%`, background: '#c9a84c' }} /></div>
             <span style={S.prefVal}>{prefFashion}</span>
           </div>
 
-          {/* S2 성격 선호 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── S2 성격 선호 ──</div>
-          <div style={S.prefSectionLabel}>합계 <span style={S.prefTotal}>{prefIntel+prefHumor+prefVirtue+prefManner} / 100</span></div>
-          {([['지적능력', prefIntel, 'intel'], ['유머', prefHumor, 'humor'], ['덕성', prefVirtue, 'virtue']] as [string,number,'intel'|'humor'|'virtue'][]).map(([label, val, key]) => (
+          {/* S2 ?깃꺽 ?좏샇 */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>?? S2 ?깃꺽 ?좏샇 ??</div>
+          <div style={S.prefSectionLabel}>?⑷퀎 <span style={S.prefTotal}>{prefIntel+prefHumor+prefVirtue+prefManner} / 100</span></div>
+          {([['吏?곷뒫??, prefIntel, 'intel'], ['?좊㉧', prefHumor, 'humor'], ['?뺤꽦', prefVirtue, 'virtue']] as [string,number,'intel'|'humor'|'virtue'][]).map(([label, val, key]) => (
             <div key={key} style={S.erogenousRow}>
               <span style={S.eroLabel}>{label}</span>
               <input type="range" min={PERS_PREF_MIN} max={PERS_PREF_MAX} step={5} value={val}
@@ -1994,14 +2146,14 @@ export default function FemaleCharacterCreatePage({
             </div>
           ))}
           <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>매너 (자동)</span>
+            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>留ㅻ꼫 (?먮룞)</span>
             <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((prefManner - PERS_PREF_MIN) / (PERS_PREF_MAX - PERS_PREF_MIN)) * 100}%`, background: '#c9a84c' }} /></div>
             <span style={S.prefVal}>{prefManner}</span>
           </div>
-          {/* S3 발기 선호 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── S3 성기 선호 ──</div>
-          <div style={S.prefSectionLabel}>합계 <span style={S.prefTotal}>{prefPower+prefDuration+prefHardness+prefTech} / 100</span></div>
-          {([['발기력', prefPower, 'power'], ['지속력', prefDuration, 'duration'], ['단단함', prefHardness, 'hardness']] as [string,number,'power'|'duration'|'hardness'][]).map(([label, val, key]) => (
+          {/* S3 諛쒓린 ?좏샇 */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>?? S3 ?깃린 ?좏샇 ??</div>
+          <div style={S.prefSectionLabel}>?⑷퀎 <span style={S.prefTotal}>{prefPower+prefDuration+prefHardness+prefTech} / 100</span></div>
+          {([['諛쒓린??, prefPower, 'power'], ['吏?띾젰', prefDuration, 'duration'], ['?⑤떒??, prefHardness, 'hardness']] as [string,number,'power'|'duration'|'hardness'][]).map(([label, val, key]) => (
             <div key={key} style={S.erogenousRow}>
               <span style={S.eroLabel}>{label}</span>
               <input type="range" min={ERECT_PREF_MIN} max={ERECT_PREF_MAX} step={5} value={val}
@@ -2010,49 +2162,70 @@ export default function FemaleCharacterCreatePage({
             </div>
           ))}
           <div style={S.erogenousRow}>
-            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>테크닉 (자동)</span>
+            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>?뚰겕??(?먮룞)</span>
             <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((prefTech - ERECT_PREF_MIN) / (ERECT_PREF_MAX - ERECT_PREF_MIN)) * 100}%`, background: '#c9a84c' }} /></div>
             <span style={S.prefVal}>{prefTech}</span>
           </div>
 
-          {/* 선호 자세 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 선호 자세 (1 비선호 / 5 선호) ──</div>
+          {/* ?깃린 ?ш린 ?좏샇 */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>?? ?깃린 ?ш린 ?좏샇 ??</div>
+          <div style={S.prefSectionLabel}>?⑷퀎 <span style={S.prefTotal}>{prefSize.size + prefSize.girth} / 100</span></div>
+          {([['湲몄씠', 'size'], ['?먭퍡', 'girth']] as [string, 'size'|'girth'][]).map(([label, key]) => (
+            <div key={key} style={S.erogenousRow}>
+              <span style={S.eroLabel}>{label}</span>
+              <input type="range" min={SIZE_PREF_MIN} max={100 - SIZE_PREF_MIN} step={5} value={prefSize[key]}
+                onChange={e => setPrefSizeStat(key, Number(e.target.value))} style={S.slider} />
+              <span style={S.prefVal}>{prefSize[key]}</span>
+            </div>
+          ))}
 
-          {([
-            ['정상위','missionary'],['후배위','doggy'],
-            ['여성상위','cowgirl'],['버터플라이','side'],
-          ] as [string, keyof typeof prefPose][]).map(([label, key]) => {
+          {/* ?좏샇 ?먯꽭 */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>?? ?좏샇 ?먯꽭 (?⑷퀎 10) ??</div>
+          <div style={S.prefSectionLabel}>?⑷퀎 <span style={S.prefTotal}>{prefPose.missionary + prefPose.doggy + prefPose.cowgirl + poseSideAuto} / {POSE_TOTAL}</span></div>
+
+          {(['?뺤긽??,'?꾨같??,'?ъ꽦?곸쐞'] as const).map((label, i) => {
+            const key = (['missionary','doggy','cowgirl'] as const)[i]
             const val = prefPose[key]
             const poseColor = val >= 4 ? '#c9a84c' : val >= 2 ? '#66BB6A' : '#e94560'
             return (
               <div key={key} style={S.erogenousRow}>
                 <span style={{ ...S.eroLabel, color: poseColor }}>{label}</span>
-                <input type="range" min={1} max={5} step={1} value={val}
+                <input type="range" min={POSE_MIN} max={POSE_MAX} step={1} value={val}
                   onChange={e => setPose(key, Number(e.target.value))} style={{ ...S.slider, accentColor: poseColor }} />
-                <span style={{ color: poseColor, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>
-                  {val}
-                </span>
+                <span style={{ color: poseColor, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
               </div>
             )
           })}
+          {/* 踰꾪꽣?뚮씪???먮룞 */}
+          {(() => {
+            const val = poseSideAuto
+            const poseColor = val >= 4 ? '#c9a84c' : val >= 2 ? '#66BB6A' : '#e94560'
+            return (
+              <div style={S.erogenousRow}>
+                <span style={{ ...S.eroLabel, color: '#ffffff66' }}>踰꾪꽣?뚮씪??(?먮룞)</span>
+                <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((val - POSE_MIN) / (POSE_MAX - POSE_MIN)) * 100}%`, background: poseColor }} /></div>
+                <span style={{ color: poseColor, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
+              </div>
+            )
+          })()}
 
         </div>
 
-        {/* 외모 설명 */}
+        {/* ?몃え ?ㅻ챸 */}
         <div style={{ ...S.card, borderColor: '#4FC3F733', marginTop: 0 }}>
-          <div style={S.cardTitle}>🎨 외모 설명 <span style={{ color: '#ffffff44', fontSize: 12, fontWeight: 'normal' }}>이미지 생성에 반영됩니다</span></div>
+          <div style={S.cardTitle}>?렓 ?몃え ?ㅻ챸 <span style={{ color: '#ffffff44', fontSize: 12, fontWeight: 'normal' }}>?대?吏 ?앹꽦??諛섏쁺?⑸땲??/span></div>
 
-          {/* 머리색 */}
+          {/* 癒몃━??*/}
           <div style={{ marginBottom: 10 }}>
-            <div style={{ color: '#ffffff88', fontSize: 12, marginBottom: 6 }}>머리색</div>
+            <div style={{ color: '#ffffff88', fontSize: 12, marginBottom: 6 }}>癒몃━??/div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {[
-                { label: '흑발', val: 'black hair' },
-                { label: '갈색', val: 'dark brown hair' },
-                { label: '밝은 갈색', val: 'light brown hair' },
-                { label: '금발', val: 'blonde hair' },
-                { label: '빨간색', val: 'red hair' },
-                { label: '분홍', val: 'pink hair' },
+                { label: '?묐컻', val: 'black hair' },
+                { label: '媛덉깋', val: 'dark brown hair' },
+                { label: '諛앹? 媛덉깋', val: 'light brown hair' },
+                { label: '湲덈컻', val: 'blonde hair' },
+                { label: '鍮④컙??, val: 'red hair' },
+                { label: '遺꾪솉', val: 'pink hair' },
               ].map(({ label, val }) => (
                 <button key={val}
                   style={{ padding: '4px 10px', borderRadius: 16, fontSize: 12, cursor: 'pointer', border: hairColor === val ? '1.5px solid #c9a84c' : '1px solid #ffffff33', background: hairColor === val ? '#c9a84c22' : 'transparent', color: hairColor === val ? '#c9a84c' : '#ffffff88' }}
@@ -2063,14 +2236,14 @@ export default function FemaleCharacterCreatePage({
             </div>
           </div>
 
-          {/* 머리 길이 */}
+          {/* 癒몃━ 湲몄씠 */}
           <div style={{ marginBottom: 10 }}>
-            <div style={{ color: '#ffffff88', fontSize: 12, marginBottom: 6 }}>머리 길이</div>
+            <div style={{ color: '#ffffff88', fontSize: 12, marginBottom: 6 }}>癒몃━ 湲몄씠</div>
             <div style={{ display: 'flex', gap: 6 }}>
               {[
-                { label: '짧은 머리', val: 'short hair' },
-                { label: '단발', val: 'bob cut hair' },
-                { label: '긴 머리', val: 'long hair' },
+                { label: '吏㏃? 癒몃━', val: 'short hair' },
+                { label: '?⑤컻', val: 'bob cut hair' },
+                { label: '湲?癒몃━', val: 'long hair' },
               ].map(({ label, val }) => (
                 <button key={val}
                   style={{ padding: '4px 10px', borderRadius: 16, fontSize: 12, cursor: 'pointer', border: hairLength === val ? '1.5px solid #c9a84c' : '1px solid #ffffff33', background: hairLength === val ? '#c9a84c22' : 'transparent', color: hairLength === val ? '#c9a84c' : '#ffffff88' }}
@@ -2081,18 +2254,18 @@ export default function FemaleCharacterCreatePage({
             </div>
           </div>
 
-          {/* 추가 설명 */}
-          <div style={{ color: '#ffffff88', fontSize: 12, marginBottom: 6 }}>추가 설명 (선택)</div>
+          {/* 異붽? ?ㅻ챸 */}
+          <div style={{ color: '#ffffff88', fontSize: 12, marginBottom: 6 }}>異붽? ?ㅻ챸 (?좏깮)</div>
           <textarea
             style={{ ...S.textarea, minHeight: 60 }}
             value={appearanceDesc}
             onChange={e => setAppearanceDesc(e.target.value)}
-            placeholder="예) wavy hair, small lips, tattoo, fair skin..."
+            placeholder="?? wavy hair, small lips, tattoo, fair skin..."
             maxLength={200}
             rows={2}
           />
-          <span style={{ color: '#ffffff33', fontSize: 11 }}>{appearanceDesc.length}/200자</span>
-          <span style={{ color: '#FF9800', fontSize: 11, marginLeft: 8 }}>⚠️ 추가 설명은 영어로 입력</span>
+          <span style={{ color: '#ffffff33', fontSize: 11 }}>{appearanceDesc.length}/200??/span>
+          <span style={{ color: '#FF9800', fontSize: 11, marginLeft: 8 }}>?좑툘 異붽? ?ㅻ챸? ?곸뼱濡??낅젰</span>
         </div>
 
         {error && <p style={S.error}>{error}</p>}
@@ -2101,13 +2274,13 @@ export default function FemaleCharacterCreatePage({
           onClick={handleComplete}
           disabled={generating}
         >
-          {generating ? `🎨 ${genProgress || '이미지 생성 중...'}` : isEdit ? '다음 → 이미지 편집' : '✅ 캐릭터 등록'}
+          {generating ? `?렓 ${genProgress || '?대?吏 ?앹꽦 以?..'}` : isEdit ? '?ㅼ쓬 ???대?吏 ?몄쭛' : '??罹먮┃???깅줉'}
         </button>
         {generating && (
           <button
             style={{ marginTop: 8, width: '100%', background: '#e9455688', border: 'none', color: '#fff', borderRadius: 8, padding: '10px', fontSize: 13, cursor: 'pointer' }}
             onClick={handleCancelProfile}
-          >✕ 취소</button>
+          >??痍⑥냼</button>
         )}
         </div>{/* /rightCol */}
         </div>{/* /twoCol */}
@@ -2129,120 +2302,4 @@ const IS: Record<string, React.CSSProperties> = {
   setTabs: { display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' as const },
   setTab: { background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22', color: '#ffffff88', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer' },
   setTabActive: { background: 'rgba(201,168,76,0.25)', border: '1px solid #c9a84c', color: '#c9a84c' },
-}
-
-const PR: Record<string, React.CSSProperties> = {
-  overlay: { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  enlargeOverlay: { position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.93)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' },
-  enlargedImg: { maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 12, border: '2px solid #c9a84c55' },
-  confirmBox: { background: '#1a1a2e', border: '1px solid #c9a84c55', borderRadius: 16, padding: '28px 24px', width: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 },
-  confirmTitle: { color: '#c9a84c', fontSize: 15, fontWeight: 'bold', margin: 0, textAlign: 'center' as const },
-  confirmPreview: { width: 140, height: 182, objectFit: 'cover', borderRadius: 10, border: '2px solid #c9a84c44' },
-  confirmSub: { color: '#ffffff66', fontSize: 12, margin: 0, textAlign: 'center' as const },
-  confirmBtns: { display: 'flex', gap: 10, width: '100%' },
-  cancelBtn: { flex: 1, background: 'transparent', border: '1px solid #ffffff33', color: '#ffffff88', borderRadius: 8, padding: '10px', fontSize: 13, cursor: 'pointer' },
-  okBtn: { flex: 1, background: 'linear-gradient(90deg, #c9a84c, #e94560)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 'bold', cursor: 'pointer' },
-  card: { minHeight: '100vh', background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '32px 24px 80px', gap: 16 },
-  subtitle: { color: '#ffffff55', fontSize: 13, margin: 0 },
-  name: { color: '#c9a84c', fontSize: 26, fontWeight: 'bold', margin: 0 },
-  meta: { color: '#ffffff66', fontSize: 13, margin: 0 },
-  imgWrap: { background: 'rgba(0,0,0,0.3)', border: '1px solid #ffffff11', borderRadius: 16, padding: 12 },
-  mainImg: { width: 220, height: 286, objectFit: 'cover', borderRadius: 12, border: '2px solid #c9a84c44', display: 'block' },
-  imgPlaceholder: { width: 220, height: 286, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff33', fontSize: 13 },
-  thumbRow: { display: 'flex', gap: 8 },
-  thumb: { width: 60, height: 78, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' },
-  regenBtn: { background: 'rgba(201,168,76,0.15)', border: '1px solid #c9a84c55', color: '#c9a84c', borderRadius: 8, padding: '8px 20px', fontSize: 13, cursor: 'pointer' },
-  finalBtn: { background: 'linear-gradient(90deg, #c9a84c, #e94560)', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 15, fontWeight: 'bold', cursor: 'pointer' },
-  backBtn: { background: 'transparent', border: '1px solid #ffffff22', color: '#ffffff55', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer' },
-}
-
-const S: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)',
-    display: 'flex', justifyContent: 'center', padding: '24px 16px',
-  },
-  inner: { width: '100%', maxWidth: 960, display: 'flex', flexDirection: 'column', gap: 16 },
-  header: { textAlign: 'center', padding: '8px 0 4px' },
-  backBtn: {
-    background: 'transparent', border: '1px solid #ffffff22', color: '#ffffff66',
-    borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 13, marginBottom: 12,
-  },
-  title: { color: '#c9a84c', fontSize: 24, fontWeight: 'bold', margin: '0 0 4px' },
-  subtitle: { color: '#ffffff44', fontSize: 12, margin: 0 },
-  card: {
-    background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c22',
-    borderRadius: 16, padding: '20px 20px', display: 'flex', flexDirection: 'column', gap: 12,
-  },
-  cardTitle: { color: '#c9a84c', fontWeight: 'bold', fontSize: 15, marginBottom: 4 },
-  row: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  label: { color: '#ffffff88', fontSize: 13, minWidth: 72, flexShrink: 0 },
-  hint: { color: '#ffffff44', fontSize: 12 },
-  input: {
-    background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
-    borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14,
-    outline: 'none', flex: 1, minWidth: 0,
-  },
-  textarea: {
-    background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
-    borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13,
-    outline: 'none', flex: 1, resize: 'none', fontFamily: 'inherit',
-  },
-  select: {
-    background: 'rgba(255,255,255,0.08)', border: '1px solid #ffffff22',
-    borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14,
-    outline: 'none', flex: 1,
-  },
-  chips: { display: 'flex', gap: 8, flexWrap: 'wrap' },
-  chip: {
-    background: 'rgba(255,255,255,0.06)', border: '1px solid #ffffff22',
-    borderRadius: 20, padding: '5px 14px', color: '#ffffff66', fontSize: 13, cursor: 'pointer',
-  },
-  chipActive: { background: 'rgba(201,168,76,0.2)', border: '1px solid #c9a84c', color: '#c9a84c' },
-  sliderRow: { display: 'flex', alignItems: 'center', gap: 10 },
-  sliderLabel: { fontWeight: 'bold', fontSize: 13, minWidth: 36 },
-  slider: { flex: 1, accentColor: '#c9a84c' },
-  sliderVal: { fontWeight: 'bold', fontSize: 14, minWidth: 28, textAlign: 'right' },
-  tagSection: { display: 'flex', flexDirection: 'column', gap: 6 },
-  tagLabel: { color: '#ffffff88', fontSize: 13 },
-  tagLimit: { color: '#ffffff44', fontSize: 11 },
-  tagGrid: { display: 'flex', flexWrap: 'wrap', gap: 6 },
-  tag: {
-    background: 'rgba(255,255,255,0.06)', border: '1px solid #ffffff22',
-    borderRadius: 20, padding: '4px 12px', color: '#ffffff66', fontSize: 12, cursor: 'pointer',
-  },
-  tagActive: { background: 'rgba(201,168,76,0.2)', border: '1px solid #c9a84c', color: '#c9a84c' },
-  tagActiveRed: { background: 'rgba(233,69,96,0.2)', border: '1px solid #e94560', color: '#e94560' },
-  personalityRow: { display: 'flex', alignItems: 'center', gap: 8 },
-  persLabel: { fontWeight: 'bold', fontSize: 12, minWidth: 28 },
-  persEdge: { color: '#ffffff44', fontSize: 11, minWidth: 36, textAlign: 'center' },
-  hiddenBadge: {
-    background: 'rgba(233,69,96,0.2)', border: '1px solid #e9456055',
-    borderRadius: 20, padding: '2px 10px', color: '#e94560', fontSize: 11, marginLeft: 8,
-  },
-  poolNote: { color: '#ffffff33', fontSize: 11, marginBottom: 4 },
-  autoBar: { flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' },
-  autoFill: { height: '100%', borderRadius: 3, transition: 'width 0.2s' },
-  erogenousNote: { color: '#ffffff44', fontSize: 11, margin: '0 0 4px' },
-  erogenousRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 },
-  erogenousLabel: { fontWeight: 'bold', fontSize: 13, minWidth: 72 },
-  erogenousNote2: { color: '#ffffff33', fontSize: 10, minWidth: 0 },
-  eroLabel: { fontWeight: 'bold', fontSize: 11, width: 72, flexShrink: 0, color: '#ffffffcc' },
-  eroDivider: { textAlign: 'center' as const, color: '#c9a84c88', fontSize: 11, margin: '8px 0 4px' },
-  segments: { display: 'flex', gap: 3, flex: 1 },
-  segment: { flex: 1, height: 20, borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' },
-  erogenousBarWrap: { flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' },
-  erogenousBarFill: { height: '100%', borderRadius: 4, transition: 'width 0.15s' },
-  twoCol: { display: 'flex', gap: 16, alignItems: 'flex-start' },
-  leftCol: { flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column' as const, gap: 16 },
-  rightCol: { width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column' as const, gap: 16 },
-  prefSectionLabel: { fontSize: 11, color: '#ffffff88', margin: '2px 0 2px', display: 'flex', justifyContent: 'space-between' as const },
-  prefTotal: { fontWeight: 'bold', color: '#c9a84c', fontSize: 12 },
-  prefVal: { fontWeight: 'bold', fontSize: 13, width: 24, textAlign: 'center' as const, flexShrink: 0, color: '#ffffffcc' },
-  error: { color: '#e94560', fontSize: 13, textAlign: 'center', margin: 0 },
-  completeBtn: {
-    background: 'linear-gradient(135deg, #c9a84c, #e94560)',
-    border: 'none', borderRadius: 12, padding: '16px',
-    color: '#fff', fontWeight: 'bold', fontSize: 16, cursor: 'pointer', marginTop: 8,
-  },
 }
