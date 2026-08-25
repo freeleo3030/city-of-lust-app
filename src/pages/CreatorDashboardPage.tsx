@@ -28,11 +28,11 @@ const diffColor = (married: string, age: number) => {
 
 export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, onBack, onUpdateChar }: Props) {
   const scale = useScale(1440)
-  const s = (n: number) => Math.round(n * scale * 0.8)
+  const s = (n: number) => Math.round(n * scale)
 
   const S: Record<string, React.CSSProperties> = {
     container: { minHeight: '100vh', background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)' },
-    inner: { maxWidth: 'min(1440px, 100%)', margin: '0 auto', padding: `${s(29)}px ${s(19)}px`, display: 'flex', flexDirection: 'column', gap: s(19) },
+    inner: { maxWidth: 'min(1440px, 100%)', margin: '0 auto', padding: `${s(29)}px ${s(19)}px`, display: 'flex', flexDirection: 'column', gap: s(19), zoom: 0.8 },
     header: { textAlign: 'center', padding: `${s(8)}px 0 ${s(4)}px` },
     backBtn: { background: 'none', border: '1px solid #ffffff33', borderRadius: s(8), color: '#ffffff88', padding: `${s(7)}px ${s(17)}px`, cursor: 'pointer', fontSize: s(16), marginBottom: s(10) },
     title: { color: '#c9a84c', fontSize: s(29), fontWeight: 'bold', margin: `0 0 ${s(4)}px` },
