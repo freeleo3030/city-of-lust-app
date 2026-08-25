@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
+import { useScale } from '../hooks/useScale'
 
 interface Location {
   id: number
@@ -12,9 +13,64 @@ interface Location {
 interface Props {
   location: Location
   femaleChars: FemaleCharacterData[]
+  maleChar?: any
+  gold?: number
   onBack: () => void
   onStartDate?: (char: FemaleCharacterData) => void
   onStartSexScene?: (char: FemaleCharacterData, pose: string) => void
+}
+
+// 여캐 레벨 판별
+function getFemaleLevel(char: FemaleCharacterData): number {
+  const { age, married } = char
+  if (age >= 30 && age < 40 && married === '기혼') return 6
+  if (age >= 40 && married === '기혼') return 5
+  if ((age >= 20 && age < 30 && married === '기혼') ||
+      (age >= 30 && age < 40 && married === '돌싱') ||
+      (age >= 40 && married === '돌싱')) return 4
+  if ((age >= 30 && married === '미혼') || (age >= 40 && married === '미혼')) return 3
+  if (age >= 20 && age < 30 && married === '돌싱') return 2
+  return 1
+}
+
+const LEVEL_HURDLE = [0, 10, 20, 35, 50, 70, 90] // index = Lv
+
+function calcWealth(gold: number): number {
+  if (gold >= 1_000_000) return 100
+  if (gold >= 500_000)   return 80
+  if (gold >= 200_000)   return 60
+  if (gold >= 50_000)    return 30
+  if (gold >= 10_000)    return 10
+  return 0
+}
+
+// S1 총매력도 계산
+// 외모궁합 × 0.70 + 대화궁합 × 0.15 + 나이매칭 × 0.15 + 재력보너스
+function calcS1Score(male: any, female: FemaleCharacterData): number {
+  const pl = female.prefLook     ?? { face: 25, height: 25, body: 25, fashion: 25 }
+  const pp = female.prefPersonality ?? { intel: 25, humor: 25, virtue: 25, manner: 25 }
+  const pa = (female as any).prefAge ?? { age20: 34, age30: 33, age40: 33 }
+
+  const lookScore =
+    (male.face    ?? 25) * (pl.face    / 100) +
+    (male.height  ?? 25) * (pl.height  / 100) +
+    (male.body    ?? 25) * (pl.body    / 100) +
+    (male.fashion ?? 25) * (pl.fashion / 100)
+
+  const talkScore =
+    (male.intellect ?? 25) * (pp.intel / 100) +
+    (male.humor     ?? 25) * (pp.humor   / 100) +
+    (male.virtue    ?? 25) * (pp.virtue  / 100) +
+    (male.manner    ?? 25) * (pp.manner  / 100)
+
+  const ageGroup = (male.age ?? 25) < 30 ? 'age20' : (male.age ?? 25) < 40 ? 'age30' : 'age40'
+  const ageScore = pa[ageGroup] ?? 33
+
+  return Math.round(lookScore * 0.70 + talkScore * 0.15 + ageScore * 0.15)
+}
+
+function calcWealthBonus(gold: number, female: FemaleCharacterData): number {
+  return calcWealth(gold) * ((female as any).prefWealth ?? 50) / 100 * 0.15
 }
 
 const marriedLabel = { '미혼': '미혼', '기혼': '기혼', '돌싱': '돌싱' }
@@ -26,6 +82,20 @@ const diffColor = (married: string, age: number) => {
   return '#64b5f6'
 }
 
+const REJECT_LINES: Record<number, string[]> = {
+  1: ["어... 저 지금 좀 바빠서요.", "죄송한데 오늘은 좀 그래요.", "음... 저 약속이 있어서요."],
+  2: ["별로 관심 없어요.", "지금은 좀 아닌 것 같아요.", "그냥 가주세요."],
+  3: ["필요 없어요.", "말 걸지 마세요.", "저한테 왜 이러세요."],
+  4: ["관심 없어요.", "시간 낭비예요.", "보시다시피 바빠요."],
+  5: ["...", "보이지 않으세요?", "무슨 일이죠."],
+  6: ["감히.", "웃기네요.", "착각하지 마세요."],
+}
+
+function getRejectLine(lv: number): string {
+  const lines = REJECT_LINES[lv] ?? REJECT_LINES[3]
+  return lines[Math.floor(Math.random() * lines.length)]
+}
+
 const POSES = [
   { key: 'missionary', label: '정상위', emoji: '🛏️' },
   { key: 'doggy',      label: '후배위', emoji: '🐾' },
@@ -33,9 +103,55 @@ const POSES = [
   { key: 'side',       label: '버터플라이', emoji: '🦋' },
 ]
 
-export default function LocationPage({ location, femaleChars, onBack, onStartDate, onStartSexScene }: Props) {
+export default function LocationPage({ location, femaleChars, maleChar, gold = 0, onBack, onStartDate, onStartSexScene }: Props) {
+  const scale = useScale(1440)
   const [selected, setSelected] = useState<FemaleCharacterData | null>(null)
   const [showPoseSelect, setShowPoseSelect] = useState(false)
+  const [rejectState, setRejectState] = useState<{ line: string; score: number; hurdle: number; bypassChar: FemaleCharacterData | null } | null>(null)
+  const [bypassCountdown, setBypassCountdown] = useState(0)
+  const rejectTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const countdownRef  = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const isTestChar = maleChar?.nickname === '윈드'
+
+  useEffect(() => {
+    if (bypassCountdown <= 0 || !rejectState?.bypassChar) return
+    if (bypassCountdown === 0) return
+    countdownRef.current = setInterval(() => {
+      setBypassCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!)
+          const char = rejectState.bypassChar!
+          setRejectState(null)
+          onStartDate?.(char)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => { if (countdownRef.current) clearInterval(countdownRef.current) }
+  }, [rejectState])
+
+  function handleApproach(char: FemaleCharacterData) {
+    if (!maleChar) { onStartDate?.(char); return }
+    const base   = calcS1Score(maleChar, char)
+    const bonus  = calcWealthBonus(gold, char)
+    const score  = Math.round(base + bonus)
+    const lv     = getFemaleLevel(char)
+    const hurdle = LEVEL_HURDLE[lv]
+    if (score >= hurdle) {
+      onStartDate?.(char)
+    } else {
+      if (rejectTimer.current) clearTimeout(rejectTimer.current)
+      if (countdownRef.current) clearInterval(countdownRef.current)
+      setRejectState({ line: getRejectLine(lv), score, hurdle, bypassChar: isTestChar ? char : null })
+      if (isTestChar) {
+        setBypassCountdown(5)
+      } else {
+        rejectTimer.current = setTimeout(() => setRejectState(null), 3500)
+      }
+    }
+  }
 
   const chars = femaleChars.filter(c => c.location === location.name)
   console.log('[Location]', location.name, '| femaleChars:', femaleChars.length, '| chars:', chars.length, '| locations:', femaleChars.map(c => `${c.nickname}:${c.location}`))
@@ -43,7 +159,7 @@ export default function LocationPage({ location, femaleChars, onBack, onStartDat
   return (
     <div style={S.container}>
       {/* 헤더 */}
-      <div style={S.header}>
+      <div style={{ ...S.header, zoom: scale * 0.8 }}>
         <button style={S.backBtn} onClick={onBack}>← 지도로</button>
         <div style={S.headerTitle}>
           <span style={S.headerEmoji}>{location.emoji}</span>
@@ -53,7 +169,7 @@ export default function LocationPage({ location, femaleChars, onBack, onStartDat
       </div>
 
       {/* 여캐 목록 */}
-      <div style={S.list}>
+      <div style={{ ...S.list, zoom: scale * 0.8 }}>
         {chars.length === 0 ? (
           <div style={S.empty}>
             <p style={{ color: '#ffffff33', fontSize: 15, margin: 0 }}>아직 이곳에 등록된 여캐가 없어요</p>
@@ -85,7 +201,7 @@ export default function LocationPage({ location, femaleChars, onBack, onStartDat
                 <div style={S.job}>{char.job} · {char.bodyType} · {char.heightCm}cm</div>
                 <p style={S.intro}>{char.intro || '소개글 없음'}</p>
                 <div style={S.tags}>
-                  {char.interestTags.slice(0, 3).map(t => (
+                  {(char.interestTags ?? []).slice(0, 3).map(t => (
                     <span key={t} style={S.tag}>{t}</span>
                   ))}
                 </div>
@@ -110,13 +226,32 @@ export default function LocationPage({ location, femaleChars, onBack, onStartDat
         <div style={S.bottomBar}>
           <div style={S.bottomInfo}>
             {selected.imageUrl && <img src={selected.imageUrl} style={S.bottomThumb} alt="" />}
-            <div>
-              <div style={S.bottomName}>{selected.nickname}</div>
-              <div style={S.bottomMeta}>{selected.job} · {selected.age}세 · {marriedLabel[selected.married]}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {rejectState ? (
+                <>
+                  <div style={S.rejectLine}>"{rejectState.line}"</div>
+                  <div style={S.rejectSub}>
+                    (접근을 위한 궁합 점수가 기준 대비 {rejectState.hurdle - rejectState.score}점 부족합니다)
+                  </div>
+                  {bypassCountdown > 0 && (
+                    <div style={{ color: '#c9a84c', fontSize: 11, marginTop: 4 }}>
+                      [TEST] {bypassCountdown}초 후 자동 진입...
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div style={S.bottomName}>{selected.nickname}</div>
+                  <div style={S.bottomMeta}>{selected.job} · {selected.age}세 · {marriedLabel[selected.married]}</div>
+                </>
+              )}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-end' }}>
-            <button style={{ ...S.approachBtn, background: location.color }} onClick={() => onStartDate?.(selected)}>
+          <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+            <button
+              style={{ ...S.approachBtn, background: rejectState ? '#555' : location.color }}
+              onClick={() => handleApproach(selected)}
+            >
               💬 접근하기
             </button>
             {onStartSexScene && (
@@ -195,5 +330,7 @@ const S: Record<string, React.CSSProperties> = {
   bottomThumb: { width: 44, height: 56, objectFit: 'cover', borderRadius: 6, border: '1px solid #c9a84c44' },
   bottomName: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   bottomMeta: { color: '#ffffff66', fontSize: 12 },
+  rejectLine: { color: '#e94560', fontWeight: 'bold', fontSize: 15, marginBottom: 4 },
+  rejectSub:  { color: '#ffffff55', fontSize: 11, fontStyle: 'italic' },
   approachBtn: { border: 'none', borderRadius: 8, padding: '12px 24px', color: '#000', fontWeight: 'bold', fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' },
 }

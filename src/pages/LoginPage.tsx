@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useScale } from '../hooks/useScale'
 
 export default function LoginPage() {
+  const scale = useScale(1440)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -34,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
+      <div style={{ ...styles.card, zoom: scale * 0.8 }}>
         <h1 style={styles.title}>욕정의 도시</h1>
         <p style={styles.subtitle}>City of Lust</p>
 

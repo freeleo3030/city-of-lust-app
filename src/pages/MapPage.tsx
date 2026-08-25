@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useScale } from '../hooks/useScale'
 import { supabase } from '../lib/supabase'
 import LocationPage from './LocationPage'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
@@ -251,6 +252,7 @@ const LOCATIONS = [
 ]
 
 export default function MapPage({ character, onViewCharacter, gold = 500, onCreatorMode, femaleChars = [], onStartDate, onStartSexScene }: { character?: any; onViewCharacter?: () => void; gold?: number; onCreatorMode?: () => void; femaleChars?: FemaleCharacterData[]; onStartDate?: (char: FemaleCharacterData) => void; onStartSexScene?: (char: FemaleCharacterData, pose: string) => void }) {
+  const scale = useScale(1440)
   const [selected, setSelected] = useState<typeof LOCATIONS[0] | null>(null)
   const [entering, setEntering] = useState<typeof LOCATIONS[0] | null>(null)
   const [mapSize, setMapSize] = useState({ width: 0, height: 0 })
@@ -346,7 +348,7 @@ export default function MapPage({ character, onViewCharacter, gold = 500, onCrea
   return (
     <div style={styles.container}>
       {/* 상단 HUD */}
-      <div style={styles.hud}>
+      <div style={{ ...styles.hud, zoom: scale * 0.8 }}>
         <div style={styles.hudLeft}>
           <span style={styles.cityName}>🌆 루스트 시티</span>
         </div>

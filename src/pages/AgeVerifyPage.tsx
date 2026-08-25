@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useScale } from '../hooks/useScale'
 
 interface Props {
   onVerified: () => void
 }
 
 export default function AgeVerifyPage({ onVerified }: Props) {
+  const scale = useScale(1440)
   const [checked, setChecked] = useState(false)
   const [birthYear, setBirthYear] = useState('')
   const [error, setError] = useState('')
@@ -29,7 +31,7 @@ export default function AgeVerifyPage({ onVerified }: Props) {
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
+      <div style={{ ...styles.card, zoom: scale * 0.8 }}>
         <div style={styles.icon}>🔞</div>
         <h1 style={styles.title}>성인 인증</h1>
         <p style={styles.desc}>

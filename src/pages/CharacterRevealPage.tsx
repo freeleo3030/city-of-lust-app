@@ -121,7 +121,7 @@ export default function CharacterRevealPage({
     },
     card: {
       background: 'rgba(255,255,255,0.05)', border: '1px solid #c9a84c44',
-      borderRadius: s(20), padding: `${s(36)}px ${s(32)}px`, width: s(480), maxWidth: '100%',
+      borderRadius: s(20), padding: `${s(36)}px ${s(32)}px`, width: s(480), maxWidth: '100%', zoom: 0.8,
     },
     subtitle: { color: '#ffffff55', fontSize: s(13), margin: '0 0 4px', textAlign: 'center' },
     title: { color: '#c9a84c', fontSize: s(30), fontWeight: 'bold', margin: '0 0 4px', textAlign: 'center' },
