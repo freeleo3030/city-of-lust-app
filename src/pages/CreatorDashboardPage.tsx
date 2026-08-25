@@ -28,7 +28,7 @@ const diffColor = (married: string, age: number) => {
 
 export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, onBack, onUpdateChar }: Props) {
   const scale = useScale(1440)
-  const s = (n: number) => Math.round(n * scale)
+  const s = (n: number) => Math.round(n * scale * 0.8)
 
   const S: Record<string, React.CSSProperties> = {
     container: { minHeight: '100vh', background: 'linear-gradient(135deg, #0d0d1a 0%, #1a0010 100%)' },
