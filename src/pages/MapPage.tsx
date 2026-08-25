@@ -337,6 +337,10 @@ export default function MapPage({ character, onViewCharacter, gold = 500, onCrea
   // 언마운트 시 타이머 정리
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
+  // 핀 크기 스케일 (mapSize 기준, 1440px 이상=1.0, 좁을수록 축소)
+  const pinScale = mapSize.width > 0 ? Math.min(1.0, Math.max(0.4, mapSize.width / 1440)) : 1
+  const ps = (n: number) => Math.round(n * pinScale)
+
   if (entering) return <LocationPage location={entering} femaleChars={femaleChars} maleChar={character} gold={gold} onBack={() => setEntering(null)} onStartDate={onStartDate} onStartSexScene={onStartSexScene} />
 
   return (
@@ -426,11 +430,14 @@ export default function MapPage({ character, onViewCharacter, gold = 500, onCrea
                 top: `${loc.y}%`,
                 borderColor: loc.color,
                 boxShadow: selected?.id === loc.id ? `0 0 20px ${loc.color}` : `0 0 8px ${loc.color}66`,
+                padding: `${ps(8)}px ${ps(14)}px`,
+                borderRadius: ps(14),
+                gap: ps(4),
               }}
               onClick={(e) => handlePinClick(e, loc)}
             >
-              <span style={styles.pinEmoji}>{loc.emoji}</span>
-              <span style={{ ...styles.pinLabel, color: loc.color }}>{loc.name}</span>
+              <span style={{ fontSize: ps(36) }}>{loc.emoji}</span>
+              <span style={{ ...styles.pinLabel, color: loc.color, fontSize: ps(16) }}>{loc.name}</span>
             </button>
           ))}
         </div>
