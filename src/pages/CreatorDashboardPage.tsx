@@ -63,7 +63,7 @@ export default function CreatorDashboardPage({ chars, onAdd, onEdit, onDelete, o
     confirmYes: { background: '#e94560', border: 'none', borderRadius: s(10), color: '#fff', padding: `${s(7)}px ${s(17)}px`, cursor: 'pointer', fontSize: s(19) },
     confirmNo: { background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: s(6), color: '#fff', padding: `${s(4)}px ${s(10)}px`, cursor: 'pointer', fontSize: s(12) },
     modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
-    modal: { background: '#1a0a2e', border: '1px solid #c9a84c44', borderRadius: s(16), width: '90vw', maxWidth: s(760), maxHeight: '90vh', overflow: 'auto', padding: s(24) },
+    modal: { background: '#1a0a2e', border: '1px solid #c9a84c44', borderRadius: s(16), width: '90vw', maxWidth: s(760), maxHeight: '90vh', overflow: 'auto', padding: s(24), zoom: 0.8 },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: s(16) },
     modalTitle: { color: '#c9a84c', fontWeight: 'bold', fontSize: s(18) },
     modalClose: { background: 'none', border: 'none', color: '#ffffff88', fontSize: s(20), cursor: 'pointer' },
