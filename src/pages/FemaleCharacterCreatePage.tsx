@@ -497,9 +497,10 @@ export default function FemaleCharacterCreatePage({
     else setPrefVirtue(Math.max(PERS_PREF_MIN,clamped))
   }
   // S3 발기 선호 (테크닉 자동)
-  // 성기 크기 선호 (독립 슬라이더)
-  const [prefSize, setPrefSize] = useState(d?.prefSize?.size ?? 50)
-  const [prefGirth, setPrefGirth] = useState(d?.prefSize?.girth ?? 50)
+  // 성기 크기 선호 (합계 100, 두께 자동)
+  const SIZE_TOTAL = 100
+  const [prefSize, setPrefSize] = useState(Math.min(80, Math.max(20, d?.prefSize?.size ?? 50)))
+  const prefGirth = SIZE_TOTAL - prefSize
 
   const ERECT_PREF_MIN = 10; const ERECT_PREF_MAX = 50
   const [prefPower, setPrefPower] = useState(d?.prefErect?.power ?? 25)
@@ -2128,17 +2129,23 @@ export default function FemaleCharacterCreatePage({
           </div>
           {/* S3 발기 선호 */}
           <div style={{ ...S.eroDivider, marginTop: 10 }}>── S3 성기 선호 ──</div>
-          <div style={{ margin: '4px 0' }}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>크기: 20=작을수록 · 50=평균 · 100=클수록</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0' }}>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>20=작을수록 · 50=평균 · 80=클수록 · 두께 자동</span>
+            <span style={{ fontSize: 12, fontWeight: 'bold', color: '#c9a84c' }}>{prefSize + prefGirth} / {SIZE_TOTAL}pt</span>
           </div>
-          {([['길이 선호', prefSize, setPrefSize], ['두께 선호', prefGirth, setPrefGirth]] as [string,number,(_:number)=>void][]).map(([label, val, setter]) => (
-            <div key={label} style={S.erogenousRow}>
-              <span style={S.eroLabel}>{label}</span>
-              <input type="range" min={20} max={100} step={5} value={val}
-                onChange={e => setter(Number(e.target.value))} style={S.slider} />
-              <span style={S.prefVal}>{val}</span>
-            </div>
-          ))}
+          {/* 길이 슬라이더 */}
+          <div style={S.erogenousRow}>
+            <span style={S.eroLabel}>길이 선호</span>
+            <input type="range" min={20} max={80} step={5} value={prefSize}
+              onChange={e => setPrefSize(Number(e.target.value))} style={S.slider} />
+            <span style={S.prefVal}>{prefSize}</span>
+          </div>
+          {/* 두께 자동 */}
+          <div style={S.erogenousRow}>
+            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>두께 선호 (자동)</span>
+            <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((prefGirth - 20) / 60) * 100}%`, background: '#c9a84c' }} /></div>
+            <span style={S.prefVal}>{prefGirth}</span>
+          </div>
           <div style={S.prefSectionLabel}>합계 <span style={S.prefTotal}>{prefPower+prefDuration+prefHardness+prefTech} / 100</span></div>
           {([['발기력', prefPower, 'power'], ['지속력', prefDuration, 'duration'], ['단단함', prefHardness, 'hardness']] as [string,number,'power'|'duration'|'hardness'][]).map(([label, val, key]) => (
             <div key={key} style={S.erogenousRow}>
