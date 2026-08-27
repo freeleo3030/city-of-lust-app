@@ -61,7 +61,7 @@ const isEnglishName = (s: string) =>
 const isRealName = (s: string) => isKoreanName(s) || isEnglishName(s)
 
 export default function CharacterCreatePage({ onComplete, initialData, gold = 0 }: Props) {
-  const scale = useScale(960)
+  const scale = useScale(1440)
   const s = (n: number) => n * scale
   const d = initialData
   const [nickname, setNickname] = useState(d?.nickname ?? '')
