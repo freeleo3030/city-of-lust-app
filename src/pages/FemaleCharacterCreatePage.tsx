@@ -497,6 +497,10 @@ export default function FemaleCharacterCreatePage({
     else setPrefVirtue(Math.max(PERS_PREF_MIN,clamped))
   }
   // S3 발기 선호 (테크닉 자동)
+  // 성기 크기 선호 (독립 슬라이더)
+  const [prefSize, setPrefSize] = useState(d?.prefSize?.size ?? 50)
+  const [prefGirth, setPrefGirth] = useState(d?.prefSize?.girth ?? 50)
+
   const ERECT_PREF_MIN = 10; const ERECT_PREF_MAX = 50
   const [prefPower, setPrefPower] = useState(d?.prefErect?.power ?? 25)
   const [prefDuration, setPrefDuration] = useState(d?.prefErect?.duration ?? 25)
@@ -509,6 +513,11 @@ export default function FemaleCharacterCreatePage({
     else if (key==='duration') setPrefDuration(Math.max(ERECT_PREF_MIN,clamped))
     else setPrefHardness(Math.max(ERECT_PREF_MIN,clamped))
   }
+  // 성기 크기 선호 (길이·두께 독립 슬라이더, 각 10~90)
+  const SIZE_MIN = 10; const SIZE_MAX = 90
+  const [prefSizeLength, setPrefSizeLength] = useState(Math.min(SIZE_MAX, Math.max(SIZE_MIN, d?.prefSize?.size ?? 50)))
+  const [prefSizeGirth, setPrefSizeGirth] = useState(Math.min(SIZE_MAX, Math.max(SIZE_MIN, d?.prefSize?.girth ?? 50)))
+
   // 선호 자세 (0~5)
   const POSE_TOTAL = 12; const POSE_MIN = 1; const POSE_MAX = 5
   const clampPose = (v: number) => Math.min(POSE_MAX, Math.max(POSE_MIN, Math.round(v ?? 3)))
@@ -955,6 +964,7 @@ export default function FemaleCharacterCreatePage({
       prefWealth,
       prefPersonality: { intel: prefIntel, humor: prefHumor, virtue: prefVirtue, manner: prefManner },
       prefErect: { power: prefPower, duration: prefDuration, hardness: prefHardness, tech: prefTech },
+      prefSize: { size: prefSize, girth: prefGirth },
       prefPose, smTendency, dateCostShare,
       appearanceDesc: buildAppearanceDesc(),
       hairColor: hairColor || undefined,
@@ -2117,6 +2127,20 @@ export default function FemaleCharacterCreatePage({
             <span style={S.prefVal}>{prefManner}</span>
           </div>
           {/* S3 발기 선호 */}
+          {/* 성기 크기 선호 */}
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>── S2 성기 크기 선호 ──</div>
+          <div style={{ margin: '4px 0' }}>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>20=작을수록 · 50=평균 · 100=클수록</span>
+          </div>
+          {([['길이 선호', prefSize, setPrefSize], ['두께 선호', prefGirth, setPrefGirth]] as [string,number,(_:number)=>void][]).map(([label, val, setter]) => (
+            <div key={label} style={S.erogenousRow}>
+              <span style={S.eroLabel}>{label}</span>
+              <input type="range" min={20} max={100} step={5} value={val}
+                onChange={e => setter(Number(e.target.value))} style={S.slider} />
+              <span style={S.prefVal}>{val}</span>
+            </div>
+          ))}
+
           <div style={{ ...S.eroDivider, marginTop: 10 }}>── S3 성기 선호 ──</div>
           <div style={S.prefSectionLabel}>합계 <span style={S.prefTotal}>{prefPower+prefDuration+prefHardness+prefTech} / 100</span></div>
           {([['발기력', prefPower, 'power'], ['지속력', prefDuration, 'duration'], ['단단함', prefHardness, 'hardness']] as [string,number,'power'|'duration'|'hardness'][]).map(([label, val, key]) => (
