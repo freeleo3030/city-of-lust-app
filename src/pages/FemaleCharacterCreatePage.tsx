@@ -2127,10 +2127,9 @@ export default function FemaleCharacterCreatePage({
             <span style={S.prefVal}>{prefManner}</span>
           </div>
           {/* S3 발기 선호 */}
-          {/* 성기 크기 선호 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── S2 성기 크기 선호 ──</div>
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>── S3 성기 선호 ──</div>
           <div style={{ margin: '4px 0' }}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>20=작을수록 · 50=평균 · 100=클수록</span>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>크기: 20=작을수록 · 50=평균 · 100=클수록</span>
           </div>
           {([['길이 선호', prefSize, setPrefSize], ['두께 선호', prefGirth, setPrefGirth]] as [string,number,(_:number)=>void][]).map(([label, val, setter]) => (
             <div key={label} style={S.erogenousRow}>
@@ -2140,8 +2139,6 @@ export default function FemaleCharacterCreatePage({
               <span style={S.prefVal}>{val}</span>
             </div>
           ))}
-
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── S3 성기 선호 ──</div>
           <div style={S.prefSectionLabel}>합계 <span style={S.prefTotal}>{prefPower+prefDuration+prefHardness+prefTech} / 100</span></div>
           {([['발기력', prefPower, 'power'], ['지속력', prefDuration, 'duration'], ['단단함', prefHardness, 'hardness']] as [string,number,'power'|'duration'|'hardness'][]).map(([label, val, key]) => (
             <div key={key} style={S.erogenousRow}>
