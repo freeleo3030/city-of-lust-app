@@ -510,14 +510,25 @@ export default function FemaleCharacterCreatePage({
     else setPrefHardness(Math.max(ERECT_PREF_MIN,clamped))
   }
   // 선호 자세 (0~5)
-  const [prefPose, setPrefPose] = useState(d?.prefPose ?? { missionary:3, doggy:3, cowgirl:3, side:3 })
+  const POSE_TOTAL = 12; const POSE_MIN = 1; const POSE_MAX = 5
+  const clampPose = (v: number) => Math.min(POSE_MAX, Math.max(POSE_MIN, Math.round(v ?? 3)))
+  const [prefPose, setPrefPose] = useState(() => {
+    const p = d?.prefPose
+    if (p) return { missionary: clampPose(p.missionary), doggy: clampPose(p.doggy), cowgirl: clampPose(p.cowgirl), side: clampPose(p.side) }
+    return { missionary:3, doggy:3, cowgirl:3, side:3 }
+  })
   const [smTendency, setSmTendency] = useState(d?.smTendency ?? 0)
   const [dateCostShare, setDateCostShare] = useState(d?.dateCostShare ?? 0)
   const [appearanceDesc, setAppearanceDesc] = useState(d?.appearanceDesc ?? '')
   const [hairColor, setHairColor] = useState<string>(d?.hairColor ?? '')
   const [hairLength, setHairLength] = useState<string>(d?.hairLength ?? '')
   const [glasses, setGlasses] = useState<boolean>(d?.glasses ?? false)
-  const setPose = (key: keyof typeof prefPose, val: number) => setPrefPose({ ...prefPose, [key]: Math.min(5, Math.max(1, val)) })
+  const setPose = (key: keyof typeof prefPose, val: number) => {
+    const clamped = Math.min(POSE_MAX, Math.max(POSE_MIN, val))
+    const rest = Object.entries(prefPose).filter(([k]) => k !== key).reduce((s, [,v]) => s + (v as number), 0)
+    if (rest + clamped > POSE_TOTAL) return // 합계 초과 시 거부
+    setPrefPose(prev => ({ ...prev, [key]: clamped }))
+  }
 
   const buildAppearanceDesc = () => {
     const parts: string[] = []
@@ -2120,7 +2131,13 @@ export default function FemaleCharacterCreatePage({
           </div>
 
           {/* 선호 자세 */}
-          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 선호 자세 (1 비선호 / 5 선호) ──</div>
+          <div style={{ ...S.eroDivider, marginTop: 10 }}>── 선호 자세 ──</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0' }}>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>1=비선호 · 5=선호 · 합계 12</span>
+            <span style={{ fontSize: 12, fontWeight: 'bold', color: (prefPose.missionary+prefPose.doggy+prefPose.cowgirl+prefPose.side) === POSE_TOTAL ? '#c9a84c' : '#e94560' }}>
+              {prefPose.missionary+prefPose.doggy+prefPose.cowgirl+prefPose.side} / {POSE_TOTAL}pt
+            </span>
+          </div>
 
           {([
             ['정상위','missionary'],['후배위','doggy'],
