@@ -523,11 +523,14 @@ export default function FemaleCharacterCreatePage({
   const [hairColor, setHairColor] = useState<string>(d?.hairColor ?? '')
   const [hairLength, setHairLength] = useState<string>(d?.hairLength ?? '')
   const [glasses, setGlasses] = useState<boolean>(d?.glasses ?? false)
-  const setPose = (key: keyof typeof prefPose, val: number) => {
+  // side(버터플라이) 자동 = POSE_TOTAL - 나머지 3개, clamp 1~5
+  const poseSideAuto = Math.min(POSE_MAX, Math.max(POSE_MIN, POSE_TOTAL - prefPose.missionary - prefPose.doggy - prefPose.cowgirl))
+  const setPose = (key: 'missionary'|'doggy'|'cowgirl', val: number) => {
     const clamped = Math.min(POSE_MAX, Math.max(POSE_MIN, val))
-    const rest = Object.entries(prefPose).filter(([k]) => k !== key).reduce((s, [,v]) => s + (v as number), 0)
-    if (rest + clamped > POSE_TOTAL) return // 합계 초과 시 거부
-    setPrefPose(prev => ({ ...prev, [key]: clamped }))
+    const auto = POSE_TOTAL - clamped -
+      (key === 'missionary' ? prefPose.doggy + prefPose.cowgirl : key === 'doggy' ? prefPose.missionary + prefPose.cowgirl : prefPose.missionary + prefPose.doggy)
+    if (auto < POSE_MIN || auto > POSE_MAX) return // side가 범위 벗어나면 거부
+    setPrefPose(prev => ({ ...prev, [key]: clamped, side: auto }))
   }
 
   const buildAppearanceDesc = () => {
@@ -2133,29 +2136,31 @@ export default function FemaleCharacterCreatePage({
           {/* 선호 자세 */}
           <div style={{ ...S.eroDivider, marginTop: 10 }}>── 선호 자세 ──</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0' }}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>1=비선호 · 5=선호 · 합계 12</span>
-            <span style={{ fontSize: 12, fontWeight: 'bold', color: (prefPose.missionary+prefPose.doggy+prefPose.cowgirl+prefPose.side) === POSE_TOTAL ? '#c9a84c' : '#e94560' }}>
-              {prefPose.missionary+prefPose.doggy+prefPose.cowgirl+prefPose.side} / {POSE_TOTAL}pt
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>1=비선호 · 5=선호 · 버터플라이 자동 · 합계 12</span>
+            <span style={{ fontSize: 12, fontWeight: 'bold', color: (prefPose.missionary+prefPose.doggy+prefPose.cowgirl+poseSideAuto) === POSE_TOTAL ? '#c9a84c' : '#e94560' }}>
+              {prefPose.missionary+prefPose.doggy+prefPose.cowgirl+poseSideAuto} / {POSE_TOTAL}pt
             </span>
           </div>
 
-          {([
-            ['정상위','missionary'],['후배위','doggy'],
-            ['여성상위','cowgirl'],['버터플라이','side'],
-          ] as [string, keyof typeof prefPose][]).map(([label, key]) => {
+          {(['missionary','doggy','cowgirl'] as const).map(key => {
+            const labelMap = { missionary:'정상위', doggy:'후배위', cowgirl:'여성상위' }
             const val = prefPose[key]
             const poseColor = val >= 4 ? '#c9a84c' : val >= 2 ? '#66BB6A' : '#e94560'
             return (
               <div key={key} style={S.erogenousRow}>
-                <span style={{ ...S.eroLabel, color: poseColor }}>{label}</span>
+                <span style={{ ...S.eroLabel, color: poseColor }}>{labelMap[key]}</span>
                 <input type="range" min={1} max={5} step={1} value={val}
                   onChange={e => setPose(key, Number(e.target.value))} style={{ ...S.slider, accentColor: poseColor }} />
-                <span style={{ color: poseColor, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>
-                  {val}
-                </span>
+                <span style={{ color: poseColor, fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{val}</span>
               </div>
             )
           })}
+          {/* 버터플라이 — 자동 */}
+          <div style={S.erogenousRow}>
+            <span style={{ ...S.eroLabel, color: '#ffffff66' }}>버터플라이 (자동)</span>
+            <div style={S.autoBar}><div style={{ ...S.autoFill, width: `${((poseSideAuto - POSE_MIN) / (POSE_MAX - POSE_MIN)) * 100}%`, background: poseSideAuto >= 4 ? '#c9a84c' : poseSideAuto >= 2 ? '#66BB6A' : '#e94560' }} /></div>
+            <span style={{ color: poseSideAuto >= 4 ? '#c9a84c' : poseSideAuto >= 2 ? '#66BB6A' : '#e94560', fontWeight: 'bold', fontSize: 13, width: 20, textAlign: 'center', flexShrink: 0 }}>{poseSideAuto}</span>
+          </div>
 
         </div>
 
