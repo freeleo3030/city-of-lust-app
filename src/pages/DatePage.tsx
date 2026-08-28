@@ -48,6 +48,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const [bypassCountdown, setBypassCountdown] = useState(0)
   const [timeLeft, setTimeLeft] = useState(600) // 10분
   const [exprIdx, setExprIdx] = useState(0) // 표정 인덱스 0~4 (평온→설렘)
+  const [voiceMode, setVoiceMode] = useState(false)
+  const [listening, setListening] = useState(false)
   const chatHistory = useRef<{ role: string; content: string }[]>([])
   const chatEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -55,6 +57,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const initialized = useRef(false)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const recognitionRef = useRef<any>(null)
+  const synthRef = useRef<SpeechSynthesisUtterance | null>(null)
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog])
 
@@ -80,6 +84,45 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     }, 1000)
   }
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current) }, [])
+
+  // 음성 인식 초기화
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) return
+    const rec = new SpeechRecognition()
+    rec.lang = 'ko-KR'
+    rec.interimResults = false
+    rec.maxAlternatives = 1
+    rec.onstart = () => setListening(true)
+    rec.onend = () => setListening(false)
+    rec.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript.trim()
+      if (transcript) sendMessageText(transcript)
+    }
+    rec.onerror = () => setListening(false)
+    recognitionRef.current = rec
+    rec.start()
+  }
+
+  const stopListening = () => {
+    recognitionRef.current?.stop()
+    setListening(false)
+  }
+
+  const speakReply = (text: string) => {
+    window.speechSynthesis.cancel()
+    const utter = new SpeechSynthesisUtterance(text)
+    utter.lang = 'ko-KR'
+    utter.rate = 1.0
+    utter.pitch = 1.1
+    // 한국어 여성 목소리 우선 선택
+    const voices = window.speechSynthesis.getVoices()
+    const koFemale = voices.find(v => v.lang.startsWith('ko') && v.name.toLowerCase().includes('female'))
+      || voices.find(v => v.lang.startsWith('ko'))
+    if (koFemale) utter.voice = koFemale
+    synthRef.current = utter
+    window.speechSynthesis.speak(utter)
+  }
 
   // 10분 타이머 — 로딩 끝난 후 시작, 로컬 모드만 제외 (윈드도 UI 동일하게 표시)
   useEffect(() => {
@@ -258,7 +301,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const res = await fetch(`${supabaseUrl}/functions/v1/date-chat`, {
+      const res = await fetch(`${supabaseUrl}/functions/v1/gemini-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
         body: JSON.stringify({
@@ -306,8 +349,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     setChatLog(prev => [...prev, { id: msgId.current++, sender: 'player', text }])
   }
 
-  const sendMessage = async () => {
-    const text = input.trim()
+  const sendMessageText = async (text: string) => {
     if (!text || sending || sessionEnded || !rel) return
     setInput('')
     addPlayerMsg(text)
@@ -317,7 +359,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const res = await fetch(`${supabaseUrl}/functions/v1/date-chat`, {
+      const res = await fetch(`${supabaseUrl}/functions/v1/gemini-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
         body: JSON.stringify({
@@ -382,6 +424,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
       setRel(prev => prev ? { ...prev, affection: newAffection } : prev)
       addFemaleMsg(reply, delta)
+      if (voiceMode) speakReply(reply)
 
       // SEX 잠금 해제 체크
       if (newAffection >= SEX_UNLOCK_THRESHOLD && !rel.sex_unlocked) {
@@ -396,9 +439,11 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       addFemaleMsg('...')
     } finally {
       setSending(false)
-      inputRef.current?.focus()
+      if (!voiceMode) inputRef.current?.focus()
     }
   }
+
+  const sendMessage = () => sendMessageText(input.trim())
 
   const affectionPct = rel ? Math.round((rel.affection / MAX_AFFECTION) * 100) : 0
   const barColor = affectionPct >= 90 ? '#c9a84c' : affectionPct >= 50 ? '#e94560' : '#4FC3F7'
@@ -532,20 +577,48 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
             <button style={S.backBtn} onClick={onBack}>나가기</button>
           </div>
         ) : (
-          <div style={S.inputRow}>
-            <input
-              ref={inputRef}
-              style={S.input}
-              value={input}
-              onChange={e => setInput(e.target.value.slice(0, 100))}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-              placeholder="말을 걸어봐... (100자)"
-              disabled={sending}
-            />
-            <button style={{ ...S.sendBtn, opacity: sending || !input.trim() ? 0.5 : 1 }} onClick={sendMessage} disabled={sending || !input.trim()}>
-              전송
-            </button>
-          </div>
+          <>
+            {/* 음성/텍스트 모드 토글 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 12px 0', gap: 6 }}>
+              <button
+                style={{ ...S.modeBtn, background: !voiceMode ? '#c9a84c22' : 'none', color: !voiceMode ? '#c9a84c' : '#ffffff44', border: `1px solid ${!voiceMode ? '#c9a84c' : '#ffffff22'}` }}
+                onClick={() => { setVoiceMode(false); stopListening(); window.speechSynthesis.cancel() }}
+              >⌨️ 텍스트</button>
+              <button
+                style={{ ...S.modeBtn, background: voiceMode ? '#e9456022' : 'none', color: voiceMode ? '#e94560' : '#ffffff44', border: `1px solid ${voiceMode ? '#e94560' : '#ffffff22'}` }}
+                onClick={() => setVoiceMode(true)}
+              >🎤 음성</button>
+            </div>
+
+            {voiceMode ? (
+              /* 음성 모드 입력 */
+              <div style={S.inputRow}>
+                <button
+                  style={{ flex: 1, background: listening ? '#e9456033' : '#1a1a2e', border: `1px solid ${listening ? '#e94560' : '#ffffff22'}`, borderRadius: 8, padding: '9px 12px', color: listening ? '#e94560' : '#ffffff88', fontSize: 13, cursor: sending ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+                  onClick={listening ? stopListening : startListening}
+                  disabled={sending}
+                >
+                  {listening ? '🔴 듣는 중... (탭하면 중지)' : sending ? '⏳ 답변 중...' : '🎤 탭해서 말하기'}
+                </button>
+              </div>
+            ) : (
+              /* 텍스트 모드 입력 */
+              <div style={S.inputRow}>
+                <input
+                  ref={inputRef}
+                  style={S.input}
+                  value={input}
+                  onChange={e => setInput(e.target.value.slice(0, 100))}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
+                  placeholder="말을 걸어봐... (100자)"
+                  disabled={sending}
+                />
+                <button style={{ ...S.sendBtn, opacity: sending || !input.trim() ? 0.5 : 1 }} onClick={sendMessage} disabled={sending || !input.trim()}>
+                  전송
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -606,6 +679,9 @@ const S: Record<string, React.CSSProperties> = {
   chatArea:     { flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 },
   msgRow:       { display: 'flex', alignItems: 'flex-end', gap: 6 },
   bubble:       { maxWidth: '90%', padding: '8px 12px', wordBreak: 'break-word', borderRadius: 10 },
+
+  // 모드 토글
+  modeBtn:      { fontSize: 11, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', background: 'none', transition: 'all 0.2s' },
 
   // 입력
   inputRow:     { display: 'flex', gap: 6, padding: '10px 12px', borderTop: '1px solid #ffffff11', flexShrink: 0 },
