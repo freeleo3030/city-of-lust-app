@@ -109,19 +109,27 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     setListening(false)
   }
 
-  const speakReply = (text: string) => {
-    window.speechSynthesis.cancel()
-    const utter = new SpeechSynthesisUtterance(text)
-    utter.lang = 'ko-KR'
-    utter.rate = 1.0
-    utter.pitch = 1.1
-    // 한국어 여성 목소리 우선 선택
-    const voices = window.speechSynthesis.getVoices()
-    const koFemale = voices.find(v => v.lang.startsWith('ko') && v.name.toLowerCase().includes('female'))
-      || voices.find(v => v.lang.startsWith('ko'))
-    if (koFemale) utter.voice = koFemale
-    synthRef.current = utter
-    window.speechSynthesis.speak(utter)
+  const speakReply = async (text: string) => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const res = await fetch(`${supabaseUrl}/functions/v1/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
+        body: JSON.stringify({ text }),
+      })
+      const data = await res.json()
+      if (data.audioContent) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`)
+        audio.play()
+      }
+    } catch {
+      // TTS 실패 시 브라우저 TTS 폴백
+      window.speechSynthesis.cancel()
+      const utter = new SpeechSynthesisUtterance(text)
+      utter.lang = 'ko-KR'
+      window.speechSynthesis.speak(utter)
+    }
   }
 
   // 10분 타이머 — 로딩 끝난 후 시작, 로컬 모드만 제외 (윈드도 UI 동일하게 표시)
