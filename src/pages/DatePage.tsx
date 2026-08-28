@@ -616,9 +616,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
                   ref={inputRef}
                   style={S.input}
                   value={input}
-                  onChange={e => setInput(e.target.value.slice(0, 100))}
+                  onChange={e => setInput(e.target.value.slice(0, 200))}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-                  placeholder="말을 걸어봐... (100자)"
+                  placeholder="말을 걸어봐... (200자)"
                   disabled={sending}
                 />
                 <button style={{ ...S.sendBtn, opacity: sending || !input.trim() ? 0.5 : 1 }} onClick={sendMessage} disabled={sending || !input.trim()}>
