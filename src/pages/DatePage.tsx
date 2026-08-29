@@ -51,6 +51,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const [voiceMode, setVoiceMode] = useState(false)
   const [listening, setListening] = useState(false)
   const [micReady, setMicReady] = useState(false)
+  const [sttLang, setSttLang] = useState<'ko-KR' | 'en-US'>('ko-KR')
   const chatHistory = useRef<{ role: string; content: string }[]>([])
   const chatEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -91,7 +92,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) return
     const rec = new SpeechRecognition()
-    rec.lang = ''  // 브라우저 언어 자동감지 (한국어/영어 모두 인식)
+    rec.lang = sttLang
     rec.interimResults = false
     rec.maxAlternatives = 1
     rec.continuous = true
@@ -625,6 +626,11 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
             {voiceMode ? (
               /* 음성 모드 입력 */
               <div style={S.inputRow}>
+                <button
+                  style={{ width: 44, flexShrink: 0, background: '#1a1a2e', border: '1px solid #ffffff22', borderRadius: 8, padding: '9px 4px', color: '#ffffffcc', fontSize: 16, cursor: 'pointer' }}
+                  onClick={() => { stopListening(); setSttLang(l => l === 'ko-KR' ? 'en-US' : 'ko-KR') }}
+                  title="언어 전환"
+                >{sttLang === 'ko-KR' ? '🇰🇷' : '🇺🇸'}</button>
                 <button
                   style={{ flex: 1, background: listening ? '#e9456033' : '#1a1a2e', border: `1px solid ${listening ? '#e94560' : '#ffffff22'}`, borderRadius: 8, padding: '9px 12px', color: listening ? '#e94560' : '#ffffff88', fontSize: 13, cursor: sending ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
                   onClick={listening ? stopListening : startListening}
