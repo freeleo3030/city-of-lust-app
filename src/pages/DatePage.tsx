@@ -137,11 +137,13 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const { voiceName, speakingRate, pitch } = getVoiceConfig()
+      const voiceCfg = sttLang === 'en-US'
+        ? { voiceName: 'en-US-Neural2-F', speakingRate: 1.0, pitch: 0.0, lang: 'en-US' }
+        : { ...getVoiceConfig(), lang: 'ko-KR' }
       const res = await fetch(`${supabaseUrl}/functions/v1/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
-        body: JSON.stringify({ text, voiceName, speakingRate, pitch }),
+        body: JSON.stringify({ text, ...voiceCfg }),
       })
       const data = await res.json()
       if (data.audioContent) {
