@@ -93,11 +93,19 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     rec.lang = 'ko-KR'
     rec.interimResults = false
     rec.maxAlternatives = 1
+    rec.continuous = true
     rec.onstart = () => setListening(true)
     rec.onend = () => setListening(false)
     rec.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript.trim()
-      if (transcript) sendMessageText(transcript)
+      // continuous 모드: 마지막 최종 결과만 처리
+      const result = e.results[e.results.length - 1]
+      if (result.isFinal) {
+        const transcript = result[0].transcript.trim()
+        if (transcript) {
+          rec.stop()
+          sendMessageText(transcript)
+        }
+      }
     }
     rec.onerror = () => setListening(false)
     recognitionRef.current = rec
