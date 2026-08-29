@@ -117,14 +117,25 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     setListening(false)
   }
 
+  const getVoiceConfig = () => {
+    // 여캐 ID 해시로 목소리 고정 (같은 여캐 = 항상 같은 목소리)
+    const idSum = (femaleChar.id || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+    const age = femaleChar.age ?? 25
+    const voiceName = idSum % 2 === 0 ? 'ko-KR-Neural2-A' : 'ko-KR-Neural2-C'
+    const speakingRate = age < 30 ? 1.0 : age < 40 ? 0.95 : 0.90
+    const pitch = age < 30 ? 1.0 : age < 40 ? 0.0 : -1.0
+    return { voiceName, speakingRate, pitch }
+  }
+
   const speakReply = async (text: string) => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const { voiceName, speakingRate, pitch } = getVoiceConfig()
       const res = await fetch(`${supabaseUrl}/functions/v1/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, voiceName, speakingRate, pitch }),
       })
       const data = await res.json()
       if (data.audioContent) {
