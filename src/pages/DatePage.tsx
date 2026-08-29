@@ -113,7 +113,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     recognitionRef.current = rec
     setMicReady(false)
     setListening(true)  // 즉시 준비중 표시
-    setTimeout(() => rec.start(), 400)
+    setTimeout(() => rec.start(), 800)
   }
 
   const stopListening = () => {
