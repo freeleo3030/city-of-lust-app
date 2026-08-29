@@ -91,12 +91,12 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) return
     const rec = new SpeechRecognition()
-    rec.lang = 'ko-KR'
+    rec.lang = 'ko-KR'  // 한국어 우선, 영어도 인식됨
     rec.interimResults = false
     rec.maxAlternatives = 1
     rec.continuous = true
-    rec.onstart = () => setListening(true)
-    rec.onend = () => setListening(false)
+    rec.onstart = () => { setListening(true); setMicReady(true) }
+    rec.onend = () => { setListening(false); setMicReady(false) }
     rec.onresult = (e: any) => {
       // continuous 모드: 마지막 최종 결과만 처리
       const result = e.results[e.results.length - 1]
@@ -111,7 +111,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     rec.onerror = () => setListening(false)
     recognitionRef.current = rec
     setMicReady(false)
-    setTimeout(() => { rec.start(); setMicReady(true) }, 400)
+    setListening(true)  // 즉시 준비중 표시
+    setTimeout(() => rec.start(), 400)
   }
 
   const stopListening = () => {
