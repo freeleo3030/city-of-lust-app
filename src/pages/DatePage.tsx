@@ -91,7 +91,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) return
     const rec = new SpeechRecognition()
-    rec.lang = 'ko-KR'  // 한국어 우선, 영어도 인식됨
+    rec.lang = ''  // 브라우저 언어 자동감지 (한국어/영어 모두 인식)
     rec.interimResults = false
     rec.maxAlternatives = 1
     rec.continuous = true
