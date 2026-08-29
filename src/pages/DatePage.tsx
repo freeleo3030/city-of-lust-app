@@ -121,7 +121,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     // 여캐 ID 해시로 목소리 고정 (같은 여캐 = 항상 같은 목소리)
     const idSum = (femaleChar.id || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
     const age = femaleChar.age ?? 25
-    const voiceName = idSum % 2 === 0 ? 'ko-KR-Neural2-A' : 'ko-KR-Neural2-C'
+    // Neural2 여성: A만 있음. Wavenet 여성: A, B
+    const voiceName = idSum % 2 === 0 ? 'ko-KR-Neural2-A' : 'ko-KR-Wavenet-B'
     const speakingRate = age < 30 ? 1.0 : age < 40 ? 0.95 : 0.90
     const pitch = age < 30 ? 1.0 : age < 40 ? 0.0 : -1.0
     return { voiceName, speakingRate, pitch }
