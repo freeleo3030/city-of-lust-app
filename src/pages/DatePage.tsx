@@ -50,6 +50,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const [exprIdx, setExprIdx] = useState(0) // 표정 인덱스 0~4 (평온→설렘)
   const [voiceMode, setVoiceMode] = useState(false)
   const [listening, setListening] = useState(false)
+  const [micReady, setMicReady] = useState(false)
   const chatHistory = useRef<{ role: string; content: string }[]>([])
   const chatEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -109,7 +110,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     }
     rec.onerror = () => setListening(false)
     recognitionRef.current = rec
-    rec.start()
+    setMicReady(false)
+    setTimeout(() => { rec.start(); setMicReady(true) }, 400)
   }
 
   const stopListening = () => {
@@ -626,7 +628,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
                   onClick={listening ? stopListening : startListening}
                   disabled={sending}
                 >
-                  {listening ? '🔴 듣는 중... (탭하면 중지)' : sending ? '⏳ 답변 중...' : '🎤 탭해서 말하기'}
+                  {listening && !micReady ? '⏳ 준비 중...' : listening ? '🔴 듣는 중... (탭하면 중지)' : sending ? '⏳ 답변 중...' : '🎤 탭해서 말하기'}
                 </button>
               </div>
             ) : (
