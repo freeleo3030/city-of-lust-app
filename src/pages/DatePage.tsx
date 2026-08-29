@@ -400,6 +400,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
           history: chatHistory.current.slice(-8),
           charContext: buildCharContext(rel.affection, rel.meet_count),
           missionContext: { missions, completed: completedMissions },
+          lang: sttLang === 'en-US' ? 'en' : 'ko',
         }),
       })
       const data = await res.json()
