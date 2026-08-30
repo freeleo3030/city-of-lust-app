@@ -191,12 +191,13 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         const buf = new ArrayBuffer(binary.length)
         const view = new Uint8Array(buf)
         for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i)
-        // Blob URL 방식 (가장 호환성 높음)
-        const blob = new Blob([view], { type: 'audio/mpeg' })
-        const url = URL.createObjectURL(blob)
-        const audio = new Audio(url)
-        audio.onended = () => URL.revokeObjectURL(url)
-        await audio.play()
+        const ctx = audioCtxRef.current!
+        if (ctx.state === 'suspended') await ctx.resume()
+        const audioBuf = await ctx.decodeAudioData(buf)
+        const src = ctx.createBufferSource()
+        src.buffer = audioBuf
+        src.connect(ctx.destination)
+        src.start(0)
       }
     } catch (e) { console.error('[TTS]', e) }
   }
