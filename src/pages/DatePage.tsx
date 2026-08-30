@@ -123,8 +123,10 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         if (transcript) sendMessageText(transcript)
       }
       mediaRecorderRef.current = mr
-      mr.start(100)  // 100ms 단위로 데이터 수집 (끝부분 손실 방지)
-      setMicReady(true)  // 마이크 준비 완료 → "말하세요!" 표시
+      // 300ms 대기: 마이크 하드웨어 안정화 + 유저가 "말하세요!" 확인
+      await new Promise(r => setTimeout(r, 300))
+      mr.start(100)
+      setMicReady(true)  // "말하세요!" 표시
     } catch {
       setListening(false)
     }
@@ -661,7 +663,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
                   onClick={() => { unlockAudio(); listening ? stopListening() : startListening() }}
                   disabled={sending}
                 >
-                  {listening && !micReady ? '⏳ 준비 중...' : listening ? '🔴 듣는 중... (탭하면 중지)' : sending ? '⏳ 답변 중...' : '🎤 탭해서 말하기'}
+                  {listening && !micReady ? '⏳ 준비 중... 잠깐!' : listening ? '🔴 말하세요! (탭하면 중지)' : sending ? '⏳ 답변 중...' : '🎤 탭해서 말하기'}
                 </button>
               </div>
             ) : (
