@@ -123,8 +123,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         if (transcript) sendMessageText(transcript)
       }
       mediaRecorderRef.current = mr
-      // 300ms 대기: 마이크 하드웨어 안정화 + 유저가 "말하세요!" 확인
-      await new Promise(r => setTimeout(r, 300))
+      // 800ms 대기: 블루투스 HFP 전환 완료 + 유저가 "말하세요!" 확인
+      await new Promise(r => setTimeout(r, 800))
       mr.start(100)
       setMicReady(true)  // "말하세요!" 표시
     } catch {
