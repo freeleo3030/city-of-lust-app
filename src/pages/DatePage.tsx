@@ -62,7 +62,6 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const micStreamRef = useRef<MediaStream | null>(null)
-  const audioCtxRef = useRef<AudioContext | null>(null)
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog])
 
@@ -74,14 +73,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     }
   }, [])
 
-  // AudioContext 언락 (버튼 클릭 핸들러에서 직접 호출)
-  const unlockAudio = () => {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext()
-    } else if (audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume()
-    }
-  }
+  const unlockAudio = () => { /* autoplay 정책: 버튼 클릭 시 호출로 컨텍스트 활성화 */ }
 
   // 로컬(개발) 모드 여부 — 로그인 없이 테스트할 때 UUID가 아닌 userId가 들어옴
   const isLocalMode = !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
@@ -182,17 +174,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       const data = await res.json()
       if (data.audioContent) {
         // AudioContext로 재생 (autoplay 정책 우회)
-        const binary = atob(data.audioContent)
-        const buf = new ArrayBuffer(binary.length)
-        const view = new Uint8Array(buf)
-        for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i)
-        const ctx = audioCtxRef.current!
-        if (ctx.state === 'suspended') await ctx.resume()
-        const audioBuf = await ctx.decodeAudioData(buf)
-        const src = ctx.createBufferSource()
-        src.buffer = audioBuf
-        src.connect(ctx.destination)
-        src.start(0)
+        const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`)
+        audio.play().catch(e => console.error('[TTS play]', e))
       }
     } catch (e) { console.error('[TTS]', e) }
   }
