@@ -62,15 +62,23 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const micStreamRef = useRef<MediaStream | null>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog])
 
-  // 음성 모드 ON → 마이크 미리 초기화 (앞부분 짤림 방지)
+  // 음성 모드 ON → 마이크 + AudioContext 미리 초기화
   useEffect(() => {
     if (voiceMode) {
       navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
         micStreamRef.current = stream
       }).catch(() => {})
+      // AudioContext는 user gesture 직후 생성해야 autoplay 허용됨
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioContext()
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume()
+      }
     } else {
       micStreamRef.current?.getTracks().forEach(t => t.stop())
       micStreamRef.current = null
@@ -180,8 +188,18 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       })
       const data = await res.json()
       if (data.audioContent) {
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`)
-        audio.play()
+        // AudioContext로 재생 (autoplay 정책 우회)
+        const ctx = audioCtxRef.current || new AudioContext()
+        audioCtxRef.current = ctx
+        if (ctx.state === 'suspended') await ctx.resume()
+        const binary = atob(data.audioContent)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        const audioBuf = await ctx.decodeAudioData(bytes.buffer)
+        const src = ctx.createBufferSource()
+        src.buffer = audioBuf
+        src.connect(ctx.destination)
+        src.start(0)
       }
     } catch { /* TTS 실패 시 무시 */ }
   }
