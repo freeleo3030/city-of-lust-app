@@ -155,8 +155,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         body: form,
       })
       const data = await res.json()
+      console.log('[STT] whisper result:', data.text, 'error:', data.error)
       return data.text ?? ''
-    } catch { return '' }
+    } catch (e) { console.error('[STT] fetch error:', e); return '' }
   }
 
   const getVoice = () => {
