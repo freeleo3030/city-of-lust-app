@@ -101,6 +101,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   // Whisper STT — 녹음 시작 (매번 새로 요청, 끝나면 즉시 해제 → 블루투스 A2DP 유지)
   const startListening = async () => {
     try {
+      setListening(true)   // 즉시 "준비 중..." 표시
+      setMicReady(false)
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       micStreamRef.current = stream
       audioChunksRef.current = []
@@ -121,9 +123,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         if (transcript) sendMessageText(transcript)
       }
       mediaRecorderRef.current = mr
-      setMicReady(true)
-      setListening(true)
       mr.start(100)  // 100ms 단위로 데이터 수집 (끝부분 손실 방지)
+      setMicReady(true)  // 마이크 준비 완료 → "말하세요!" 표시
     } catch {
       setListening(false)
     }
