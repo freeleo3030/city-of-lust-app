@@ -51,7 +51,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const [voiceMode, setVoiceMode] = useState(false)
   const [listening, setListening] = useState(false)
   const [micReady, setMicReady] = useState(false)
-  const [sttLang, setSttLang] = useState<'ko-KR' | 'en-US'>('ko-KR')
+  const [sttLang, setSttLang] = useState<'ko' | 'en'>('ko')
   const chatHistory = useRef<{ role: string; content: string }[]>([])
   const chatEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -59,8 +59,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const initialized = useRef(false)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const recognitionRef = useRef<any>(null)
-  const synthRef = useRef<SpeechSynthesisUtterance | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog])
 
@@ -87,76 +87,77 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   }
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current) }, [])
 
-  // 음성 인식 초기화
-  const startListening = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) return
-    const rec = new SpeechRecognition()
-    rec.lang = sttLang
-    rec.interimResults = false
-    rec.maxAlternatives = 1
-    rec.continuous = true
-    rec.onstart = () => { setListening(true); setMicReady(true) }
-    rec.onend = () => { setListening(false); setMicReady(false) }
-    rec.onresult = (e: any) => {
-      // continuous 모드: 마지막 최종 결과만 처리
-      const result = e.results[e.results.length - 1]
-      if (result.isFinal) {
-        const transcript = result[0].transcript.trim()
-        if (transcript) {
-          rec.stop()
-          sendMessageText(transcript)
-        }
+  // Whisper STT — 녹음 시작
+  const startListening = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioChunksRef.current = []
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        setListening(false)
+        setMicReady(false)
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        if (blob.size < 1000) return  // 너무 짧으면 무시
+        const transcript = await whisperTranscribe(blob)
+        if (transcript) sendMessageText(transcript)
       }
+      mediaRecorderRef.current = mr
+      setMicReady(true)
+      setListening(true)
+      mr.start()
+    } catch {
+      setListening(false)
     }
-    rec.onerror = () => setListening(false)
-    recognitionRef.current = rec
-    setMicReady(false)
-    setListening(true)  // 즉시 준비중 표시
-    setTimeout(() => rec.start(), 800)
   }
 
   const stopListening = () => {
-    recognitionRef.current?.stop()
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop()
+    }
     setListening(false)
   }
 
-  const getVoiceConfig = () => {
-    // 여캐 ID 해시로 목소리 고정 (같은 여캐 = 항상 같은 목소리)
-    const idSum = (femaleChar.id || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  const whisperTranscribe = async (blob: Blob): Promise<string> => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const form = new FormData()
+      form.append('audio', blob, 'audio.webm')
+      form.append('lang', sttLang)
+      const res = await fetch(`${supabaseUrl}/functions/v1/stt`, {
+        method: 'POST',
+        headers: { 'apikey': supabaseKey },
+        body: form,
+      })
+      const data = await res.json()
+      return data.text ?? ''
+    } catch { return '' }
+  }
+
+  const getVoice = () => {
+    // 나이별 OpenAI TTS 목소리 (nova=20대 밝음, shimmer=30~40대 차분함)
     const age = femaleChar.age ?? 25
-    // 확인된 한국어 여성 목소리만 사용
-    const femaleVoices = ['ko-KR-Neural2-A', 'ko-KR-Wavenet-A', 'ko-KR-Wavenet-B']
-    const voiceName = femaleVoices[idSum % femaleVoices.length]
-    const speakingRate = age < 30 ? 1.05 : age < 40 ? 1.0 : 0.95
-    const pitch = age < 30 ? 1.0 : age < 40 ? 0.0 : -1.0
-    return { voiceName, speakingRate, pitch }
+    if (sttLang === 'en') return age < 30 ? 'nova' : 'shimmer'
+    return age < 30 ? 'nova' : 'shimmer'
   }
 
   const speakReply = async (text: string) => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const voiceCfg = sttLang === 'en-US'
-        ? { voiceName: 'en-US-Neural2-F', speakingRate: 1.0, pitch: 0.0, lang: 'en-US' }
-        : { ...getVoiceConfig(), lang: 'ko-KR' }
       const res = await fetch(`${supabaseUrl}/functions/v1/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
-        body: JSON.stringify({ text, ...voiceCfg }),
+        body: JSON.stringify({ text, voice: getVoice() }),
       })
       const data = await res.json()
       if (data.audioContent) {
         const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`)
         audio.play()
       }
-    } catch {
-      // TTS 실패 시 브라우저 TTS 폴백
-      window.speechSynthesis.cancel()
-      const utter = new SpeechSynthesisUtterance(text)
-      utter.lang = 'ko-KR'
-      window.speechSynthesis.speak(utter)
-    }
+    } catch { /* TTS 실패 시 무시 */ }
   }
 
   // 10분 타이머 — 로딩 끝난 후 시작, 로컬 모드만 제외 (윈드도 UI 동일하게 표시)
@@ -402,7 +403,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
           history: chatHistory.current.slice(-8),
           charContext: buildCharContext(rel.affection, rel.meet_count),
           missionContext: { missions, completed: completedMissions },
-          lang: sttLang === 'en-US' ? 'en' : 'ko',
+          lang: sttLang,
         }),
       })
       const data = await res.json()
@@ -631,9 +632,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
               <div style={S.inputRow}>
                 <button
                   style={{ width: 44, flexShrink: 0, background: '#1a1a2e', border: '1px solid #ffffff22', borderRadius: 8, padding: '9px 4px', color: '#ffffffcc', fontSize: 16, cursor: 'pointer' }}
-                  onClick={() => { stopListening(); setSttLang(l => l === 'ko-KR' ? 'en-US' : 'ko-KR') }}
+                  onClick={() => { stopListening(); setSttLang(l => l === 'ko' ? 'en' : 'ko') }}
                   title="언어 전환"
-                >{sttLang === 'ko-KR' ? '🇰🇷' : '🇺🇸'}</button>
+                >{sttLang === 'ko' ? '🇰🇷' : '🇺🇸'}</button>
                 <button
                   style={{ flex: 1, background: listening ? '#e9456033' : '#1a1a2e', border: `1px solid ${listening ? '#e94560' : '#ffffff22'}`, borderRadius: 8, padding: '9px 12px', color: listening ? '#e94560' : '#ffffff88', fontSize: 13, cursor: sending ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
                   onClick={listening ? stopListening : startListening}
