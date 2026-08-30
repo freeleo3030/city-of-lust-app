@@ -66,20 +66,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog])
 
-  // 음성 모드 ON → 마이크 + AudioContext 미리 초기화
+  // 음성 모드 OFF → 마이크 정리
   useEffect(() => {
-    if (voiceMode) {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        micStreamRef.current = stream
-      }).catch(() => {})
-      // AudioContext는 user gesture 직후 생성해야 autoplay 허용됨
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContext()
-      }
-      if (audioCtxRef.current.state === 'suspended') {
-        audioCtxRef.current.resume()
-      }
-    } else {
+    if (!voiceMode) {
       micStreamRef.current?.getTracks().forEach(t => t.stop())
       micStreamRef.current = null
     }
@@ -88,6 +77,15 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       micStreamRef.current = null
     }
   }, [voiceMode])
+
+  // AudioContext 언락 (버튼 클릭 핸들러에서 직접 호출)
+  const unlockAudio = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new AudioContext()
+    } else if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume()
+    }
+  }
 
   // 로컬(개발) 모드 여부 — 로그인 없이 테스트할 때 UUID가 아닌 userId가 들어옴
   const isLocalMode = !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
@@ -193,9 +191,10 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         audioCtxRef.current = ctx
         if (ctx.state === 'suspended') await ctx.resume()
         const binary = atob(data.audioContent)
-        const bytes = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-        const audioBuf = await ctx.decodeAudioData(bytes.buffer)
+        const buf = new ArrayBuffer(binary.length)
+        const view = new Uint8Array(buf)
+        for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i)
+        const audioBuf = await ctx.decodeAudioData(buf)
         const src = ctx.createBufferSource()
         src.buffer = audioBuf
         src.connect(ctx.destination)
@@ -667,7 +666,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
               >⌨️ 텍스트</button>
               <button
                 style={{ ...S.modeBtn, background: voiceMode ? '#e9456022' : 'none', color: voiceMode ? '#e94560' : '#ffffff44', border: `1px solid ${voiceMode ? '#e94560' : '#ffffff22'}` }}
-                onClick={() => setVoiceMode(true)}
+                onClick={() => { unlockAudio(); setVoiceMode(true) }}
               >🎤 음성</button>
             </div>
 
@@ -681,7 +680,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
                 >{sttLang === 'ko' ? '🇰🇷' : '🇺🇸'}</button>
                 <button
                   style={{ flex: 1, background: listening ? '#e9456033' : '#1a1a2e', border: `1px solid ${listening ? '#e94560' : '#ffffff22'}`, borderRadius: 8, padding: '9px 12px', color: listening ? '#e94560' : '#ffffff88', fontSize: 13, cursor: sending ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
-                  onClick={listening ? stopListening : startListening}
+                  onClick={() => { unlockAudio(); listening ? stopListening() : startListening() }}
                   disabled={sending}
                 >
                   {listening && !micReady ? '⏳ 준비 중...' : listening ? '🔴 듣는 중... (탭하면 중지)' : sending ? '⏳ 답변 중...' : '🎤 탭해서 말하기'}
