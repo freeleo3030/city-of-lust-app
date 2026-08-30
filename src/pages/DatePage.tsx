@@ -61,8 +61,25 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
+  const micStreamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog])
+
+  // 음성 모드 ON → 마이크 미리 초기화 (앞부분 짤림 방지)
+  useEffect(() => {
+    if (voiceMode) {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        micStreamRef.current = stream
+      }).catch(() => {})
+    } else {
+      micStreamRef.current?.getTracks().forEach(t => t.stop())
+      micStreamRef.current = null
+    }
+    return () => {
+      micStreamRef.current?.getTracks().forEach(t => t.stop())
+      micStreamRef.current = null
+    }
+  }, [voiceMode])
 
   // 로컬(개발) 모드 여부 — 로그인 없이 테스트할 때 UUID가 아닌 userId가 들어옴
   const isLocalMode = !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
@@ -87,26 +104,33 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   }
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current) }, [])
 
-  // Whisper STT — 녹음 시작
+  // Whisper STT — 녹음 시작 (미리 초기화된 스트림 재사용)
   const startListening = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // 미리 초기화된 스트림이 없으면 새로 요청
+      let stream = micStreamRef.current
+      if (!stream || stream.getTracks().some(t => t.readyState === 'ended')) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        micStreamRef.current = stream
+      }
       audioChunksRef.current = []
-      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      // 지원 코덱 순서로 선택 (Whisper 호환 우선)
+      const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
+        .find(m => MediaRecorder.isTypeSupported(m)) || ''
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {})
       mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
       mr.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop())
         setListening(false)
         setMicReady(false)
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-        if (blob.size < 1000) return  // 너무 짧으면 무시
-        const transcript = await whisperTranscribe(blob)
+        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || 'audio/webm' })
+        if (blob.size < 2000) return  // 너무 짧으면 무시
+        const transcript = await whisperTranscribe(blob, mr.mimeType)
         if (transcript) sendMessageText(transcript)
       }
       mediaRecorderRef.current = mr
       setMicReady(true)
       setListening(true)
-      mr.start()
+      mr.start(100)  // 100ms 단위로 데이터 수집 (끝부분 손실 방지)
     } catch {
       setListening(false)
     }
@@ -119,12 +143,14 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     setListening(false)
   }
 
-  const whisperTranscribe = async (blob: Blob): Promise<string> => {
+  const whisperTranscribe = async (blob: Blob, mimeType?: string): Promise<string> => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      // 파일 확장자를 mimeType에 맞게 설정
+      const ext = mimeType?.includes('ogg') ? 'ogg' : mimeType?.includes('mp4') ? 'mp4' : 'webm'
       const form = new FormData()
-      form.append('audio', blob, 'audio.webm')
+      form.append('audio', blob, `audio.${ext}`)
       form.append('lang', sttLang)
       const res = await fetch(`${supabaseUrl}/functions/v1/stt`, {
         method: 'POST',
