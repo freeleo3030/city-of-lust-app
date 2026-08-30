@@ -410,6 +410,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
   const sendMessageText = async (text: string) => {
     if (!text || sending || sessionEnded || !rel) return
+    // 직전 메시지와 동일하면 중복 무시 (STT 더블 트리거 방지)
+    const lastMsg = chatHistory.current[chatHistory.current.length - 1]
+    if (lastMsg?.role === 'user' && lastMsg?.content === text) return
     setInput('')
     addPlayerMsg(text)
     setSending(true)
