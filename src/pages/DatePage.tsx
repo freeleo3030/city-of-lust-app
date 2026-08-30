@@ -66,17 +66,13 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog])
 
-  // 음성 모드 OFF → 마이크 정리
+  // 음성 모드 OFF → 혹시 열린 마이크 정리
   useEffect(() => {
-    if (!voiceMode) {
-      micStreamRef.current?.getTracks().forEach(t => t.stop())
-      micStreamRef.current = null
-    }
     return () => {
       micStreamRef.current?.getTracks().forEach(t => t.stop())
       micStreamRef.current = null
     }
-  }, [voiceMode])
+  }, [])
 
   // AudioContext 언락 (버튼 클릭 핸들러에서 직접 호출)
   const unlockAudio = () => {
@@ -110,15 +106,11 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   }
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current) }, [])
 
-  // Whisper STT — 녹음 시작 (미리 초기화된 스트림 재사용)
+  // Whisper STT — 녹음 시작 (매번 새로 요청, 끝나면 즉시 해제 → 블루투스 A2DP 유지)
   const startListening = async () => {
     try {
-      // 미리 초기화된 스트림이 없으면 새로 요청
-      let stream = micStreamRef.current
-      if (!stream || stream.getTracks().some(t => t.readyState === 'ended')) {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        micStreamRef.current = stream
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      micStreamRef.current = stream
       audioChunksRef.current = []
       // 지원 코덱 순서로 선택 (Whisper 호환 우선)
       const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
@@ -126,6 +118,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {})
       mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
       mr.onstop = async () => {
+        // 녹음 끝나면 즉시 마이크 해제 → 블루투스 A2DP 복귀
+        stream.getTracks().forEach(t => t.stop())
+        micStreamRef.current = null
         setListening(false)
         setMicReady(false)
         const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || 'audio/webm' })
