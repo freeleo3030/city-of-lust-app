@@ -118,7 +118,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         setListening(false)
         setMicReady(false)
         const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || 'audio/webm' })
-        if (blob.size < 2000) return  // 너무 짧으면 무시
+        console.log('[STT] blob size:', blob.size, 'type:', mr.mimeType)
+        if (blob.size < 500) return
         const transcript = await whisperTranscribe(blob, mr.mimeType)
         if (transcript) sendMessageText(transcript)
       }
