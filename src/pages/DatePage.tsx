@@ -62,6 +62,11 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const micStreamRef = useRef<MediaStream | null>(null)
+  const vadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const vadAnimRef = useRef<number | null>(null)
+  const voiceModeRef = useRef(false)
+  const [continuousVoice, setContinuousVoice] = useState(false)
+  const continuousVoiceRef = useRef(false)
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatLog])
 
@@ -106,38 +111,93 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       micStreamRef.current = stream
       audioChunksRef.current = []
+
+      // AudioContext: getUserMedia 직후 (사용자 제스처 컨텍스트 안) 에서 생성
+      const audioCtx = new AudioContext()
+      await audioCtx.resume()
+      const analyser = audioCtx.createAnalyser()
+      analyser.fftSize = 512
+      const source = audioCtx.createMediaStreamSource(stream)
+      source.connect(analyser)
+      const buf = new Uint8Array(analyser.frequencyBinCount)
+
       // 지원 코덱 순서로 선택 (Whisper 호환 우선)
       const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
         .find(m => MediaRecorder.isTypeSupported(m)) || ''
       const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {})
       mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
       mr.onstop = async () => {
-        // 녹음 끝나면 즉시 마이크 해제 → 블루투스 A2DP 복귀
         stream.getTracks().forEach(t => t.stop())
         micStreamRef.current = null
         setListening(false)
         setMicReady(false)
         const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || 'audio/webm' })
-        console.log('[STT] blob size:', blob.size, 'type:', mr.mimeType)
+        console.log('[STT] blob size:', blob.size, 'type:', mr.mimeType, 'hadSpeech:', lastSoundAt !== null)
+        // 말소리 없이 타임아웃된 경우 → STT 스킵, 연속 대화는 중단(무한루프 방지)
+        if (lastSoundAt === null) {
+          return
+        }
         if (blob.size < 500) return
         const transcript = await whisperTranscribe(blob, mr.mimeType)
         if (transcript) sendMessageText(transcript)
       }
       mediaRecorderRef.current = mr
+
       // 800ms 대기: 블루투스 HFP 전환 완료 + 유저가 "말하세요!" 확인
       await new Promise(r => setTimeout(r, 800))
       mr.start(100)
-      setMicReady(true)  // "말하세요!" 표시
+      setMicReady(true)
+
+      // VAD: setInterval로 음량 감지 → 말소리 감지 후 1.5초 침묵 시 자동 중지
+      const VAD_SILENCE_MS = 1500
+      const VAD_THRESHOLD = 15
+      // 말소리 감지 전엔 최대 5초 대기, 감지 후부터 침묵 카운트 시작
+      const VAD_MAX_WAIT_MS = 5000
+      let lastSoundAt: number | null = null  // null = 아직 말소리 없음
+      let waitStart = Date.now()
+      console.log('[VAD] started, ctx state:', audioCtx.state)
+
+      vadTimerRef.current = setInterval(() => {
+        analyser.getByteFrequencyData(buf)
+        const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length)
+        const vol = Math.round(rms)
+        if (vol > VAD_THRESHOLD) lastSoundAt = Date.now()
+        if (Date.now() % 500 < 110) console.log('[VAD] vol:', vol, lastSoundAt !== null ? `silence: ${Date.now() - lastSoundAt}` : 'waiting')
+        // 말소리 없이 5초 지나면 → 연속 대화면 다시 대기, 아니면 중지
+        if (lastSoundAt === null && Date.now() - waitStart > VAD_MAX_WAIT_MS) {
+          clearInterval(vadTimerRef.current!); vadTimerRef.current = null
+          try { audioCtx.close() } catch {}
+          if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+          return
+        }
+        if (lastSoundAt === null) return  // 아직 말소리 기다리는 중
+        const silence = Date.now() - lastSoundAt
+        if (silence >= VAD_SILENCE_MS) {
+          console.log('[VAD] auto-stop triggered')
+          clearInterval(vadTimerRef.current!)
+          vadTimerRef.current = null
+          try { audioCtx.close() } catch {}
+          if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+        }
+      }, 100)
     } catch {
       setListening(false)
     }
   }
 
   const stopListening = () => {
+    if (vadAnimRef.current) { cancelAnimationFrame(vadAnimRef.current); vadAnimRef.current = null }
+    if (vadTimerRef.current) { clearTimeout(vadTimerRef.current); vadTimerRef.current = null }
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop()
     }
     setListening(false)
+  }
+
+  const stopContinuousVoice = () => {
+    continuousVoiceRef.current = false
+    setContinuousVoice(false)
+    stopListening()
   }
 
   const whisperTranscribe = async (blob: Blob, mimeType?: string): Promise<string> => {
@@ -156,7 +216,12 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       })
       const data = await res.json()
       console.log('[STT] whisper result:', data.text, 'error:', data.error)
-      return data.text ?? ''
+      const text = data.text ?? ''
+      // Whisper가 오디오를 못 잡으면 prompt 문장을 그대로 반환하는 경우 제거
+      const koPrompt = '안녕하세요. 이것은 두 사람 사이의 대화입니다.'
+      const enPrompt = 'This is a casual conversation between two people.'
+      if (text === koPrompt || text === enPrompt) return ''
+      return text
     } catch (e) { console.error('[STT] fetch error:', e); return '' }
   }
 
@@ -167,6 +232,15 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     return age < 30 ? 'nova' : 'shimmer'
   }
 
+  const getTtsSpeed = () => {
+    const p = (femaleChar as any).personality ?? {}
+    const introvert = p.introvert ?? 3  // 1=내향(느림), 5=외향(빠름)
+    const friendly  = p.friendly  ?? 3  // 1=친근(부드), 5=도도(차분)
+    // 외향적일수록 빠르게, 도도할수록 약간 느리게
+    const speed = 1.0 + (introvert - 3) * 0.06 - (friendly - 3) * 0.03
+    return Math.round(Math.max(0.8, Math.min(1.3, speed)) * 100) / 100
+  }
+
   const speakReply = async (text: string) => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -174,12 +248,14 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       const res = await fetch(`${supabaseUrl}/functions/v1/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
-        body: JSON.stringify({ text, voice: getVoice() }),
+        body: JSON.stringify({ text, voice: getVoice(), speed: getTtsSpeed() }),
       })
       const data = await res.json()
       if (data.audioContent) {
-        // AudioContext로 재생 (autoplay 정책 우회)
         const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`)
+        audio.onended = () => {
+          if (continuousVoiceRef.current) startListening()
+        }
         audio.play().catch(e => console.error('[TTS play]', e))
       }
     } catch (e) { console.error('[TTS]', e) }
@@ -374,10 +450,13 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       })
       const data = await res.json()
       const reply = data.reply ?? ''
+      console.log('[Mission] raw reply:', reply.slice(0, 200))
       const match = reply.match(/\[[\s\S]*\]/)
+      console.log('[Mission] match:', match?.[0]?.slice(0, 100))
       if (match) {
         const parsed: string[] = JSON.parse(match[0])
         const missionList = parsed.slice(0, missionCount)
+        console.log('[Mission] parsed:', missionList)
         setMissions(missionList)
         if (!isLocalMode) {
           await supabase.from('date_missions').insert(
@@ -435,7 +514,15 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         }),
       })
       const data = await res.json()
-      const reply: string = data.reply ?? '...'
+      console.log('[Gemini] res status:', res.status, 'data:', JSON.stringify(data).slice(0, 200))
+      let reply: string = data.reply || '...'
+      // 혹시 reply에 JSON 전체가 들어온 경우 방어
+      if (reply.startsWith('{') || reply.startsWith('```')) {
+        try {
+          const inner = JSON.parse((reply.match(/\{[\s\S]*\}/) ?? [])[0] ?? '')
+          if (inner?.reply) reply = inner.reply
+        } catch { reply = '...' }
+      }
       const delta: number = data.affection_delta ?? 0
       const mannerViolation: boolean = data.manner_violation ?? false
       const missionCompleted: boolean = data.mission_completed ?? false
@@ -446,7 +533,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       setExprIdx(newExpr)
       setTimeout(() => setExprIdx(0), 3000)
 
-      chatHistory.current.push({ role: 'assistant', content: reply })
+      // 빈 응답은 히스토리에 넣지 않음 (쌓이면 Gemini 혼란 유발)
+      if (data.reply) chatHistory.current.push({ role: 'assistant', content: reply })
 
       // 호감도 업데이트
       const newAffection = Math.max(0, Math.min(MAX_AFFECTION, rel.affection + delta))
@@ -489,7 +577,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
       setRel(prev => prev ? { ...prev, affection: newAffection } : prev)
       addFemaleMsg(reply, delta)
-      if (voiceMode) speakReply(reply)
+      if (voiceMode && reply && reply !== '...') speakReply(reply)
 
       // SEX 잠금 해제 체크
       if (newAffection >= SEX_UNLOCK_THRESHOLD && !rel.sex_unlocked) {
@@ -647,7 +735,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
             <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 12px 0', gap: 6 }}>
               <button
                 style={{ ...S.modeBtn, background: !voiceMode ? '#c9a84c22' : 'none', color: !voiceMode ? '#c9a84c' : '#ffffff44', border: `1px solid ${!voiceMode ? '#c9a84c' : '#ffffff22'}` }}
-                onClick={() => { setVoiceMode(false); stopListening(); window.speechSynthesis.cancel() }}
+                onClick={() => { setVoiceMode(false); stopContinuousVoice(); window.speechSynthesis.cancel() }}
               >⌨️ 텍스트</button>
               <button
                 style={{ ...S.modeBtn, background: voiceMode ? '#e9456022' : 'none', color: voiceMode ? '#e94560' : '#ffffff44', border: `1px solid ${voiceMode ? '#e94560' : '#ffffff22'}` }}
@@ -657,19 +745,28 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
             {voiceMode ? (
               /* 음성 모드 입력 */
-              <div style={S.inputRow}>
-                <button
-                  style={{ width: 44, flexShrink: 0, background: '#1a1a2e', border: '1px solid #ffffff22', borderRadius: 8, padding: '9px 4px', color: '#ffffffcc', fontSize: 16, cursor: 'pointer' }}
-                  onClick={() => { stopListening(); setSttLang(l => l === 'ko' ? 'en' : 'ko') }}
-                  title="언어 전환"
-                >{sttLang === 'ko' ? '🇰🇷' : '🇺🇸'}</button>
-                <button
-                  style={{ flex: 1, background: listening ? '#e9456033' : '#1a1a2e', border: `1px solid ${listening ? '#e94560' : '#ffffff22'}`, borderRadius: 8, padding: '9px 12px', color: listening ? '#e94560' : '#ffffff88', fontSize: 13, cursor: sending ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
-                  onClick={() => { unlockAudio(); listening ? stopListening() : startListening() }}
-                  disabled={sending}
-                >
-                  {listening && !micReady ? '⏳ 준비 중... 잠깐!' : listening ? '🔴 말하세요! (탭하면 중지)' : sending ? '⏳ 답변 중...' : '🎤 탭해서 말하기'}
-                </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 12px 8px' }}>
+                {/* 연속 대화 상태 표시 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    style={{ width: 36, flexShrink: 0, background: '#1a1a2e', border: '1px solid #ffffff22', borderRadius: 8, padding: '7px 4px', color: '#ffffffcc', fontSize: 14, cursor: 'pointer' }}
+                    onClick={() => { if (continuousVoice) { continuousVoiceRef.current = false; setContinuousVoice(false); stopListening() } setSttLang(l => l === 'ko' ? 'en' : 'ko') }}
+                    title="언어 전환"
+                  >{sttLang === 'ko' ? '🇰🇷' : '🇺🇸'}</button>
+                  {!continuousVoice ? (
+                    <button
+                      style={{ flex: 1, background: '#e9456033', border: '1px solid #e94560', borderRadius: 8, padding: '9px 12px', color: '#e94560', fontSize: 13, cursor: 'pointer', fontWeight: 'bold' }}
+                      onClick={() => { unlockAudio(); continuousVoiceRef.current = true; setContinuousVoice(true); startListening() }}
+                    >🎤 음성 대화 시작하기</button>
+                  ) : (
+                    <button
+                      style={{ flex: 1, background: listening ? '#e9456055' : sending ? '#ffffff11' : '#ffffff11', border: `1px solid ${listening ? '#e94560' : '#ffffff33'}`, borderRadius: 8, padding: '9px 12px', color: listening ? '#e94560' : '#ffffff66', fontSize: 13, cursor: 'pointer' }}
+                      onClick={() => { continuousVoiceRef.current = false; setContinuousVoice(false); stopListening() }}
+                    >
+                      {listening && !micReady ? '⏳ 잠깐...' : listening ? '🔴 듣는 중... (탭하면 종료)' : sending ? '⏳ 답변 중...' : '💬 대기 중... (탭하면 종료)'}
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               /* 텍스트 모드 입력 */

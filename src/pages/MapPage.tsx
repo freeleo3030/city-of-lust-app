@@ -423,25 +423,52 @@ export default function MapPage({ character, onViewCharacter, gold = 500, onCrea
           </div>
 
           {/* 장소 핀들 */}
-          {LOCATIONS.map(loc => (
-            <button
-              key={loc.id}
-              style={{
-                ...styles.pin,
-                left: `${loc.x}%`,
-                top: `${loc.y}%`,
-                borderColor: loc.color,
-                boxShadow: selected?.id === loc.id ? `0 0 20px ${loc.color}` : `0 0 8px ${loc.color}66`,
-                padding: `${ps(8)}px ${ps(14)}px`,
-                borderRadius: ps(14),
-                gap: ps(4),
-              }}
-              onClick={(e) => handlePinClick(e, loc)}
-            >
-              <span style={{ fontSize: ps(36) }}>{loc.emoji}</span>
-              <span style={{ ...styles.pinLabel, color: loc.color, fontSize: ps(16) }}>{loc.name}</span>
-            </button>
-          ))}
+          {LOCATIONS.map(loc => {
+            const charsHere = femaleChars.filter(c => c.location === loc.name)
+            return (
+              <button
+                key={loc.id}
+                style={{
+                  ...styles.pin,
+                  left: `${loc.x}%`,
+                  top: `${loc.y}%`,
+                  borderColor: loc.color,
+                  boxShadow: selected?.id === loc.id ? `0 0 20px ${loc.color}` : `0 0 8px ${loc.color}66`,
+                  padding: `${ps(8)}px ${ps(14)}px`,
+                  borderRadius: ps(14),
+                  gap: ps(4),
+                }}
+                onClick={(e) => handlePinClick(e, loc)}
+              >
+                <span style={{ fontSize: ps(36) }}>{loc.emoji}</span>
+                <span style={{ ...styles.pinLabel, color: loc.color, fontSize: ps(16) }}>{loc.name}</span>
+                {charsHere.length > 0 && (
+                  <div style={{ display: 'flex', marginTop: ps(4), gap: ps(2), flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {charsHere.slice(0, 3).map(c => (
+                      <div key={c.id} style={{
+                        width: ps(28), height: ps(28), borderRadius: '50%',
+                        overflow: 'hidden', border: `${ps(1.5)}px solid ${loc.color}`,
+                        background: '#333',
+                        flexShrink: 0,
+                      }}>
+                        {c.imageUrl
+                          ? <img src={c.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                          : <span style={{ fontSize: ps(16), lineHeight: `${ps(28)}px`, display: 'block', textAlign: 'center' }}>👤</span>
+                        }
+                      </div>
+                    ))}
+                    {charsHere.length > 3 && (
+                      <div style={{
+                        width: ps(28), height: ps(28), borderRadius: '50%',
+                        background: '#555', color: '#fff',
+                        fontSize: ps(10), display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>+{charsHere.length - 3}</div>
+                    )}
+                  </div>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
