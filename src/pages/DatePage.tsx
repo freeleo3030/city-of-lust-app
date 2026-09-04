@@ -231,8 +231,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     // 나이별 OpenAI TTS 목소리 (nova=20대, alloy=30대, fable=40대)
     const age = femaleChar.age ?? 25
     if (age < 30) return 'nova'
-    if (age < 40) return 'alloy'
-    return 'fable'
+    if (age < 40) return 'fable'
+    return 'onyx'
   }
 
   const getTtsSpeed = () => {
