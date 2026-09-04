@@ -625,7 +625,6 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       <div style={S.imagePanel}>
         {exprImgSrc ? (
           <img
-            key={exprIdx}
             src={exprImgSrc}
             style={S.exprImg}
             alt=""
@@ -821,7 +820,7 @@ const S: Record<string, React.CSSProperties> = {
   container:    { position: 'fixed', inset: 0, display: 'flex', flexDirection: 'row', background: '#0d0d1a', color: '#fff', fontFamily: 'sans-serif' },
 
   // 좌: 표정 이미지 — SexScene과 동일 (height:100%, width:auto, flexShrink:0)
-  imagePanel:   { position: 'relative', height: '100%', flexShrink: 0 },
+  imagePanel:   { position: 'relative', height: '100%', flexShrink: 0, minWidth: 10 },
   exprImg:      { height: '100%', width: 'auto', display: 'block' },
 
   // 우: 사이드 채팅 패널
