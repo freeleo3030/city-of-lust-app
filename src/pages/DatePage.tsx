@@ -108,7 +108,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     try {
       setListening(true)   // 즉시 "준비 중..." 표시
       setMicReady(false)
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      })
       micStreamRef.current = stream
       audioChunksRef.current = []
 
@@ -462,12 +464,18 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         }),
       })
       const data = await res.json()
-      const reply = data.reply ?? ''
-      console.log('[Mission] raw reply:', reply.slice(0, 200))
-      const match = reply.match(/\[[\s\S]*\]/)
-      console.log('[Mission] match:', match?.[0]?.slice(0, 100))
-      if (match) {
-        const parsed: string[] = JSON.parse(match[0])
+      const reply = (data.reply ?? '') as string
+      console.log('[Mission] raw reply:', reply.slice(0, 300))
+      let parsed: string[] | null = null
+      // 1) 직접 파싱 시도
+      try { parsed = JSON.parse(reply.trim()) } catch {}
+      // 2) regex fallback
+      if (!parsed) {
+        const match = reply.match(/\[[\s\S]*?\]/)
+        console.log('[Mission] match:', match?.[0]?.slice(0, 100))
+        if (match) { try { parsed = JSON.parse(match[0]) } catch {} }
+      }
+      if (parsed) {
         const missionList = parsed.slice(0, missionCount)
         console.log('[Mission] parsed:', missionList)
         setMissions(missionList)
