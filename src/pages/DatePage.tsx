@@ -457,7 +457,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
         body: JSON.stringify({
-          message: `[미션생성] 이 여성과 ${meetNum}번째 만남이야. 여성 직업: ${femaleChar.job}, 관심사: ${femaleChar.interestTags?.join(',')}. 현재 호감도: ${affection}/500. 이 상황에 맞는 자연스러운 미션 ${missionCount}개를 JSON 배열로만 반환해. 예: ["미션1", "미션2"]`,
+          message: `[미션생성] 직업:${femaleChar.job}, 관심사:${femaleChar.interestTags?.join(',')}. 짧은 미션(15자 이내) ${missionCount}개. JSON 배열만. 예:["취미 물어보기","여행 얘기 꺼내기"]`,
           history: [],
           charContext: buildCharContext(affection, meetNum),
           missionContext: { missions: [], completed: [] },
