@@ -256,9 +256,22 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         audio.onended = () => {
           if (continuousVoiceRef.current) startListening()
         }
-        audio.play().catch(e => console.error('[TTS play]', e))
+        audio.onerror = () => {
+          console.error('[TTS] audio error, restarting listen')
+          if (continuousVoiceRef.current) startListening()
+        }
+        audio.play().catch(e => {
+          console.error('[TTS play]', e)
+          if (continuousVoiceRef.current) startListening()
+        })
+      } else {
+        console.error('[TTS] no audioContent:', data)
+        if (continuousVoiceRef.current) startListening()
       }
-    } catch (e) { console.error('[TTS]', e) }
+    } catch (e) {
+      console.error('[TTS]', e)
+      if (continuousVoiceRef.current) startListening()
+    }
   }
 
   // 10분 타이머 — 로딩 끝난 후 시작, 로컬 모드만 제외 (윈드도 UI 동일하게 표시)
