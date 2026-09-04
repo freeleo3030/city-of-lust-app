@@ -449,53 +449,29 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       }
     }
 
-    // Grok으로 미션 생성
+    // 템플릿 기반 미션 생성 (AI 불안정하여 로컬 생성으로 대체)
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const res = await fetch(`${supabaseUrl}/functions/v1/gemini-chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey },
-        body: JSON.stringify({
-          message: `[미션생성] 직업:${femaleChar.job}, 관심사:${femaleChar.interestTags?.join(',')}. 짧은 미션(15자 이내) ${missionCount}개. JSON 배열만. 예:["취미 물어보기","여행 얘기 꺼내기"]`,
-          history: [],
-          charContext: buildCharContext(affection, meetNum),
-          missionContext: { missions: [], completed: [] },
-        }),
-      })
-      const data = await res.json()
-      console.log('[Mission] data type:', typeof data.reply, 'val:', JSON.stringify(data.reply).slice(0, 300))
-      let parsed: string[] | null = null
-      // 0) reply가 이미 배열인 경우
-      if (Array.isArray(data.reply)) {
-        parsed = data.reply
-      } else {
-        const reply = String(data.reply ?? '')
-        // 1) 직접 파싱 시도
-        try { parsed = JSON.parse(reply.trim()) } catch (e) {
-          console.log('[Mission] JSON.parse error:', String(e).slice(0, 100))
-        }
-        // 2) 마크다운 펜스 제거 후 재시도
-        if (!parsed) {
-          const stripped = reply.replace(/```(?:json)?\n?/g, '').trim()
-          try { parsed = JSON.parse(stripped) } catch {}
-        }
-        // 3) regex fallback (greedy — 마지막 ] 까지)
-        if (!parsed) {
-          const match = reply.match(/\[[\s\S]*\]/)
-          console.log('[Mission] match:', match?.[0]?.slice(0, 100))
-          if (match) { try { parsed = JSON.parse(match[0]) } catch {} }
-        }
-      }
-      if (parsed) {
-        const missionList = parsed.slice(0, missionCount)
-        console.log('[Mission] parsed:', missionList)
-        setMissions(missionList)
-        if (!isLocalMode) {
-          await supabase.from('date_missions').insert(
-            missionList.map(m => ({ relationship_id: relId, meet_number: meetNum, content: m }))
-          )
-        }
+      const job = femaleChar.job ?? ''
+      const interests = femaleChar.interestTags ?? []
+      const pool: string[] = [
+        interests[0] ? `${interests[0]} 얘기하기` : '취미 물어보기',
+        `${job} 일 어떤지 물어보기`,
+        '최근 여행 얘기 꺼내기',
+        '좋아하는 음식 물어보기',
+        '주말 뭐 하는지 물어보기',
+        interests[1] ? `${interests[1]} 얘기 꺼내기` : '평소 취미 물어보기',
+        '요즘 재미있는 거 물어보기',
+        '좋아하는 영화/드라마 물어보기',
+        '자주 가는 장소 물어보기',
+        '가고 싶은 여행지 물어보기',
+      ]
+      const missionList = pool.slice(0, missionCount)
+      console.log('[Mission] local generated:', missionList)
+      setMissions(missionList)
+      if (!isLocalMode) {
+        await supabase.from('date_missions').insert(
+          missionList.map(m => ({ relationship_id: relId, meet_number: meetNum, content: m }))
+        )
       }
     } catch { /* 미션 생성 실패해도 대화는 진행 */ }
   }
