@@ -33,6 +33,24 @@ const SEX_UNLOCK_THRESHOLD = 450  // 90%
 const MAX_MEET_COUNT = 10
 const MAX_MEET_TODAY = 3
 
+// 회차별 누적 호감도 목표치 (이 값 도달 시 세션 자동 종료)
+const MEET_AFFECTION_TARGETS: Record<number, number> = {
+  1: 100,
+  2: 200,
+  3: 350,
+  4: 450,
+}
+
+// 회차별 delta 배율
+function getMeetMultiplier(meetCount: number): number {
+  if (meetCount === 1) return 1.0
+  if (meetCount === 2) return 1.5
+  if (meetCount === 3) return 2.0
+  if (meetCount === 4) return 1.5
+  if (meetCount <= 7) return 1.0
+  return 0.8
+}
+
 export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUnlocked }: Props) {
   const scale = useScale(1440)
   const [rel, setRel] = useState<Relationship | null>(null)
@@ -420,12 +438,13 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     await supabase.from('relationships').update({ meet_count: newMeetCount, meet_today: newMeetToday }).eq('id', relData.id)
     setRel(prev => prev ? { ...prev, meet_count: newMeetCount, meet_today: newMeetToday } : prev)
 
-    // 7. 첫인사 먼저 (미션은 백그라운드)
+    // 7. 첫인사 먼저 (미션/요약은 백그라운드)
     const greeting = getGreeting(relData.affection, newMeetCount, femaleChar, maleChar?.age)
     addFemaleMsg(greeting)
     setLoading(false)
     setTimeout(() => inputRef.current?.focus(), 100)
     generateMissions(relData.id, newMeetCount, relData.affection) // 백그라운드
+    loadPrevSummary(relData.id, newMeetCount) // 백그라운드
     } catch (e) {
       console.error('[DatePage] initRelationship error:', e)
       setLoading(false)
@@ -477,6 +496,25 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     } catch { /* 미션 생성 실패해도 대화는 진행 */ }
   }
 
+  const prevSummaryRef = useRef<string>('')
+
+  // 이전 세션 대화 요약 로드 (세션 시작 시 1회)
+  const loadPrevSummary = async (relId: string, meetCount: number) => {
+    if (isLocalMode || meetCount <= 1) return
+    try {
+      const { data: msgs } = await supabase
+        .from('date_messages')
+        .select('sender, content')
+        .eq('relationship_id', relId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      if (!msgs || msgs.length === 0) return
+      // 최신순으로 왔으니 역순으로 정렬
+      const lines = msgs.reverse().map(m => `${m.sender === 'player' ? '나' : femaleChar.nickname}: ${m.content}`).join('\n')
+      prevSummaryRef.current = `[이전 대화 요약]\n${lines}`
+    } catch { /* 실패해도 대화 진행 */ }
+  }
+
   const buildCharContext = (affection: number, meetCount: number) => ({
     name: femaleChar.nickname,
     nickname: femaleChar.nickname,
@@ -490,6 +528,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     maleAge: maleChar?.age ?? null,
     affection,
     meetCount,
+    prevSummary: prevSummaryRef.current || undefined,
   })
 
   const addFemaleMsg = (text: string, delta?: number) => {
@@ -546,13 +585,15 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       // 빈 응답은 히스토리에 넣지 않음 (쌓이면 Gemini 혼란 유발)
       if (data.reply) chatHistory.current.push({ role: 'assistant', content: reply })
 
-      // 호감도 업데이트
-      const newAffection = Math.max(0, Math.min(MAX_AFFECTION, rel.affection + delta))
+      // 회차별 배율 적용 후 호감도 업데이트
+      const multiplier = getMeetMultiplier(rel.meet_count)
+      const scaledDelta = Math.round(delta * multiplier)
+      const newAffection = Math.max(0, Math.min(MAX_AFFECTION, rel.affection + scaledDelta))
       if (!isLocalMode) {
         await supabase.from('relationships').update({ affection: newAffection }).eq('id', rel.id)
         await supabase.from('date_messages').insert([
           { relationship_id: rel.id, sender: 'player', content: text, affection_delta: 0 },
-          { relationship_id: rel.id, sender: 'female', content: reply, affection_delta: delta, manner_violation: mannerViolation },
+          { relationship_id: rel.id, sender: 'female', content: reply, affection_delta: scaledDelta, manner_violation: mannerViolation },
         ])
       }
 
@@ -586,8 +627,28 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       }
 
       setRel(prev => prev ? { ...prev, affection: newAffection } : prev)
-      addFemaleMsg(reply, delta)
+      addFemaleMsg(reply, scaledDelta)
       if (voiceMode && reply && reply !== '...') speakReply(reply)
+
+      // 회차 목표치 도달 시 세션 종료
+      const target = MEET_AFFECTION_TARGETS[rel.meet_count]
+      if (target && newAffection >= target && newAffection < SEX_UNLOCK_THRESHOLD) {
+        const cooldownMsgs: Record<number, string> = {
+          5: '오늘은 즐거웠어. 다음에 또 봐.',
+          6: '시간 가는 줄 몰랐네. 오늘은 여기서.',
+          7: '...요즘 좀 바빠서. 나중에 또 봐.',
+          8: '솔직히 우리... 그냥 친구인 것 같기도 해.',
+          9: '다음에 보면 좀 달라질 수 있을까.',
+        }
+        const endMsg = cooldownMsgs[rel.meet_count] ?? '오늘은 즐거웠어. 다음에 또 봐.'
+        setTimeout(() => {
+          addFemaleMsg(endMsg)
+          setSessionEnded(true)
+          setEndReason('limit')
+          startBypass()
+        }, 1000)
+        return
+      }
 
       // SEX 잠금 해제 체크
       if (newAffection >= SEX_UNLOCK_THRESHOLD && !rel.sex_unlocked) {
@@ -802,7 +863,6 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 }
 
 function getGreeting(affection: number, meetCount: number, char: FemaleCharacterData, maleAge?: number): string {
-  // 여캐가 남캐보다 어리면 존댓말, 같거나 많으면 반말
   const formal = maleAge != null && char.age < maleAge
 
   if (meetCount === 1) {
@@ -810,6 +870,14 @@ function getGreeting(affection: number, meetCount: number, char: FemaleCharacter
       ? `안녕하세요, 저 ${char.nickname}이에요. 처음 뵙는 분이죠...?`
       : `안녕, 나 ${char.nickname}이야. 처음 보는 얼굴인데...`
   }
+
+  // 5회차+ 식어가는 분위기
+  if (meetCount === 5) return formal ? `어, 또 오셨어요? 요즘 자주 보네요.` : `어, 또 왔어? 요즘 자주 보이네.`
+  if (meetCount === 6) return formal ? `오셨군요... 무슨 일이에요?` : `왔어... 무슨 일이야?`
+  if (meetCount === 7) return formal ? `요즘 좀 바쁜데... 잠깐만 있을게요.` : `요즘 좀 바쁜데... 잠깐만 있을게.`
+  if (meetCount === 8) return formal ? `...또 오셨네요.` : `...또 왔네.`
+  if (meetCount === 9) return formal ? `이게 마지막이면 좋겠어요, 솔직히.` : `이게 마지막이면 좋겠어, 솔직히.`
+
   if (affection < 100) return formal ? `어, 또 오셨어요?` : `어, 또 왔어?`
   if (affection < 250) return formal ? `오셨네요. 오늘은 무슨 일이에요?` : `왔어. 오늘은 무슨 일이야?`
   if (affection < 400) return formal ? `어, 오셨구나. 기다리고 있었어요.` : `어, 왔구나. 기다리고 있었어.`
