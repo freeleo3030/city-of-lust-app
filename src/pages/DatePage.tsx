@@ -154,7 +154,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       const VAD_SILENCE_MS = 1500
       const VAD_THRESHOLD = 15
       // 말소리 감지 전엔 최대 5초 대기, 감지 후부터 침묵 카운트 시작
-      const VAD_MAX_WAIT_MS = 5000
+      const VAD_MAX_WAIT_MS = 3000
       let lastSoundAt: number | null = null  // null = 아직 말소리 없음
       let waitStart = Date.now()
       console.log('[VAD] started, ctx state:', audioCtx.state)
