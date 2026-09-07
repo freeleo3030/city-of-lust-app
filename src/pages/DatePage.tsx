@@ -69,7 +69,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   const [missions, setMissions] = useState<string[]>([])
   const [completedMissions, setCompletedMissions] = useState<string[]>([])
   const [mannerWarnings, setMannerWarnings] = useState(0)
-  const [sessionEnded, setSessionEnded] = useState(false)
+  const [sessionEnded, setSessionEnded_] = useState(false)
+  const sessionEndedRef = useRef(false)
+  const setSessionEnded = (v: boolean) => { sessionEndedRef.current = v; setSessionEnded_(v) }
   const [endReason, setEndReason] = useState<'broken' | 'sex_unlocked' | 'limit' | 'timeout' | null>(null)
   const [bypassCountdown, setBypassCountdown] = useState(0)
   const [timeLeft, setTimeLeft] = useState(600) // 10분
@@ -549,7 +551,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   }
 
   const sendMessageText = async (text: string) => {
-    if (!text || sending || sessionEnded || !rel) return
+    if (!text || sending || sessionEndedRef.current || !rel) return
     // 직전 메시지와 동일하면 중복 무시 (STT 더블 트리거 방지)
     const lastMsg = chatHistory.current[chatHistory.current.length - 1]
     if (lastMsg?.role === 'user' && lastMsg?.content === text) return
@@ -654,6 +656,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
           9: '다음에 보면 좀 달라질 수 있을까.',
         }
         const endMsg = cooldownMsgs[currentRel.meet_count] ?? '오늘은 즐거웠어. 다음에 또 봐.'
+        sessionEndedRef.current = true  // 즉시 추가 입력 차단
         setTimeout(() => {
           addFemaleMsg(endMsg)
           setSessionEnded(true)
