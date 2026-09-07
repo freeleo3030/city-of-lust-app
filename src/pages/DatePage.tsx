@@ -726,14 +726,26 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
         {/* 호감도 바 */}
         <div style={S.affectionWrap}>
+          {/* 이번 회차 목표 바 */}
           <div style={S.affectionLabel}>
-            <span style={{ color: '#ffffff88', fontSize: 11 }}>호감도</span>
+            <span style={{ color: '#ffffff88', fontSize: 11 }}>이번 목표</span>
             <span style={{ color: barColor, fontWeight: 'bold', fontSize: 12 }}>{rel?.affection ?? 0} / {currentTarget}</span>
           </div>
           <div style={S.barBg}>
             <div style={{ ...S.barFill, width: `${affectionPct}%`, background: barColor }} />
-            <div style={{ ...S.marker, left: `${Math.min(99, Math.round((SEX_UNLOCK_THRESHOLD / currentTarget) * 100))}%` }} title="SEX 잠금 해제">❤️</div>
           </div>
+          {/* SEX 잠금 해제 바 */}
+          {!rel?.sex_unlocked && (
+            <>
+              <div style={{ ...S.affectionLabel, marginTop: 6 }}>
+                <span style={{ color: '#ffffff88', fontSize: 11 }}>❤️ SEX까지</span>
+                <span style={{ color: '#e9456088', fontWeight: 'bold', fontSize: 12 }}>{rel?.affection ?? 0} / {SEX_UNLOCK_THRESHOLD}</span>
+              </div>
+              <div style={S.barBg}>
+                <div style={{ ...S.barFill, width: `${Math.min(100, Math.round(((rel?.affection ?? 0) / SEX_UNLOCK_THRESHOLD) * 100))}%`, background: '#e9456066' }} />
+              </div>
+            </>
+          )}
           {rel?.sex_unlocked && (
             <button style={S.sexBtn} onClick={() => onSexUnlocked(femaleChar)}>❤️‍🔥 SEX</button>
           )}
