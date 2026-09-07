@@ -177,8 +177,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       setMicReady(true)
 
       // VAD: setInterval로 음량 감지 → 말소리 감지 후 1.5초 침묵 시 자동 중지
-      const VAD_SILENCE_MS = 1500
-      const VAD_THRESHOLD = 15
+      const VAD_SILENCE_MS = 3000
+      const VAD_THRESHOLD = 20
       // 말소리 감지 전엔 최대 5초 대기 (여캐 말 끝나고 내가 준비할 시간), 감지 후 침묵 1.5초 시 자동 중지
       const VAD_MAX_WAIT_MS = 5000
       let lastSoundAt: number | null = null  // null = 아직 말소리 없음
