@@ -566,14 +566,16 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       })
       const data = await res.json()
       console.log('[Gemini] res status:', res.status, 'data:', JSON.stringify(data).slice(0, 200))
-      let reply: string = data.reply || '...'
+      let reply: string = data.reply || ''
       // 혹시 reply에 JSON 전체가 들어온 경우 방어
       if (reply.startsWith('{') || reply.startsWith('```')) {
         try {
           const inner = JSON.parse((reply.match(/\{[\s\S]*\}/) ?? [])[0] ?? '')
           if (inner?.reply) reply = inner.reply
-        } catch { reply = '...' }
+        } catch { reply = '' }
       }
+      // "..."만 반환된 경우 기본 대사로 대체
+      if (!reply || reply.trim() === '...') reply = '흠...'
       const delta: number = data.affection_delta ?? 0
       const mannerViolation: boolean = data.manner_violation ?? false
       const missionCompleted: boolean = data.mission_completed ?? false
