@@ -53,7 +53,15 @@ function getMeetMultiplier(meetCount: number): number {
 
 export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUnlocked }: Props) {
   const scale = useScale(1440)
-  const [rel, setRel] = useState<Relationship | null>(null)
+  const [rel, setRel_] = useState<Relationship | null>(null)
+  const relRef = useRef<Relationship | null>(null)
+  const setRel = (val: Relationship | null | ((prev: Relationship | null) => Relationship | null)) => {
+    setRel_(prev => {
+      const next = typeof val === 'function' ? val(prev) : val
+      relRef.current = next
+      return next
+    })
+  }
   const [loading, setLoading] = useState(true)
   const [chatLog, setChatLog] = useState<ChatMsg[]>([])
   const [input, setInput] = useState('')
@@ -590,14 +598,15 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       if (data.reply) chatHistory.current.push({ role: 'assistant', content: reply })
 
       // 회차별 배율 적용 후 호감도 업데이트
-      const multiplier = getMeetMultiplier(rel.meet_count)
+      const currentRel = relRef.current ?? rel
+      const multiplier = getMeetMultiplier(currentRel.meet_count)
       const scaledDelta = Math.round(delta * multiplier)
-      const newAffection = Math.max(0, Math.min(MAX_AFFECTION, rel.affection + scaledDelta))
+      const newAffection = Math.max(0, Math.min(MAX_AFFECTION, currentRel.affection + scaledDelta))
       if (!isLocalMode) {
-        await supabase.from('relationships').update({ affection: newAffection }).eq('id', rel.id)
+        await supabase.from('relationships').update({ affection: newAffection }).eq('id', currentRel.id)
         await supabase.from('date_messages').insert([
-          { relationship_id: rel.id, sender: 'player', content: text, affection_delta: 0 },
-          { relationship_id: rel.id, sender: 'female', content: reply, affection_delta: scaledDelta, manner_violation: mannerViolation },
+          { relationship_id: currentRel.id, sender: 'player', content: text, affection_delta: 0 },
+          { relationship_id: currentRel.id, sender: 'female', content: reply, affection_delta: scaledDelta, manner_violation: mannerViolation },
         ])
       }
 
@@ -607,7 +616,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         setMannerWarnings(newWarnings)
         if (newWarnings >= 3) {
           addFemaleMsg('...이제 그만해. 다신 나한테 연락하지 마.')
-          if (!isLocalMode) await supabase.from('relationships').update({ status: 'broken', affection: 0 }).eq('id', rel.id)
+          if (!isLocalMode) await supabase.from('relationships').update({ status: 'broken', affection: 0 }).eq('id', currentRel.id)
           setSessionEnded(true)
           setEndReason('broken')
           setRel(prev => prev ? { ...prev, affection: 0, status: 'broken' } : prev)
@@ -624,7 +633,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
           if (!isLocalMode) {
             await supabase.from('date_missions')
               .update({ completed: true })
-              .eq('relationship_id', rel.id)
+              .eq('relationship_id', currentRel.id)
               .eq('content', unfinished)
           }
         }
@@ -635,7 +644,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       if (voiceMode && reply && reply !== '...') speakReply(reply)
 
       // 회차 목표치 도달 시 세션 종료
-      const target = MEET_AFFECTION_TARGETS[rel.meet_count]
+      const target = MEET_AFFECTION_TARGETS[currentRel.meet_count]
       if (target && newAffection >= target && newAffection < SEX_UNLOCK_THRESHOLD) {
         const cooldownMsgs: Record<number, string> = {
           5: '오늘은 즐거웠어. 다음에 또 봐.',
@@ -644,7 +653,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
           8: '솔직히 우리... 그냥 친구인 것 같기도 해.',
           9: '다음에 보면 좀 달라질 수 있을까.',
         }
-        const endMsg = cooldownMsgs[rel.meet_count] ?? '오늘은 즐거웠어. 다음에 또 봐.'
+        const endMsg = cooldownMsgs[currentRel.meet_count] ?? '오늘은 즐거웠어. 다음에 또 봐.'
         setTimeout(() => {
           addFemaleMsg(endMsg)
           setSessionEnded(true)
@@ -655,8 +664,8 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       }
 
       // SEX 잠금 해제 체크
-      if (newAffection >= SEX_UNLOCK_THRESHOLD && !rel.sex_unlocked) {
-        if (!isLocalMode) await supabase.from('relationships').update({ sex_unlocked: true, status: 'sex_unlocked' }).eq('id', rel.id)
+      if (newAffection >= SEX_UNLOCK_THRESHOLD && !currentRel.sex_unlocked) {
+        if (!isLocalMode) await supabase.from('relationships').update({ sex_unlocked: true, status: 'sex_unlocked' }).eq('id', currentRel.id)
         setRel(prev => prev ? { ...prev, sex_unlocked: true, status: 'sex_unlocked' } : prev)
         if (timerRef.current) clearInterval(timerRef.current) // SEX 해제 시 타이머 정지
         setTimeout(() => {
