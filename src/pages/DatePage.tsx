@@ -671,7 +671,10 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
   const sendMessage = () => sendMessageText(input.trim())
 
-  const affectionPct = rel ? Math.round((rel.affection / MAX_AFFECTION) * 100) : 0
+  // 회차 목표치 기준으로 바 계산 (목표 없는 회차는 MAX_AFFECTION 기준)
+  const meetCount = rel?.meet_count ?? 1
+  const currentTarget = MEET_AFFECTION_TARGETS[meetCount] ?? MAX_AFFECTION
+  const affectionPct = rel ? Math.min(100, Math.round((rel.affection / currentTarget) * 100)) : 0
   const barColor = affectionPct >= 90 ? '#c9a84c' : affectionPct >= 50 ? '#e94560' : '#4FC3F7'
 
   const exprImgSrc = femaleChar.expressionImages?.[exprIdx] || femaleChar.expressionImages?.[0] || femaleChar.imageUrl
@@ -725,11 +728,11 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         <div style={S.affectionWrap}>
           <div style={S.affectionLabel}>
             <span style={{ color: '#ffffff88', fontSize: 11 }}>호감도</span>
-            <span style={{ color: barColor, fontWeight: 'bold', fontSize: 12 }}>{rel?.affection ?? 0} / {MAX_AFFECTION}</span>
+            <span style={{ color: barColor, fontWeight: 'bold', fontSize: 12 }}>{rel?.affection ?? 0} / {currentTarget}</span>
           </div>
           <div style={S.barBg}>
             <div style={{ ...S.barFill, width: `${affectionPct}%`, background: barColor }} />
-            <div style={{ ...S.marker, left: '90%' }} title="SEX 잠금 해제">❤️</div>
+            <div style={{ ...S.marker, left: `${Math.min(99, Math.round((SEX_UNLOCK_THRESHOLD / currentTarget) * 100))}%` }} title="SEX 잠금 해제">❤️</div>
           </div>
           {rel?.sex_unlocked && (
             <button style={S.sexBtn} onClick={() => onSexUnlocked(femaleChar)}>❤️‍🔥 SEX</button>
