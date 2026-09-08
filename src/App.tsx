@@ -141,8 +141,7 @@ export default function App() {
   }, [])
 
   if (loading) return <div style={{ background: '#0d0d1a', minHeight: '100vh' }} />
-  // TODO: 개발 완료 후 로그인 연결
-  // if (!user) return <LoginPage />
+  if (!user) return <LoginPage />
   if (!ageVerified) return <AgeVerifyPage onVerified={() => setAgeVerified(true)} />
   const saveCharacter = async (c: any) => {
     localStorage.setItem('col_character', JSON.stringify(c))
