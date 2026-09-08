@@ -591,6 +591,7 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
     job: femaleChar.job,
     bodyType: femaleChar.bodyType,
     personality: femaleChar.personality,
+    dateCostShare: femaleChar.dateCostShare ?? 0,
     interestTags: femaleChar.interestTags,
     dislikeTags: femaleChar.dislikeTags,
     maleNickname: maleChar?.nickname ?? null,
