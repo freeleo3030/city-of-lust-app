@@ -541,23 +541,52 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
     try {
       const job = femaleChar.job ?? ''
       const interests = femaleChar.interestTags ?? []
-      // 관심사 미션: 보유한 관심사마다 하나씩 (최대 5개)
-      const interestMissions = interests.slice(0, 5).map((tag: string) => `${tag} 얘기하기`)
-      // 일반 미션 풀 (관심사 없을 때 채우거나 부족할 때 보충)
-      const generalPool: string[] = [
-        `${job} 일 어떤지 물어보기`,
-        '좋아하는 음식 물어보기',
-        '주말 뭐 하는지 물어보기',
-        '최근 여행 얘기 꺼내기',
-        '요즘 재미있는 거 물어보기',
-        '좋아하는 영화/드라마 물어보기',
-        '자주 가는 장소 물어보기',
-        '가고 싶은 여행지 물어보기',
-        '학창 시절 얘기 꺼내기',
-        '가족 얘기 살짝 물어보기',
-      ]
-      // 관심사 미션 먼저, 부족하면 일반 미션으로 채움
-      const pool = [...interestMissions, ...generalPool]
+
+      // 회차별 미션 풀 분리
+      let pool: string[]
+      if (meetNum === 1) {
+        // 1회차: 기본 소개 — 처음 만난 사이
+        pool = [
+          '이름 물어보기',
+          `${job} 일 어떤지 물어보기`,
+          '사는 동네 물어보기',
+          '오늘 어떻게 왔는지 물어보기',
+          '첫인상 칭찬하기',
+        ]
+      } else if (meetNum <= 3) {
+        // 2~3회차: 관심사 첫 탐색 + 일상
+        const interestMissions = interests.slice(0, 3).map((tag: string) => `${tag} 얘기하기`)
+        pool = [
+          ...interestMissions,
+          '좋아하는 음식 물어보기',
+          '주말에 뭐 하는지 물어보기',
+          '최근에 재미있었던 거 물어보기',
+        ]
+      } else if (meetNum <= 6) {
+        // 4~6회차: 나머지 관심사 + 개인적인 얘기
+        const interestMissions = interests.slice(3, 6).map((tag: string) => `${tag} 얘기 꺼내기`)
+        pool = [
+          ...interestMissions,
+          '가고 싶은 여행지 물어보기',
+          '요즘 고민 있는지 물어보기',
+          '학창 시절 얘기 꺼내기',
+          '가족 얘기 살짝 물어보기',
+          '꿈이 뭔지 물어보기',
+        ]
+      } else {
+        // 7~10회차: 감정·스킨십 암시
+        pool = [
+          '오늘 예뻐 보인다고 말하기',
+          '손이 예쁘다고 말하기',
+          '다음에 또 보고 싶다고 말하기',
+          '오늘 같이 있어서 좋았다고 말하기',
+          '눈 맞추며 칭찬하기',
+          '처음 만났을 때 기억 꺼내기',
+          '둘만의 장소 만들자고 제안하기',
+          '좋아한다고 넌지시 말하기',
+        ]
+      }
+
       const missionList = pool.slice(0, missionCount)
       console.log('[Mission] local generated:', missionList)
       setMissions(missionList)
