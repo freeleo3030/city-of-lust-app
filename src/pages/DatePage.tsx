@@ -520,8 +520,8 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
   }
 
   const generateMissions = async (relId: string, meetNum: number, affection: number) => {
-    // 이번 만남의 미션 개수 = 만남 횟수 (max 10)
-    const missionCount = Math.min(meetNum, 10)
+    // 이번 만남의 미션 개수 = 만남 횟수 (max 10), 1회차는 3개 고정
+    const missionCount = meetNum === 1 ? 3 : Math.min(meetNum, 10)
 
     // 이미 이번 만남 미션이 있으면 스킵 (DB 모드만)
     if (!isLocalMode) {
@@ -589,7 +589,10 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
         ]
       }
 
-      const missionList = pool.slice(0, missionCount)
+      // 1회차는 풀에서 랜덤 3개, 나머지는 순서대로
+      const missionList = meetNum === 1
+        ? pool.sort(() => Math.random() - 0.5).slice(0, missionCount)
+        : pool.slice(0, missionCount)
       console.log('[Mission] local generated:', missionList)
       setMissions(missionList)
       if (!isLocalMode) {
