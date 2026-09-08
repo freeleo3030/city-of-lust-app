@@ -541,18 +541,23 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
     try {
       const job = femaleChar.job ?? ''
       const interests = femaleChar.interestTags ?? []
-      const pool: string[] = [
-        interests[0] ? `${interests[0]} 얘기하기` : '취미 물어보기',
+      // 관심사 미션: 보유한 관심사마다 하나씩 (최대 5개)
+      const interestMissions = interests.slice(0, 5).map((tag: string) => `${tag} 얘기하기`)
+      // 일반 미션 풀 (관심사 없을 때 채우거나 부족할 때 보충)
+      const generalPool: string[] = [
         `${job} 일 어떤지 물어보기`,
-        '최근 여행 얘기 꺼내기',
         '좋아하는 음식 물어보기',
         '주말 뭐 하는지 물어보기',
-        interests[1] ? `${interests[1]} 얘기 꺼내기` : '평소 취미 물어보기',
+        '최근 여행 얘기 꺼내기',
         '요즘 재미있는 거 물어보기',
         '좋아하는 영화/드라마 물어보기',
         '자주 가는 장소 물어보기',
         '가고 싶은 여행지 물어보기',
+        '학창 시절 얘기 꺼내기',
+        '가족 얘기 살짝 물어보기',
       ]
+      // 관심사 미션 먼저, 부족하면 일반 미션으로 채움
+      const pool = [...interestMissions, ...generalPool]
       const missionList = pool.slice(0, missionCount)
       console.log('[Mission] local generated:', missionList)
       setMissions(missionList)
