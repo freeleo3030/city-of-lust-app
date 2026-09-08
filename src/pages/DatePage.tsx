@@ -136,10 +136,21 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     try {
       setListening(true)   // 즉시 "준비 중..." 표시
       setMicReady(false)
+      // 마이크 기기 목록에서 윈도우 기본 설정 기기(C10 등) 우선 선택
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const mics = devices.filter(d => d.kind === 'audioinput')
+      console.log('[MIC] available:', mics.map(d => d.label))
+      // "communications" 또는 윈도우 기본 입력 기기(첫 번째 비-default) 선택
+      // deviceId가 'default'인 건 Conexant일 수 있으므로 C10 등 실제 기기를 찾음
+      const preferred = mics.find(d => d.label.includes('C10') || d.label.includes('MATA')) ?? mics.find(d => d.deviceId !== 'default') ?? mics[0]
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        audio: {
+          deviceId: preferred ? { exact: preferred.deviceId } : undefined,
+          echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+        }
       })
       micStreamRef.current = stream
+      console.log('[MIC] track:', stream.getAudioTracks()[0]?.label, 'state:', stream.getAudioTracks()[0]?.readyState)
       audioChunksRef.current = []
 
       // AudioContext: getUserMedia 직후 (사용자 제스처 컨텍스트 안) 에서 생성
