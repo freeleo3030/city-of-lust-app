@@ -74,6 +74,7 @@ function buildSystemPrompt(ctx: any, missionCtx: any, lang: string): string {
   const job = ctx?.job ?? '직장인'
   const bodyType = ctx?.bodyType ?? '슬랜더'
 
+  const dateCostShare: number = ctx?.dateCostShare ?? 50
   const p = ctx?.personality ?? { introvert: 3, indirect: 3, friendly: 3 }
   const introvertLabel = p.introvert <= 2 ? '내성적' : p.introvert >= 4 ? '외향적' : '중간'
   const indirectLabel = p.indirect <= 2 ? '우회적' : p.indirect >= 4 ? '직설적' : '중간'
@@ -115,6 +116,7 @@ function buildSystemPrompt(ctx: any, missionCtx: any, lang: string): string {
 ${introvertLabel}, ${indirectLabel}, ${friendlyLabel}
 관심사: ${interests}
 싫어하는 것: ${dislikes}
+데이트 비용: ${dateCostShare === 0 ? '절대 안 냄 (남성이 100% 부담해야 함. 반반 제안도 단호히 거절)' : dateCostShare <= 30 ? `가끔 조금 낼 수 있음 (${dateCostShare}%)` : dateCostShare <= 60 ? `더치페이 수용 (${dateCostShare}%)` : dateCostShare <= 90 ? `자주 내는 편 (${dateCostShare}%)` : '항상 여성이 냄 (100%)'}
 
 【상대방 정보】
 ${maleInfo}
@@ -137,7 +139,7 @@ ${remaining.length > 0 ? `【오늘 대화 미션】\n${remaining.map((m: string
 규칙:
 - reply는 ${lang === 'en' ? '영어' : '한국어'}로, 반드시 1~2문장의 실제 대사로 작성
 - reply에 절대 "..."만 쓰지 마. 반드시 실제 문장으로 답해.
-- affection_delta: 좋은 대화 +5~+20, 나쁜 대화 -5~-15, 보통 0~+5
+- affection_delta: 관심사(${interests}) 주제 대화 성공 시 +15~+30, 일반 좋은 대화 +5~+15, 보통 0~+5, 나쁜 대화 -5~-15
 - manner_violation: 욕설/성희롱/무례 시 true
 - mission_completed: 미션 주제 대화 성공 시 true
 - 상대방 이름(${maleName ?? '상대'})을 자연스럽게 가끔 불러줘`
