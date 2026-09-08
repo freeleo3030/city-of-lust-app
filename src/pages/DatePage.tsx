@@ -3,10 +3,13 @@ import { supabase } from '../lib/supabase'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
 import { useScale } from '../hooks/useScale'
 
+const TESTER_EMAILS = ['freeleo3030@gmail.com']
+
 interface Props {
   femaleChar: FemaleCharacterData
   maleChar: any
   userId: string
+  userEmail: string
   onBack: () => void
   onSexUnlocked: (char: FemaleCharacterData) => void
 }
@@ -51,7 +54,7 @@ function getMeetMultiplier(meetCount: number): number {
   return 0.8
 }
 
-export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUnlocked }: Props) {
+export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBack, onSexUnlocked }: Props) {
   const scale = useScale(1440)
   const [rel, setRel_] = useState<Relationship | null>(null)
   const relRef = useRef<Relationship | null>(null)
@@ -111,6 +114,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
   // 로컬(개발) 모드 여부 — 로그인 없이 테스트할 때 UUID가 아닌 userId가 들어옴
   const isLocalMode = !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
   const isTestChar = maleChar?.nickname === '윈드'
+  const isTester = TESTER_EMAILS.includes(userEmail)
 
   // 테스트 캐릭터 bypass: 제한 메시지 표시 후 5초 카운트다운 → 대화 입력 허용
   function startBypass() {
@@ -135,6 +139,14 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     }, 1000)
   }
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current) }, [])
+
+  // 테스터 전용: 이 여캐와의 관계 데이터 초기화
+  const handleTesterReset = async () => {
+    if (!rel || !window.confirm('이 여캐와의 모든 대화·호감도를 초기화할까요?')) return
+    await supabase.from('date_messages').delete().eq('relationship_id', rel.id)
+    await supabase.from('relationships').delete().eq('id', rel.id)
+    window.location.reload()
+  }
 
   // Whisper STT — 녹음 시작 (매번 새로 요청, 끝나면 즉시 해제 → 블루투스 A2DP 유지)
   const startListening = async () => {
@@ -774,7 +786,15 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
         {/* 헤더 */}
         <div style={S.header}>
-          <button style={S.backBtn} onClick={onBack}>← 나가기</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <button style={S.backBtn} onClick={onBack}>← 나가기</button>
+            {isTester && (
+              <button
+                style={{ ...S.backBtn, fontSize: 10, padding: '2px 6px', color: '#e94560', borderColor: '#e9456066', background: 'none' }}
+                onClick={handleTesterReset}
+              >🔄 초기화</button>
+            )}
+          </div>
           <div style={S.headerCenter}>
             <div>
               <div style={S.charName}>{femaleChar.nickname}</div>

@@ -174,6 +174,7 @@ export default function App() {
       femaleChar={dateScene}
       maleChar={character}
       userId={user?.id ?? 'dev-user'}
+      userEmail={user?.email ?? ''}
       onBack={() => setDateScene(null)}
       onSexUnlocked={(char) => { setDateScene(null); setShowPoseSelect(char) }}
     />
