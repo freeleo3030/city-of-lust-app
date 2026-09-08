@@ -589,9 +589,9 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
         ]
       }
 
-      // 1회차는 풀에서 랜덤 3개, 나머지는 순서대로
+      // 1회차는 이름 물어보기 필수 + 나머지 풀에서 랜덤 2개, 나머지는 순서대로
       const missionList = meetNum === 1
-        ? pool.sort(() => Math.random() - 0.5).slice(0, missionCount)
+        ? ['이름 물어보기', ...pool.filter(m => m !== '이름 물어보기').sort(() => Math.random() - 0.5).slice(0, 2)]
         : pool.slice(0, missionCount)
       console.log('[Mission] local generated:', missionList)
       setMissions(missionList)
