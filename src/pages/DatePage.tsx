@@ -32,26 +32,26 @@ interface Relationship {
 }
 
 const MAX_AFFECTION = 500
-const SEX_UNLOCK_THRESHOLD = 450  // 90%
+const SEX_UNLOCK_THRESHOLD = 800
 const MAX_MEET_COUNT = 10
 const MAX_MEET_TODAY = 3
 
 // 회차별 누적 호감도 목표치 (이 값 도달 시 세션 자동 종료)
 const MEET_AFFECTION_TARGETS: Record<number, number> = {
-  1: 100,
-  2: 200,
-  3: 350,
-  4: 450,
+  1: 150,
+  2: 350,
+  3: 600,
+  4: 800,
 }
 
-// 회차별 delta 배율
+// 회차별 delta 배율 (기존 대비 절반)
 function getMeetMultiplier(meetCount: number): number {
-  if (meetCount === 1) return 1.0
-  if (meetCount === 2) return 1.5
-  if (meetCount === 3) return 2.0
-  if (meetCount === 4) return 1.5
-  if (meetCount <= 7) return 1.0
-  return 0.8
+  if (meetCount === 1) return 0.5
+  if (meetCount === 2) return 0.75
+  if (meetCount === 3) return 1.0
+  if (meetCount === 4) return 0.75
+  if (meetCount <= 7) return 0.5
+  return 0.4
 }
 
 export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBack, onSexUnlocked }: Props) {
