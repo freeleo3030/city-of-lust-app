@@ -341,6 +341,32 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     }
   }, [timeLeft])
 
+  // 호감도 목표치 도달 시 즉시 세션 종료 (sendMessageText 타이밍 이슈 보완)
+  useEffect(() => {
+    if (!rel || sessionEndedRef.current || loading) return
+    const target = MEET_AFFECTION_TARGETS[rel.meet_count]
+    if (!target || rel.affection < target || rel.affection >= SEX_UNLOCK_THRESHOLD) return
+    // 목표치 도달 — 즉시 모든 입력 차단
+    sessionEndedRef.current = true
+    if (vadTimerRef.current) { clearInterval(vadTimerRef.current); vadTimerRef.current = null }
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+    if (micStreamRef.current) { micStreamRef.current.getTracks().forEach(t => t.stop()); micStreamRef.current = null }
+    const cooldownMsgs: Record<number, string> = {
+      5: '오늘은 즐거웠어. 다음에 또 봐.',
+      6: '시간 가는 줄 몰랐네. 오늘은 여기서.',
+      7: '...요즘 좀 바빠서. 나중에 또 봐.',
+      8: '솔직히 우리... 그냥 친구인 것 같기도 해.',
+      9: '다음에 보면 좀 달라질 수 있을까.',
+    }
+    const endMsg = cooldownMsgs[rel.meet_count] ?? '오늘은 즐거웠어. 다음에 또 봐.'
+    setTimeout(() => {
+      addFemaleMsg(endMsg)
+      setSessionEnded(true)
+      setEndReason('limit')
+      startBypass()
+    }, 800)
+  }, [rel?.affection])
+
   // 관계 데이터 로드 및 오늘 횟수 체크
   useEffect(() => {
     if (initialized.current) return
