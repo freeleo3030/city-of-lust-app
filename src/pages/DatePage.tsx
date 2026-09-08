@@ -296,23 +296,23 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       if (data.audioContent) {
         const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`)
         audio.onended = () => {
-          if (continuousVoiceRef.current) startListening()
+          if (continuousVoiceRef.current && !sessionEndedRef.current) startListening()
         }
         audio.onerror = () => {
           console.error('[TTS] audio error, restarting listen')
-          if (continuousVoiceRef.current) startListening()
+          if (continuousVoiceRef.current && !sessionEndedRef.current) startListening()
         }
         audio.play().catch(e => {
           console.error('[TTS play]', e)
-          if (continuousVoiceRef.current) startListening()
+          if (continuousVoiceRef.current && !sessionEndedRef.current) startListening()
         })
       } else {
         console.error('[TTS] no audioContent:', data)
-        if (continuousVoiceRef.current) startListening()
+        if (continuousVoiceRef.current && !sessionEndedRef.current) startListening()
       }
     } catch (e) {
       console.error('[TTS]', e)
-      if (continuousVoiceRef.current) startListening()
+      if (continuousVoiceRef.current && !sessionEndedRef.current) startListening()
     }
   }
 
