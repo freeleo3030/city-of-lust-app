@@ -120,6 +120,11 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
       setBypassCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownRef.current!)
+          // 음성 모드 강제 종료 후 텍스트 모드로 복귀
+          continuousVoiceRef.current = false
+          setContinuousVoice(false)
+          setListening(false)
+          setVoiceMode(false)
           setSessionEnded(false)
           setEndReason(null)
           setTimeout(() => inputRef.current?.focus(), 100)
@@ -351,6 +356,9 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
     if (vadTimerRef.current) { clearInterval(vadTimerRef.current); vadTimerRef.current = null }
     if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
     if (micStreamRef.current) { micStreamRef.current.getTracks().forEach(t => t.stop()); micStreamRef.current = null }
+    continuousVoiceRef.current = false
+    setContinuousVoice(false)
+    setListening(false)
     const cooldownMsgs: Record<number, string> = {
       5: '오늘은 즐거웠어. 다음에 또 봐.',
       6: '시간 가는 줄 몰랐네. 오늘은 여기서.',
@@ -695,10 +703,13 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         }
         const endMsg = cooldownMsgs[currentRel.meet_count] ?? '오늘은 즐거웠어. 다음에 또 봐.'
         sessionEndedRef.current = true  // 즉시 추가 입력 차단
-        // 현재 VAD/녹음 강제 중지
+        // 현재 VAD/녹음/음성 강제 중지
         if (vadTimerRef.current) { clearInterval(vadTimerRef.current); vadTimerRef.current = null }
         if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
         if (micStreamRef.current) { micStreamRef.current.getTracks().forEach(t => t.stop()); micStreamRef.current = null }
+        continuousVoiceRef.current = false
+        setContinuousVoice(false)
+        setListening(false)
         setTimeout(() => {
           addFemaleMsg(endMsg)
           setSessionEnded(true)
