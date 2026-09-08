@@ -139,7 +139,7 @@ ${remaining.length > 0 ? `【오늘 대화 미션】\n${remaining.map((m: string
 규칙:
 - reply는 ${lang === 'en' ? '영어' : '한국어'}로, 반드시 1~2문장의 실제 대사로 작성
 - reply에 절대 "..."만 쓰지 마. 반드시 실제 문장으로 답해.
-- affection_delta: 관심사(${interests}) 주제 대화 성공 시 +15~+30, 일반 좋은 대화 +5~+15, 보통 0~+5, 나쁜 대화 -5~-15
+- affection_delta: 관심사(${interests}) 주제 대화 성공 시 +8~+15, 일반 좋은 대화 +3~+8, 보통 0~+3, 나쁜 대화 -3~-10
 - manner_violation: 욕설/성희롱/무례 시 true
 - mission_completed: 미션 주제 대화 성공 시 true
 - 상대방 이름(${maleName ?? '상대'})을 자연스럽게 가끔 불러줘`
