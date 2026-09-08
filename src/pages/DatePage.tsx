@@ -133,6 +133,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
 
   // Whisper STT — 녹음 시작 (매번 새로 요청, 끝나면 즉시 해제 → 블루투스 A2DP 유지)
   const startListening = async () => {
+    if (sessionEndedRef.current) return  // 세션 종료 시 녹음 시작 차단
     try {
       setListening(true)   // 즉시 "준비 중..." 표시
       setMicReady(false)
@@ -668,6 +669,10 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         }
         const endMsg = cooldownMsgs[currentRel.meet_count] ?? '오늘은 즐거웠어. 다음에 또 봐.'
         sessionEndedRef.current = true  // 즉시 추가 입력 차단
+        // 현재 VAD/녹음 강제 중지
+        if (vadTimerRef.current) { clearInterval(vadTimerRef.current); vadTimerRef.current = null }
+        if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+        if (micStreamRef.current) { micStreamRef.current.getTracks().forEach(t => t.stop()); micStreamRef.current = null }
         setTimeout(() => {
           addFemaleMsg(endMsg)
           setSessionEnded(true)
