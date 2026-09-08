@@ -213,7 +213,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
         // 말소리 없이 5초 지나면 → 연속 대화면 다시 대기, 아니면 중지
         if (lastSoundAt === null && Date.now() - waitStart > VAD_MAX_WAIT_MS) {
           clearInterval(vadTimerRef.current!); vadTimerRef.current = null
-          try { audioCtx.close() } catch {}
+          audioCtx.close().catch(() => {})
           if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
           return
         }
@@ -223,7 +223,7 @@ export default function DatePage({ femaleChar, maleChar, userId, onBack, onSexUn
           console.log('[VAD] auto-stop triggered')
           clearInterval(vadTimerRef.current!)
           vadTimerRef.current = null
-          try { audioCtx.close() } catch {}
+          audioCtx.close().catch(() => {})
           if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
         }
       }, 100)
