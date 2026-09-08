@@ -547,7 +547,7 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
       if (meetNum === 1) {
         // 1회차: 서로 알아가기 — 처음 만난 사이의 자연스러운 대화
         pool = [
-          '이름 물어보기',
+          `${femaleChar.nickname} 이름 불러주며 인사하기`,
           '사는 동네 물어보기',
           `${job} 어떤 일인지 물어보기`,
           '오늘 어떻게 여기 오게 됐는지 물어보기',
@@ -591,7 +591,7 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
 
       // 1회차는 이름 물어보기 필수 + 나머지 풀에서 랜덤 2개, 나머지는 순서대로
       const missionList = meetNum === 1
-        ? ['이름 물어보기', ...pool.filter(m => m !== '이름 물어보기').sort(() => Math.random() - 0.5).slice(0, 2)]
+        ? [pool[0], ...pool.slice(1).sort(() => Math.random() - 0.5).slice(0, 2)]
         : pool.slice(0, missionCount)
       console.log('[Mission] local generated:', missionList)
       setMissions(missionList)
