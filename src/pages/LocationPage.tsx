@@ -154,7 +154,6 @@ export default function LocationPage({ location, femaleChars, maleChar, gold = 0
   }
 
   const chars = femaleChars.filter(c => c.location === location.name)
-  console.log('[Location]', location.name, '| femaleChars:', femaleChars.length, '| chars:', chars.length, '| locations:', femaleChars.map(c => `${c.nickname}:${c.location}`))
 
   return (
     <div style={S.container}>
