@@ -2,6 +2,16 @@ import React, { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import type { FemaleCharacterData } from './FemaleCharacterCreatePage'
 import { useScale } from '../hooks/useScale'
+import {
+  safeInteractionResult,
+  calcDelta,
+  calcStage,
+  canUnlockSex,
+  getTrustLevel,
+  getAnimationKey,
+  type InteractionResult,
+  type RelationshipState,
+} from '../lib/relationshipEngine'
 
 const TESTER_EMAILS = ['freeleo3030@gmail.com']
 
@@ -24,6 +34,11 @@ interface ChatMsg {
 interface Relationship {
   id: string
   affection: number
+  attraction: number
+  trust: number
+  comfort: number
+  conflict: number
+  stage: string
   meet_count: number
   meet_today: number
   daily_reset_date: string | null
@@ -32,7 +47,7 @@ interface Relationship {
 }
 
 const MAX_AFFECTION = 500
-const SEX_UNLOCK_THRESHOLD = 800
+const SEX_UNLOCK_THRESHOLD = 800  // affection 기준 — 다차원 조건은 canUnlockSex 사용
 const MAX_MEET_COUNT = 10
 const MAX_MEET_TODAY = 3
 
@@ -84,6 +99,7 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
   const [micReady, setMicReady] = useState(false)
   const [sttLang, setSttLang] = useState<'ko' | 'en'>('ko')
   const chatHistory = useRef<{ role: string; content: string }[]>([])
+  const recentResults = useRef<InteractionResult[]>([])  // Repetition Modifier용
   const chatEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const msgId = useRef(0)
@@ -401,7 +417,8 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
     if (isLocalMode) {
       const defaultRel: Relationship = {
         id: `local-${femaleChar.id}`,
-        affection: 0, meet_count: 0, meet_today: 0,
+        affection: 0, attraction: 30, trust: 10, comfort: 10, conflict: 0, stage: 'stranger',
+        meet_count: 0, meet_today: 0,
         daily_reset_date: null, status: 'active', sex_unlocked: false,
       }
       const newMeetCount = 1
@@ -519,7 +536,7 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
     }
   }
 
-  const generateMissions = async (relId: string, meetNum: number, affection: number) => {
+  const generateMissions = async (relId: string, meetNum: number, _affection: number) => {
     // 이번 만남의 미션 개수 = 만남 횟수 (max 10), 1회차는 3개 고정
     const missionCount = meetNum === 1 ? 3 : Math.min(meetNum, 10)
 
@@ -622,13 +639,14 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
     } catch { /* 실패해도 대화 진행 */ }
   }
 
-  const buildCharContext = (affection: number, meetCount: number) => ({
+  const buildCharContext = (currentRel: Relationship, meetCount: number) => ({
     name: femaleChar.nickname,
     nickname: femaleChar.nickname,
     age: femaleChar.age,
     married: femaleChar.married,
     job: femaleChar.job,
     bodyType: femaleChar.bodyType,
+    dateCostShare: femaleChar.dateCostShare,
     personality: femaleChar.personality,
     dateCostShare: femaleChar.dateCostShare ?? 0,
     interestTags: femaleChar.interestTags,
@@ -636,9 +654,17 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
     maleNickname: maleChar?.nickname ?? null,
     maleAge: maleChar?.age ?? null,
     maleJob: maleChar?.job ?? null,
-    affection,
     meetCount,
     prevSummary: prevSummaryRef.current || undefined,
+    relationship: {
+      affection: currentRel.affection,
+      attraction: currentRel.attraction,
+      trust: currentRel.trust,
+      trust_level: getTrustLevel(currentRel.trust),
+      comfort: currentRel.comfort,
+      conflict: currentRel.conflict,
+      stage: currentRel.stage,
+    },
   })
 
   const addFemaleMsg = (text: string, delta?: number) => {
@@ -659,6 +685,7 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
     chatHistory.current.push({ role: 'user', content: text })
 
     try {
+      const currentRel = relRef.current ?? rel
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       const res = await fetch(`${supabaseUrl}/functions/v1/gemini-chat`, {
@@ -667,7 +694,7 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
         body: JSON.stringify({
           message: text,
           history: chatHistory.current.slice(-8),
-          charContext: buildCharContext(rel.affection, rel.meet_count),
+          charContext: buildCharContext(currentRel, currentRel.meet_count),
           missionContext: { missions, completed: completedMissions },
           lang: sttLang,
         }),
@@ -675,38 +702,71 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
       const data = await res.json()
       console.log('[Gemini] res status:', res.status, 'data:', JSON.stringify(data).slice(0, 200))
       let reply: string = data.reply || ''
-      // 혹시 reply에 JSON 전체가 들어온 경우 방어
       if (reply.startsWith('{') || reply.startsWith('```')) {
         try {
           const inner = JSON.parse((reply.match(/\{[\s\S]*\}/) ?? [])[0] ?? '')
           if (inner?.reply) reply = inner.reply
         } catch { reply = '' }
       }
-      // "..."만 반환된 경우 기본 대사로 대체
       if (!reply || reply.trim() === '...') reply = '흠...'
-      const delta: number = data.affection_delta ?? 0
+
+      const interactionResult = safeInteractionResult(data.interaction_result ?? 'neutral')
+      const emotion: string        = data.emotion ?? 'neutral'
+      const intensity: number      = data.intensity ?? 0.5
+      const targetTrait: string    = data.target_trait ?? ''
       const mannerViolation: boolean = data.manner_violation ?? false
       const missionCompleted: boolean = data.mission_completed ?? false
 
-      // 표정 업데이트 (0:평온 1:기쁨 2:수줍음 3:실망 4:기대), 3초 후 평온 복귀
-      // delta >= 20: 기쁨, delta 10~19: 수줍음, delta 1~9: 기대, delta 0: 평온, delta < 0 또는 매너위반: 실망
-      const newExpr = mannerViolation || delta < 0 ? 3 : delta >= 20 ? 1 : delta >= 10 ? 2 : delta >= 1 ? 4 : 0
+      // Repetition Modifier 추적
+      recentResults.current.push(interactionResult)
+      if (recentResults.current.length > 20) recentResults.current.shift()
+
+      // Relationship Engine: delta 계산
+      const delta = calcDelta(
+        interactionResult,
+        targetTrait,
+        femaleChar.personality ?? {},
+        recentResults.current,
+      )
+
+      // 회차 배율은 affection에만 적용 (기존 밸런스 유지)
+      const multiplier = getMeetMultiplier(rel.meet_count)
+      const newAffection  = Math.max(0, Math.min(MAX_AFFECTION, rel.affection  + Math.round(delta.affection * multiplier)))
+      const newAttraction = Math.max(0, Math.min(100, rel.attraction + delta.attraction))
+      const newTrust      = Math.max(0, Math.min(100, rel.trust      + delta.trust))
+      const newComfort    = Math.max(0, Math.min(100, rel.comfort    + delta.comfort))
+      const newConflict   = Math.max(0, Math.min(100, rel.conflict   + delta.conflict))
+
+      // Stage 재계산
+      const newRelState: RelationshipState = {
+        affection: newAffection, attraction: newAttraction,
+        trust: newTrust, comfort: newComfort, conflict: newConflict,
+        stage: rel.stage as any,
+      }
+      const newStage = calcStage(newRelState)
+
+      // 표정 업데이트 (emotion 기반)
+      const animKey = getAnimationKey(emotion, intensity)
+      console.log('[Animation]', animKey)
+      const exprMap: Record<string, number> = { happy: 1, shy: 2, annoyed: 3, touched: 2, laugh: 1, surprised: 4 }
+      const newExpr = mannerViolation ? 3 : (exprMap[emotion] ?? (delta.affection >= 5 ? 4 : delta.affection < 0 ? 3 : 0))
       setExprIdx(newExpr)
       setTimeout(() => setExprIdx(0), 3000)
 
-      // 빈 응답은 히스토리에 넣지 않음 (쌓이면 Gemini 혼란 유발)
       if (data.reply) chatHistory.current.push({ role: 'assistant', content: reply })
 
+<<<<<<< HEAD
       // 회차별 배율 적용 후 호감도 업데이트
-      const currentRel = relRef.current ?? rel
-      const multiplier = getMeetMultiplier(currentRel.meet_count)
-      const scaledDelta = Math.round(delta * multiplier)
-      const newAffection = Math.max(0, Math.min(MAX_AFFECTION, currentRel.affection + scaledDelta))
+      // DB 업데이트
       if (!isLocalMode) {
-        await supabase.from('relationships').update({ affection: newAffection }).eq('id', currentRel.id)
+        await supabase.from('relationships').update({
+          affection: newAffection, attraction: newAttraction,
+          trust: newTrust, comfort: newComfort, conflict: newConflict,
+          stage: newStage,
+        }).eq('id', currentRel.id)
         await supabase.from('date_messages').insert([
           { relationship_id: currentRel.id, sender: 'player', content: text, affection_delta: 0 },
-          { relationship_id: currentRel.id, sender: 'female', content: reply, affection_delta: scaledDelta, manner_violation: mannerViolation },
+          { relationship_id: currentRel.id, sender: 'female', content: reply, affection_delta: Math.round(delta.affection * multiplier), manner_violation: mannerViolation },
         ])
       }
 
@@ -739,13 +799,18 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
         }
       }
 
-      setRel(prev => prev ? { ...prev, affection: newAffection } : prev)
-      addFemaleMsg(reply, scaledDelta)
+      setRel(prev => prev ? {
+        ...prev,
+        affection: newAffection, attraction: newAttraction,
+        trust: newTrust, comfort: newComfort, conflict: newConflict,
+        stage: newStage,
+      } : prev)
+      addFemaleMsg(reply, Math.round(delta.affection * multiplier))
       if (voiceMode && reply && reply !== '...') speakReply(reply)
 
       // 회차 목표치 도달 시 세션 종료
       const target = MEET_AFFECTION_TARGETS[currentRel.meet_count]
-      if (target && newAffection >= target && newAffection < SEX_UNLOCK_THRESHOLD) {
+      if (target && newAffection >= target && !canUnlockSex(newRelState)) {
         const cooldownMsgs: Record<number, string> = {
           5: '오늘은 즐거웠어. 다음에 또 봐.',
           6: '시간 가는 줄 몰랐네. 오늘은 여기서.',
@@ -771,11 +836,11 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
         return
       }
 
-      // SEX 잠금 해제 체크
-      if (newAffection >= SEX_UNLOCK_THRESHOLD && !currentRel.sex_unlocked) {
+      // SEX 잠금 해제 — 다차원 조건 충족 시
+      if (canUnlockSex(newRelState) && !currentRel.sex_unlocked) {
         if (!isLocalMode) await supabase.from('relationships').update({ sex_unlocked: true, status: 'sex_unlocked' }).eq('id', currentRel.id)
         setRel(prev => prev ? { ...prev, sex_unlocked: true, status: 'sex_unlocked' } : prev)
-        if (timerRef.current) clearInterval(timerRef.current) // SEX 해제 시 타이머 정지
+        if (timerRef.current) clearInterval(timerRef.current)
         setTimeout(() => {
           addFemaleMsg('...사실 너한테 특별한 감정이 생긴 것 같아. 오늘 좀 더 있어줄 수 있어?')
         }, 800)
@@ -861,20 +926,33 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
           <div style={S.barBg}>
             <div style={{ ...S.barFill, width: `${affectionPct}%`, background: barColor }} />
           </div>
-          {/* SEX 잠금 해제 바 */}
-          {!rel?.sex_unlocked && (
-            <>
-              <div style={{ ...S.affectionLabel, marginTop: 6 }}>
-                <span style={{ color: '#ffffff88', fontSize: 11 }}>❤️ SEX까지</span>
-                <span style={{ color: '#e9456088', fontWeight: 'bold', fontSize: 12 }}>{rel?.affection ?? 0} / {SEX_UNLOCK_THRESHOLD}</span>
+          {/* 관계 상태 미니 스탯 */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            {[
+              { label: '신뢰', val: rel?.trust ?? 0, color: '#4FC3F7' },
+              { label: '편안', val: rel?.comfort ?? 0, color: '#81C784' },
+              { label: '끌림', val: rel?.attraction ?? 0, color: '#F48FB1' },
+              { label: '갈등', val: rel?.conflict ?? 0, color: '#e94560' },
+            ].map(({ label, val, color }) => (
+              <div key={label} style={{ flex: 1, minWidth: 50 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#ffffff66' }}>
+                  <span>{label}</span><span style={{ color }}>{val}</span>
+                </div>
+                <div style={{ ...S.barBg, height: 3, marginTop: 2 }}>
+                  <div style={{ height: '100%', width: `${val}%`, background: color, borderRadius: 2 }} />
+                </div>
               </div>
-              <div style={S.barBg}>
-                <div style={{ ...S.barFill, width: `${Math.min(100, Math.round(((rel?.affection ?? 0) / SEX_UNLOCK_THRESHOLD) * 100))}%`, background: '#e9456066' }} />
-              </div>
-            </>
-          )}
-          {rel?.sex_unlocked && (
+            ))}
+          </div>
+          {/* SEX 잠금 해제 */}
+          {rel?.sex_unlocked ? (
             <button style={S.sexBtn} onClick={() => onSexUnlocked(femaleChar)}>❤️‍🔥 SEX</button>
+          ) : (
+            <div style={{ fontSize: 10, color: '#ffffff44', marginTop: 6, textAlign: 'center' }}>
+              {rel && canUnlockSex({ affection: rel.affection, attraction: rel.attraction, trust: rel.trust, comfort: rel.comfort, conflict: rel.conflict, stage: rel.stage as any })
+                ? '💫 친밀 관계 조건 충족'
+                : `💫 친밀 관계까지 신뢰·편안·끌림 60+ / 갈등 40 미만`}
+            </div>
           )}
         </div>
 
