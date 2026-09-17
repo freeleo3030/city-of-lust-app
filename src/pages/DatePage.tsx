@@ -755,8 +755,6 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
 
       if (data.reply) chatHistory.current.push({ role: 'assistant', content: reply })
 
-<<<<<<< HEAD
-      // 회차별 배율 적용 후 호감도 업데이트
       // DB 업데이트
       if (!isLocalMode) {
         await supabase.from('relationships').update({
