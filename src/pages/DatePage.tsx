@@ -730,18 +730,18 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
       )
 
       // 회차 배율은 affection에만 적용 (기존 밸런스 유지)
-      const multiplier = getMeetMultiplier(rel.meet_count)
-      const newAffection  = Math.max(0, Math.min(MAX_AFFECTION, rel.affection  + Math.round(delta.affection * multiplier)))
-      const newAttraction = Math.max(0, Math.min(100, rel.attraction + delta.attraction))
-      const newTrust      = Math.max(0, Math.min(100, rel.trust      + delta.trust))
-      const newComfort    = Math.max(0, Math.min(100, rel.comfort    + delta.comfort))
-      const newConflict   = Math.max(0, Math.min(100, rel.conflict   + delta.conflict))
+      const multiplier = getMeetMultiplier(currentRel.meet_count)
+      const newAffection  = Math.max(0, Math.min(MAX_AFFECTION, currentRel.affection  + Math.round(delta.affection * multiplier)))
+      const newAttraction = Math.max(0, Math.min(100, currentRel.attraction + delta.attraction))
+      const newTrust      = Math.max(0, Math.min(100, currentRel.trust      + delta.trust))
+      const newComfort    = Math.max(0, Math.min(100, currentRel.comfort    + delta.comfort))
+      const newConflict   = Math.max(0, Math.min(100, currentRel.conflict   + delta.conflict))
 
       // Stage 재계산
       const newRelState: RelationshipState = {
         affection: newAffection, attraction: newAttraction,
         trust: newTrust, comfort: newComfort, conflict: newConflict,
-        stage: rel.stage as any,
+        stage: currentRel.stage as any,
       }
       const newStage = calcStage(newRelState)
 
