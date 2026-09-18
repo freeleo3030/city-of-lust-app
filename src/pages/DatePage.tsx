@@ -12,6 +12,7 @@ import {
   type InteractionResult,
   type RelationshipState,
 } from '../lib/relationshipEngine'
+import { resolveClip } from '../lib/animationEngine'
 
 const TESTER_EMAILS = ['freeleo3030@gmail.com']
 
@@ -747,7 +748,10 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
 
       // 표정 업데이트 (emotion 기반)
       const animKey = getAnimationKey(emotion, intensity)
-      console.log('[Animation]', animKey)
+      const gesture: string = data.gesture ?? ''
+      const charBaseUrl = `https://lfhrxkpcyfqnorjkdodp.supabase.co/storage/v1/object/public/char-images/${femaleChar.id}`
+      const clipUrl = resolveClip(femaleChar.id, animKey, gesture, charBaseUrl)
+      console.log('[Animation]', animKey, '→ clip:', clipUrl ?? '(no clip yet)')
       const exprMap: Record<string, number> = { happy: 1, shy: 2, annoyed: 3, touched: 2, laugh: 1, surprised: 4 }
       const newExpr = mannerViolation ? 3 : (exprMap[emotion] ?? (delta.affection >= 5 ? 4 : delta.affection < 0 ? 3 : 0))
       setExprIdx(newExpr)
