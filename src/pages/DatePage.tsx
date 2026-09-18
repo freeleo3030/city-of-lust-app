@@ -765,7 +765,7 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
         if (relErr) console.error('[DB] relationships update error:', relErr)
         else console.log('[DB] relationships updated:', { affection: newAffection, trust: newTrust, comfort: newComfort, attraction: newAttraction, conflict: newConflict })
         const { error: msgErr } = await supabase.from('date_messages').insert([
-          { relationship_id: currentRel.id, sender: 'player', content: text, affection_delta: 0 },
+          { relationship_id: currentRel.id, sender: 'player', content: text, affection_delta: 0, manner_violation: false },
           { relationship_id: currentRel.id, sender: 'female', content: reply, affection_delta: Math.round(delta.affection * multiplier), manner_violation: mannerViolation },
         ])
         if (msgErr) console.error('[DB] date_messages insert error:', msgErr)
