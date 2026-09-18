@@ -111,19 +111,18 @@ export default function LocationPage({ location, femaleChars, maleChar, gold = 0
   const [bypassCountdown, setBypassCountdown] = useState(0)
   const rejectTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
   const countdownRef  = useRef<ReturnType<typeof setInterval> | null>(null)
+  const bypassCharRef = useRef<FemaleCharacterData | null>(null)
 
   const isTestChar = maleChar?.nickname === '윈드'
 
+  // 카운트다운 시작
   useEffect(() => {
     if (bypassCountdown <= 0 || !rejectState?.bypassChar) return
-    if (bypassCountdown === 0) return
+    bypassCharRef.current = rejectState.bypassChar
     countdownRef.current = setInterval(() => {
       setBypassCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownRef.current!)
-          const char = rejectState.bypassChar!
-          setRejectState(null)
-          onStartDate?.(char)
           return 0
         }
         return prev - 1
@@ -131,6 +130,15 @@ export default function LocationPage({ location, femaleChars, maleChar, gold = 0
     }, 1000)
     return () => { if (countdownRef.current) clearInterval(countdownRef.current) }
   }, [rejectState])
+
+  // 카운트다운 완료 시 데이트 시작 (setState updater 밖에서 호출)
+  useEffect(() => {
+    if (bypassCountdown !== 0 || !bypassCharRef.current) return
+    const char = bypassCharRef.current
+    bypassCharRef.current = null
+    setRejectState(null)
+    onStartDate?.(char)
+  }, [bypassCountdown])
 
   function handleApproach(char: FemaleCharacterData) {
     if (!maleChar) { onStartDate?.(char); return }
