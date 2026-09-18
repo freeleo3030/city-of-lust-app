@@ -757,16 +757,20 @@ export default function DatePage({ femaleChar, maleChar, userId, userEmail, onBa
 
       // DB 업데이트
       if (!isLocalMode) {
-        await supabase.from('relationships').update({
+        const { error: relErr } = await supabase.from('relationships').update({
           affection: newAffection, attraction: newAttraction,
           trust: newTrust, comfort: newComfort, conflict: newConflict,
           stage: newStage,
         }).eq('id', currentRel.id)
-        await supabase.from('date_messages').insert([
+        if (relErr) console.error('[DB] relationships update error:', relErr)
+        else console.log('[DB] relationships updated:', { affection: newAffection, trust: newTrust, comfort: newComfort, attraction: newAttraction, conflict: newConflict })
+        const { error: msgErr } = await supabase.from('date_messages').insert([
           { relationship_id: currentRel.id, sender: 'player', content: text, affection_delta: 0 },
           { relationship_id: currentRel.id, sender: 'female', content: reply, affection_delta: Math.round(delta.affection * multiplier), manner_violation: mannerViolation },
         ])
+        if (msgErr) console.error('[DB] date_messages insert error:', msgErr)
       }
+      console.log('[Score] delta:', delta, 'new:', { affection: newAffection, trust: newTrust, comfort: newComfort, attraction: newAttraction })
 
       // 매너 위반 처리
       if (mannerViolation) {
